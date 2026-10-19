@@ -1,0 +1,160 @@
+/* 动效层：飞入抛物线 / 超支抖动 / 飘字 / 弹跳 / 呼吸光 / 告急闪烁。
+ * 关键帧与动画工具类集中在此；JS 只负责编排（写自定义变量、加类、到点移除）。 */
+
+/* ================= 商品飞入购物车 =================
+ * 外层 .fx-fly-x 做线性横向位移；内层 .fx-fly-y 用关键帧走「先抬起再落向购物篮」的弧线，
+ * 两者叠加即为抛物线。位移量由 JS 写入 --dy / --lift / --fly-dur。 */
+.fx-fly {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.fx-fly-x { width: 100%; height: 100%; transition: transform var(--fly-dur, .52s) linear; }
+.fx-fly-y { width: 100%; height: 100%; animation: zq-arc var(--fly-dur, .52s) ease-out forwards; }
+.fx-fly img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(2px 2px 0 rgba(27, 62, 111, .25)); }
+
+@keyframes zq-arc {
+  0%   { transform: translateY(0); }
+  38%  { transform: translateY(calc(var(--lift, 24px) * -1)); }
+  100% { transform: translateY(var(--dy, 0px)); }
+}
+
+/* ================= 超支：卡片抖动 + 变红 ================= */
+.slot.is-overspend { animation: zq-shake .42s ease; }
+.slot.is-overspend .slot-frame {
+  border-style: solid;
+  border-color: var(--red);
+  background: rgba(225, 75, 63, .14);
+}
+.slot.is-overspend .slot-price { color: var(--red); }
+
+@keyframes zq-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  16% { transform: translateX(-6px) rotate(-2deg); }
+  34% { transform: translateX(6px) rotate(2deg); }
+  52% { transform: translateX(-5px) rotate(-1.6deg); }
+  70% { transform: translateX(4px) rotate(1.2deg); }
+  86% { transform: translateX(-2px) rotate(-.6deg); }
+}
+
+/* ================= 飘字（+30s / 零花钱） ================= */
+.fx-float {
+  position: absolute;
+  font-weight: 900;
+  pointer-events: none;
+  animation: zq-float-up 1.1s ease-out forwards;
+}
+@keyframes zq-float-up {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(.8); }
+  18%  { opacity: 1; transform: translate(-50%, -.55em) scale(1.06); }
+  100% { opacity: 0; transform: translate(-50%, -3.4em) scale(1); }
+}
+
+/* ================= 弹跳（件数角标 / 星星入场） ================= */
+.is-pop { animation: zq-pop .32s ease-out; }
+@keyframes zq-pop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.38); }
+  100% { transform: scale(1); }
+}
+.is-pop-star { animation: zq-pop-star .46s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes zq-pop-star {
+  0%   { transform: scale(0); opacity: 0; }
+  62%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ================= 结账按钮呼吸光 ================= */
+.btn-checkout.is-breathe { animation: zq-breathe 1.7s ease-in-out infinite; }
+@keyframes zq-breathe {
+  0%, 100% { box-shadow: var(--shadow-lg), 0 0 0 0 rgba(125, 190, 93, .5); }
+  50%      { box-shadow: var(--shadow-lg), 0 0 0 9px rgba(125, 190, 93, 0); }
+}
+
+/* ================= 计时告急脉冲 ================= */
+@keyframes zq-timer-urgent {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%      { transform: translateX(-50%) scale(1.025); }
+}
+
+/* ================= 硬币落罐（结算零花钱） =================
+ * 硬币沿 .fx-fly 抛物线落进存钱罐，命中后存钱罐挤压回弹，数字滚动递增（JS 编排）。 */
+.coin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: radial-gradient(circle at 34% 30%, #FFE9A3, #E8B21E 72%);
+}
+.coins-pig {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6em;
+  height: 1.8em;
+  margin-left: .3em;
+  vertical-align: middle;
+  transform-origin: 50% 82%;
+}
+.coins-pig .pig-svg { width: 100%; height: 100%; }
+.coins-pig.is-hit { animation: zq-pig-squash .34s ease-out; }
+@keyframes zq-pig-squash {
+  0%   { transform: scale(1, 1); }
+  34%  { transform: scale(1.18, .82); }
+  68%  { transform: scale(.94, 1.07); }
+  100% { transform: scale(1, 1); }
+}
+
+/* ================= 清单：新行滑入 + 下拉展开 + 头部轻弹 ================= */
+.items-row.is-new { animation: zq-row-in .3s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes zq-row-in {
+  0%   { opacity: 0; transform: translateX(-8px) scale(.94); }
+  100% { opacity: 1; transform: none; }
+}
+/* 下拉明细出现（与 components.css 中 .hud-items.is-open .note-body 配合） */
+@keyframes zq-note-drop {
+  0%   { opacity: 0; transform: scaleY(.82) translateY(-6px); }
+  100% { opacity: 1; transform: none; }
+}
+/* 首次放入商品时头部按钮轻弹 */
+.hud-items.is-unfold .note-head { animation: zq-note-nudge .42s cubic-bezier(.2, 1.3, .4, 1); }
+@keyframes zq-note-nudge {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06) rotate(-1.2deg); }
+  100% { transform: none; }
+}
+
+/* ================= 购物篮：新商品随手丢入 ================= */
+.cart-item.is-new { animation: zq-cart-drop .34s cubic-bezier(.2, 1.4, .4, 1) backwards; }
+@keyframes zq-cart-drop {
+  0% {
+    opacity: 0;
+    transform:
+      translate(calc(-50% + var(--x, 0%)), calc(-50% + var(--y, 0%) - 16px))
+      rotate(calc(var(--r, 0deg) + 10deg))
+      scale(.72);
+  }
+  70% {
+    opacity: 1;
+    transform:
+      translate(calc(-50% + var(--x, 0%)), calc(-50% + var(--y, 0%) + 3px))
+      rotate(var(--r, 0deg))
+      scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform:
+      translate(calc(-50% + var(--x, 0%)), calc(-50% + var(--y, 0%)))
+      rotate(var(--r, 0deg))
+      scale(var(--s, 1));
+  }
+}
+
+/* ================= 货架翻页入场 ================= */
+.slot-frame.is-in { animation: zq-slot-in .3s ease-out both; }
+@keyframes zq-slot-in {
+  0%   { opacity: 0; transform: translateY(7px) scale(.96); }
+  100% { opacity: 1; transform: none; }
+}

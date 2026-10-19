@@ -1,0 +1,104 @@
+/* 基础层：设计变量、字体栈、重置、房间背景（奶油白墙 + 浅黄地板网格）。
+ * 手绘卡通风：深藏蓝描边 + 大圆角 + 硬阴影位移（不用高斯模糊）。 */
+
+:root {
+  /* 主色板 */
+  --ink:        #243E65;   /* 藏蓝描边与主文字 */
+  --ink-soft:   rgba(36, 62, 101, .18);
+  --paper:      #FFFDF7;
+  --cream:      #FBF5EA;
+  --wall:       #EAF7FC;
+  --floor:      #E8E5E0;
+  --floor-line: rgba(116, 142, 158, .3);
+
+  --green:      #7DBE5D;   /* 完成、勾选与结算 */
+  --green-lt:   #E7F1D5;
+  --blue:       #5B91C4;   /* 主色：边框、选中与链接 */
+  --blue-lt:    #DDF0FC;
+  --orange:     #EF892F;   /* 强调色：价格、倒计时 */
+  --awning:     #D75F5B;
+  --wood:       #EAD4B2;
+  --wood-dk:    #D4B783;
+  --yellow:     #F4E3B8;
+  --yellow-lt:  #FFF8E8;
+  --red:        #D65750;
+
+  /* 品类浅色块（低饱和） */
+  --cat-drink:     rgba(221, 240, 252, .88);
+  --cat-snack:     rgba(250, 239, 220, .88);
+  --cat-daily:     rgba(231, 241, 213, .88);
+  --cat-seasoning: rgba(255, 246, 219, .88);
+
+  --shadow:     4px 4px 0 var(--ink-soft);
+  --shadow-lg:  6px 6px 0 rgba(36, 62, 101, .18);
+
+  --font: 'Yuanti SC', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Heiti SC', sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: #D8EEF8;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  touch-action: manipulation;
+}
+button:disabled { cursor: default; }
+button:focus-visible {
+  outline: 4px solid var(--blue);
+  outline-offset: 3px;
+}
+img { display: block; -webkit-user-drag: none; user-select: none; }
+ul { margin: 0; padding: 0; list-style: none; }
+
+/* 页面挂载点：把 16:9 舞台居中 */
+#app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 叠加层默认不拦截点击 */
+#toast-layer, #modal-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+#modal-layer { z-index: 60; }
+#toast-layer { z-index: 80; }
+
+.noscript-tip {
+  position: fixed;
+  inset: auto 0 0 0;
+  padding: 12px;
+  text-align: center;
+  background: var(--yellow-lt);
+  border-top: 3px solid var(--ink);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}

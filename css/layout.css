@@ -1,0 +1,113 @@
+/* 主界面布局：顶部计时中心、左侧任务、中央货架、右侧购物篮、右下结算。
+ * 舞台宽度作为容器查询单位来源（1cqw = 舞台宽度的 1%）。 */
+
+.stage {
+  position: relative;
+  width: min(100vw, 177.78vh);   /* 16:9 等比铺满 */
+  height: min(56.25vw, 100vh);
+  container-type: inline-size;
+  overflow: hidden;
+  background: var(--wall);
+  box-shadow: 0 0 0 4px rgba(27, 62, 111, .12);
+}
+
+/* 房间背景层 */
+.room { position: absolute; inset: 0; z-index: 0; }
+.room::before {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 0; bottom: 34%;
+  background: linear-gradient(180deg, #CBE9F8 0%, #EAF7FC 46%, #F9F8F2 100%);
+}
+.room-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 34%;
+  background-color: var(--floor);
+  background-image:
+    repeating-linear-gradient(90deg, var(--floor-line) 0 2px, transparent 2px 12.5%),
+    repeating-linear-gradient(0deg, var(--floor-line) 0 2px, transparent 2px 25%);
+}
+
+/* ---------- 各区域定位（z-index 由低到高） ---------- */
+
+/* 左侧：流线型任务卡 */
+.hud-target {
+  position: absolute;
+  left: 3%;
+  top: 16%;
+  width: 21.5%;
+  z-index: 6;
+}
+
+/* 顶部中央：独立计时器 */
+.hud-timer {
+  position: absolute;
+  left: 50%;
+  top: 1.2%;
+  transform: translateX(-50%);
+  width: 29.5%;
+  z-index: 8;
+}
+
+/* 右侧：查看明细 + 购物篮 */
+.panel-basket {
+  position: absolute;
+  right: 2%;
+  top: 18.8%;
+  bottom: 15.5%;
+  width: 24%;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: .8cqw;
+}
+
+.hud-items {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  z-index: 8;
+}
+
+.panel-cart {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* 中央：货架 */
+.panel-shelf {
+  position: absolute;
+  left: 25%;
+  top: 18.8%;
+  width: 49%;
+  height: 79.2%;
+  z-index: 4;
+}
+
+/* 右下：结账按钮 */
+.checkout-dock {
+  position: absolute;
+  right: 2%;
+  bottom: 3.5%;
+  width: 24%;
+  z-index: 9;
+}
+.checkout-dock .btn-checkout {
+  position: relative;
+  width: 100%;
+}
+
+/* 左上：延时卡片按钮 */
+.btn-delaycard {
+  position: absolute;
+  left: 3%;
+  top: 2.2%;
+  width: 21.5%;
+  z-index: 7;
+}
+
+/* 结账按钮上方的首次提示小字 */
+.checkout-hint {
+  width: 100%;
+  margin-bottom: .5cqw;
+}
