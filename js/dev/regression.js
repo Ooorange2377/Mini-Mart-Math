@@ -121,7 +121,8 @@
       storageRemove(SAVE_KEY);
       storageRemove(BACKUP_KEY);
       var loaded = ZQ.store.load();
-      check(loaded.version === 3 && loaded.equipped.cart === 'silver', '空存档应加载默认值');
+      check(loaded.version === 4 && loaded.equipped.cart === 'silver' && loaded.equipped.pig === 'glass',
+        '空存档应加载默认值');
 
       storageSet(SAVE_KEY, JSON.stringify({
         version: 1,
@@ -131,6 +132,7 @@
       loaded = ZQ.store.load();
       check(loaded.levelStars[1] === 3, '旧存档应保留关卡星数');
       check(loaded.equipped.cart === 'silver', '旧机甲灰皮肤应迁移为普通银色');
+      check(loaded.equipped.pig === 'glass', '旧小花猪皮肤应迁移为普通玻璃存钱罐');
       check(loaded.settings.sound === true, '旧存档缺失字段应补默认值');
 
       // v1 的 40 关编号迁移到 v2 的 42 关编号，避免新增关卡导致进度错位。
@@ -142,7 +144,7 @@
         fixedQuestions: { 7: { levelId: 7, chapter: 2, seed: 123 } },
       }));
       loaded = ZQ.store.load();
-      check(loaded.version === 3, 'v1 存档应迁移到 v3');
+      check(loaded.version === 4, 'v1 存档应迁移到 v4');
       check(loaded.levelStars[6] === 1 && loaded.levelStars[7] === undefined, '第 1~6 关编号应保持不变');
       check(loaded.levelStars[8] === 2, '原第 7 关应迁移到第 8 关');
       check(loaded.levelStars[21] === 3, '原第 20 关应迁移到第 21 关');
@@ -163,9 +165,16 @@
         coins: 7,
       }));
       loaded = ZQ.store.load();
-      check(loaded.version === 3 && loaded.coins === 13, 'v2 已有三星进度应补发奖励金并保留原余额');
+      check(loaded.version === 4 && loaded.coins === 13, 'v2 已有三星进度应补发奖励金并保留原余额');
       loaded = ZQ.store.load();
       check(loaded.coins === 13, '再次加载同一存档不应重复补发奖励金');
+
+      storageSet(SAVE_KEY, JSON.stringify({
+        version: 3,
+        equipped: { cart: 'silver', pig: 'zhaocai' },
+      }));
+      loaded = ZQ.store.load();
+      check(loaded.equipped.pig === 'luckycat', '旧招财金猪应迁移为招财猫存钱罐');
 
       // 严格线性推进：缺任意前置关卡时，即使星数达标也不能跳章。
       storageSet(SAVE_KEY, JSON.stringify({
@@ -209,7 +218,7 @@
 
       storageSet(SAVE_KEY, JSON.stringify({ version: 99, levelStars: { 1: 3 } }));
       loaded = ZQ.store.load();
-      check(loaded.version === 3 && ZQ.store.totalStars() === 0, '未知高版本存档应安全重置');
+      check(loaded.version === 4 && ZQ.store.totalStars() === 0, '未知高版本存档应安全重置');
       check(!!storageGet(BACKUP_KEY), '高版本存档重置前应保留备份');
 
       // 首次三星奖励只记一次；重复三星仍可通关，但不再产生妈妈奖励金。

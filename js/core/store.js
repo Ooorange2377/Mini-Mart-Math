@@ -3,7 +3,7 @@ window.ZQ = window.ZQ || {};
 
 (function () {
   var KEY = 'zqdz_save_v1';
-  var VERSION = 3;
+  var VERSION = 4;
 
   /** v1（40 关）到 v2（42 关）的关卡编号迁移。 */
   function migratedLevelId(id) {
@@ -65,6 +65,13 @@ window.ZQ = window.ZQ || {};
     return null;
   }
 
+  /** v3 及更早存档：旧存钱罐皮肤下线后迁移到当前可用款式。 */
+  function migratePigSkins(save) {
+    if (!save.equipped || typeof save.equipped !== 'object') return;
+    if (save.equipped.pig === 'zhaocai') save.equipped.pig = 'luckycat';
+    else if (save.equipped.pig === 'xiaohua' || save.equipped.pig === 'space') save.equipped.pig = 'glass';
+  }
+
   function defaultSave() {
     return {
       version: VERSION,
@@ -73,7 +80,7 @@ window.ZQ = window.ZQ || {};
       momBonusLedger: {},    // 每关是否已领取「妈妈奖励金」
       coins: 0,              // 零花钱
       delayCards: 0,         // 延时卡片存量
-      equipped: { cart: 'silver', pig: 'xiaohua' },
+      equipped: { cart: 'silver', pig: 'glass' },
       clearCounts: {},       // 每关成功通关次数（递减倍率用）
       fixedQuestions: {},    // 未满星关卡的固定题
       tutorialSeen: {},
@@ -110,6 +117,7 @@ window.ZQ = window.ZQ || {};
     var fromVersion = typeof save.version === 'number' ? save.version : 1;
     if (fromVersion < 2) migrateLevelIds(save);
     if (fromVersion < 3) migrateMomBonuses(save);
+    if (fromVersion < 4) migratePigSkins(save);
     save.version = VERSION;
     return save;
   }

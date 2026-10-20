@@ -56,39 +56,37 @@
   color: var(--ink);
 }
 
-/* 两侧购物车装饰（不拦截点击） */
-.start-deco {
-  position: absolute;
-  bottom: 7%;
-  width: 16%;
-  height: 26%;
-  z-index: 2;
-  pointer-events: none;
-}
-.start-deco-left { left: 6%; }
-.start-deco-right { right: 6%; }
-.start-deco .cart-svg { width: 100%; height: 100%; object-fit: contain; }
-
-/* 中间吉祥物：轻微上下浮动 */
-.start-hero {
+/* 开始页主视觉：Q 版购物车（动画层级见 animations.css） */
+.start-cart {
   position: absolute;
   left: 50%; top: 36%;
+  width: 22.1%;
+  aspect-ratio: 340 / 250;
   transform: translateX(-50%);
-  width: 28%;
-  height: 30%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 3;
   pointer-events: none;
-  animation: zq-bob 2.6s ease-in-out infinite;
 }
-.start-hero .pig-svg { width: 100%; height: 100%; }
-
-@keyframes zq-bob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50%      { transform: translate(-50%, -6%); }
+.start-cart-float {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
 }
+.start-cart-visual {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(-1);
+}
+.start-cart-back,
+.start-cart-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.start-cart-back { z-index: 0; }
+.start-cart-front { z-index: 2; }
 
 /* 底部菜单 */
 .start-menu {
@@ -466,7 +464,9 @@
   animation: zq-pop .32s ease-out;
 }
 .skin-card.is-locked { background: #F0EDE4; }
-.skin-card.is-locked .skin-preview { opacity: .35; filter: grayscale(.85); }
+.skin-card.is-locked .skin-preview { opacity: 1; filter: none; }
+.skin-card.is-locked .skin-preview .pig-svg { opacity: .35; filter: grayscale(.85); }
+.skin-card.is-locked .skin-swatch { opacity: 1; filter: none; }
 .skin-preview {
   height: 8cqw;
   width: 100%;
@@ -474,7 +474,33 @@
   align-items: center;
   justify-content: center;
 }
-.skin-preview .cart-svg, .skin-preview .pig-svg { width: 100%; height: 100%; }
+.skin-preview .pig-svg { width: 100%; height: 100%; }
+.skin-swatch {
+  width: 8.2cqw;
+  aspect-ratio: 324 / 140;
+  display: block;
+  color: var(--swatch-color);
+}
+.skin-swatch svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.skin-swatch path { fill: currentColor; }
+.skin-swatch-silver {
+  --swatch-color: #707A8A;
+}
+.skin-swatch-starblue {
+  --swatch-color: #4066B4;
+}
+.skin-swatch-straw {
+  --swatch-color: #E890A5;
+}
+.skin-swatch-mint {
+  --swatch-color: #4FA991;
+}
+.skin-swatch-gold { --swatch-color: #D9A240; }
 .skin-name { margin-top: .5cqw; font-size: 1.7cqw; line-height: 1.15; font-weight: 900; }
 .skin-sub {
   margin-top: .15cqw;

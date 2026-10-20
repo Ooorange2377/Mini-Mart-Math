@@ -33,7 +33,7 @@
   position: absolute;
   left: 3%;
   top: 16%;
-  width: 21.5%;
+  width: 18.5%;
   z-index: 6;
 }
 
@@ -50,10 +50,10 @@
 /* 右侧：查看明细 + 购物篮 */
 .panel-basket {
   position: absolute;
-  right: 2%;
+  right: 3%;
   top: 18.8%;
   bottom: 15.5%;
-  width: 24%;
+  width: 20%;
   z-index: 6;
   display: flex;
   flex-direction: column;
@@ -87,9 +87,9 @@
 /* 右下：结账按钮 */
 .checkout-dock {
   position: absolute;
-  right: 2%;
+  right: 3%;
   bottom: 3.5%;
-  width: 24%;
+  width: 20%;
   z-index: 9;
 }
 .checkout-dock .btn-checkout {
@@ -102,7 +102,7 @@
   position: absolute;
   left: 3%;
   top: 2.2%;
-  width: 21.5%;
+  width: 18.5%;
   z-index: 7;
 }
 

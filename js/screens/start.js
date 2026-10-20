@@ -1,4 +1,4 @@
-/* 开始页：招牌标题 + 吉祥物（按已装备皮肤展示）+ 开始/继续游戏、玩法说明、重置存档。
+/* 开始页：招牌标题 + Q 版购物车入场动画 + 开始/继续游戏、玩法说明、重置存档。
  * 「继续游戏」的显示条件：存在任何进度（历史星数 / 零花钱 / 延时卡片）。 */
 window.ZQ = window.ZQ || {};
 ZQ.screens = ZQ.screens || {};
@@ -20,6 +20,52 @@ ZQ.screens = ZQ.screens || {};
             ZQ.I18N.howToPerfectText.replace('{n}', ZQ.MOM_BONUS_COINS) +
             '<span class="howto-first">（' + ZQ.I18N.howToFirstOnly + '）</span></li>' +
         '</ul>' +
+      '</div>';
+  }
+
+  function startCartHTML() {
+    return '<div class="start-cart" aria-hidden="true">' +
+        '<div class="start-cart-float">' +
+          '<div class="start-cart-visual">' +
+              '<svg class="start-cart-back" viewBox="0 0 340 250">' +
+                '<path d="M68 76 H296 L266 174 H88 Z" fill="#E8F4FB" ' +
+                  'stroke="#1B3E6F" stroke-width="7" stroke-linejoin="round"/>' +
+                '<path d="M82 93 H284" stroke="#FFFDF7" stroke-width="4" ' +
+                  'stroke-linecap="round" opacity=".9"/>' +
+              '</svg>' +
+              '<svg class="start-cart-front" viewBox="0 0 340 250">' +
+                '<g fill="none" stroke="#1B3E6F" stroke-width="6" ' +
+                  'stroke-linecap="round" stroke-linejoin="round">' +
+                  '<path d="M68 76 H296 L266 174 H88 Z"/>' +
+                  '<path d="M91 77 L104 173 M132 77 L138 173 M174 77 L171 173 ' +
+                    'M216 77 L204 173 M258 77 L237 173"/>' +
+                  '<path d="M76 98 H288 M84 122 H278 M92 146 H268"/>' +
+                  '<path d="M91 174 L108 195 M264 174 L247 195"/>' +
+                  '<path d="M296 82 C316 82 323 72 327 57 L336 48"/>' +
+                '</g>' +
+                '<path d="M334 49 L344 42" stroke="#1B3E6F" stroke-width="15" ' +
+                  'stroke-linecap="round"/>' +
+                '<path d="M334 49 L344 42" stroke="#F4E3B8" stroke-width="8" ' +
+                  'stroke-linecap="round"/>' +
+                '<g transform="translate(118 210)">' +
+                  '<g class="start-cart-wheel">' +
+                    '<circle r="21" fill="#FFFDF7" stroke="#1B3E6F" stroke-width="6"/>' +
+                    '<path d="M-13 0 H13 M0 -13 V13" stroke="#5B91C4" ' +
+                      'stroke-width="5" stroke-linecap="round"/>' +
+                    '<circle r="4" fill="#EF892F" stroke="#1B3E6F" stroke-width="3"/>' +
+                  '</g>' +
+                '</g>' +
+                '<g transform="translate(242 210)">' +
+                  '<g class="start-cart-wheel">' +
+                    '<circle r="21" fill="#FFFDF7" stroke="#1B3E6F" stroke-width="6"/>' +
+                    '<path d="M-13 0 H13 M0 -13 V13" stroke="#5B91C4" ' +
+                      'stroke-width="5" stroke-linecap="round"/>' +
+                    '<circle r="4" fill="#EF892F" stroke="#1B3E6F" stroke-width="3"/>' +
+                  '</g>' +
+                '</g>' +
+              '</svg>' +
+          '</div>' +
+        '</div>' +
       '</div>';
   }
 
@@ -72,9 +118,6 @@ ZQ.screens = ZQ.screens || {};
       if (!ZQ.store.data) ZQ.store.load();
       var saved = ZQ.store.data || {};
       var hasProgress = ZQ.store.totalStars() > 0 || (saved.coins || 0) > 0 || (saved.delayCards || 0) > 0;
-      var eq = saved.equipped || {};
-      var cartSkin = eq.cart || 'silver';
-      var pigSkin = eq.pig || 'xiaohua';
 
       var el = document.createElement('div');
       el.className = 'stage screen-start';
@@ -90,12 +133,8 @@ ZQ.screens = ZQ.screens || {};
           '</div>' +
         '</div>' +
 
-        // 两侧购物车（按已装备皮肤）
-        '<div class="start-deco start-deco-left">' + ZQ.ui.slots.renderCart(cartSkin) + '</div>' +
-        '<div class="start-deco start-deco-right">' + ZQ.ui.slots.renderCart(cartSkin) + '</div>' +
-
-        // 中间吉祥物存钱罐
-        '<div class="start-hero">' + ZQ.ui.slots.renderPig(pigSkin) + '</div>' +
+        // 中央偏下：Q 版购物车滑入并停在主视觉区域
+        startCartHTML() +
 
         // 底部菜单
         '<div class="start-menu">' +

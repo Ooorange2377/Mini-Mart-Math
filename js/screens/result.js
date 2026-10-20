@@ -95,7 +95,7 @@ ZQ.screens = ZQ.screens || {};
         ? ZQ.I18N.resultInvalidCount
         : (ctx.invalidReason === 'constraint' ? ZQ.I18N.resultInvalidConstraint : ZQ.rules.resultText(ctx.star));
       var eq = (ZQ.store.data && ZQ.store.data.equipped) || {};
-      var pigSkin = eq.pig || 'xiaohua';
+      var pigSkin = eq.pig || 'glass';
 
       var mask = document.createElement('div');
       mask.className = 'modal-mask';

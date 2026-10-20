@@ -139,7 +139,7 @@ ZQ.screens = ZQ.screens || {};
 
         '<div class="map-foot">' +
           '<button class="btn-menu btn-shop" type="button">💰 ' + ZQ.I18N.mapShop + '</button>' +
-          '<button class="btn-menu btn-skins" type="button">🐷 ' + ZQ.I18N.mapSkins + '</button>' +
+          '<button class="btn-menu btn-skins" type="button">🏅 ' + ZQ.I18N.mapSkins + '</button>' +
         '</div>';
 
       el.addEventListener('click', function (e) {

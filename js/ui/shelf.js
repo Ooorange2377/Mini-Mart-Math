@@ -5,6 +5,7 @@ ZQ.ui = ZQ.ui || {};
 
 (function () {
   var itemMap = null;
+  var AWNING_PANELS = 12;
 
   function lookup(itemId) {
     if (!itemMap) {
@@ -68,8 +69,18 @@ ZQ.ui = ZQ.ui || {};
         pages += pageHtml(lv.items.slice(p * ZQ.SLOTS_PER_PAGE, (p + 1) * ZQ.SLOTS_PER_PAGE), p);
       }
 
+      var slats = '';
+      var scallops = '';
+      for (var a = 0; a < AWNING_PANELS; a++) {
+        var alt = a % 2 ? ' is-alt' : '';
+        slats += '<span class="awning-slat' + alt + '" aria-hidden="true"></span>';
+        scallops += '<span class="awning-scallop' + alt + '" aria-hidden="true"></span>';
+      }
+
       var html = '<div class="shelf-awning">' +
-          '<div class="awning-cloth"></div><div class="awning-valance"></div>' +
+          '<div class="awning-canopy">' + slats + '</div>' +
+          '<div class="awning-valance">' + scallops + '</div>' +
+          '<div class="awning-shadow" aria-hidden="true"></div>' +
         '</div>' +
         '<div class="shelf-stand"><div class="shelf-viewport">' +
           '<div class="shelf-track">' + pages + '</div>' +

@@ -65,6 +65,13 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ================= 开始页购物车浮动 ================= */
+.start-cart-float { animation: zq-start-cart-float 2.4s ease-in-out infinite both; }
+@keyframes zq-start-cart-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-.9cqw); }
+}
+
 /* ================= 结账按钮呼吸光 ================= */
 .btn-checkout.is-breathe { animation: zq-breathe 1.7s ease-in-out infinite; }
 @keyframes zq-breathe {

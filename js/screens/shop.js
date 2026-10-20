@@ -36,7 +36,7 @@ ZQ.screens = ZQ.screens || {};
     /** @returns {HTMLElement} */
     render: function () {
       if (!ZQ.store.data) ZQ.store.load();
-      if (!ZQ.store.data.equipped) ZQ.store.data.equipped = { cart: DEFAULT_CART, pig: 'xiaohua' };
+      if (!ZQ.store.data.equipped) ZQ.store.data.equipped = { cart: DEFAULT_CART, pig: 'glass' };
       var save = ZQ.store.data;
 
       var cards = '';
