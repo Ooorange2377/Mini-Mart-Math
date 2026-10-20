@@ -465,8 +465,8 @@
 }
 .skin-card.is-locked { background: #F0EDE4; }
 .skin-card.is-locked .skin-preview { opacity: 1; filter: none; }
-.skin-card.is-locked .skin-preview .pig-svg { opacity: .35; filter: grayscale(.85); }
-.skin-card.is-locked .skin-swatch { opacity: 1; filter: none; }
+.skin-card.is-locked .skin-preview .pig-svg,
+.skin-card.is-locked .skin-swatch { opacity: .35; filter: grayscale(.85); }
 .skin-preview {
   height: 8cqw;
   width: 100%;

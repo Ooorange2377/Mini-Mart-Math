@@ -79,8 +79,16 @@
 }
 .hud-target .t-rule b {
   flex: 1;
+  min-width: 0;
   text-align: right;
+  white-space: nowrap;
 }
+.hud-target .t-rule.count-2 { gap: .4cqw; }
+.hud-target .t-rule.count-3 { gap: .3cqw; }
+.hud-target .t-rule.count-4 { gap: .24cqw; }
+.hud-target .t-rule.count-2 b { font-size: 1.02cqw; }
+.hud-target .t-rule.count-3 b { font-size: .9cqw; }
+.hud-target .t-rule.count-4 b { font-size: .77cqw; }
 
 /* ================= 顶部独立计时器 ================= */
 .hud-timer {
@@ -595,7 +603,7 @@
 .cart .cart-svg {
   position: absolute;
   left: 50%; top: calc(49% + .4cqw);
-  width: 280%; height: auto;
+  width: 224%; height: auto;
   transform: translate(-50%, -50%);
   pointer-events: none;
   user-select: none;
@@ -769,14 +777,24 @@
 .r-star.s2 { transform: translateY(-.3em) scale(1.12); }
 .r-star.s3 { transform: translateY(.3em) rotate(11deg); }
 .r-star .star-in {
-  font-style: normal;
+  display: block;
+  width: 1em;
+  height: 1em;
+  overflow: visible;
   color: #FFC33C;
-  -webkit-text-stroke: 2px var(--ink);
-  paint-order: stroke fill;
-  text-shadow: 2px 3px 0 rgba(27, 62, 111, .25);
+  transform-origin: 50% 55%;
+  filter: drop-shadow(2px 3px 0 rgba(27, 62, 111, .22));
   animation: zq-pop-star .46s cubic-bezier(.2, 1.5, .4, 1) both;
 }
-.r-star.is-dim .star-in { color: #CFC9BC; }
+.r-star .star-in path {
+  fill: currentColor;
+  stroke: var(--ink);
+  stroke-width: 10;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.r-star.is-dim .star-in { color: #CFC9BC; opacity: .82; }
+.r-star.is-dim .star-in path { stroke: rgba(36, 62, 101, .42); }
 .result-stars .r-star:nth-child(1) .star-in { animation-delay: .06s; }
 .result-stars .r-star:nth-child(2) .star-in { animation-delay: .22s; }
 .result-stars .r-star:nth-child(3) .star-in { animation-delay: .38s; }

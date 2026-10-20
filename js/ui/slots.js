@@ -1,4 +1,4 @@
-/* 皮肤素材：购物篮 5 款（购物篮/ 目录 PNG 顶视角铁丝篮）+ 存钱罐 3 款（内联 SVG）。
+/* 皮肤素材：购物篮 5 款（购物篮/优化/ 归一化 PNG 顶视角铁丝篮）+ 存钱罐 4 款（内联 SVG）。
  * 购物车素材为带透明留白的位图，由 CSS 放大裁切让篮身铺满容器。 */
 window.ZQ = window.ZQ || {};
 ZQ.ui = ZQ.ui || {};
@@ -7,11 +7,11 @@ ZQ.ui = ZQ.ui || {};
   var INK = '#1B3E6F';
 
   var CART_SKINS = {
-    silver:   { name: '普通银色', src: '购物篮/普通铁皮.png' },
-    starblue: { name: '星空蓝',   src: '购物篮/星空蓝.png' },
-    straw:    { name: '草莓粉',   src: '购物篮/草莓粉.png' },
-    mint:     { name: '薄荷绿',   src: '购物篮/薄荷绿.png' },
-    gold:     { name: '金光闪闪', src: '购物篮/金光闪闪.png' },
+    silver:   { name: '普通银色', src: '购物篮/优化/普通铁皮.png' },
+    starblue: { name: '星空蓝',   src: '购物篮/优化/星空蓝.png' },
+    straw:    { name: '草莓粉',   src: '购物篮/优化/草莓粉.png' },
+    mint:     { name: '薄荷绿',   src: '购物篮/优化/薄荷绿.png' },
+    gold:     { name: '金光闪闪', src: '购物篮/优化/金光闪闪.png' },
   };
 
   var PIG_THEMES = {

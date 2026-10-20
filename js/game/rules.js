@@ -137,6 +137,16 @@ ZQ.rules = {
     }).join(' · ');
   },
 
+  /** 多条件紧凑文案：如「饮品1 零食2」；abbreviate=true 时用单字品类 */
+  constraintLabelCompact: function (constraint, abbreviate) {
+    if (!constraint || !constraint.length) return '';
+    return constraint.map(function (c) {
+      var name = ZQ.CATEGORY_NAMES[c.category] || c.category;
+      if (abbreviate) name = name.charAt(0);
+      return name + c.count;
+    }).join(' ');
+  },
+
   /**
    * 组合是否满足品类约束（constraint 为 [{category,count}]，件数须恰好等于 n）
    */

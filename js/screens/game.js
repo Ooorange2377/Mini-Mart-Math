@@ -126,6 +126,13 @@ ZQ.screens = ZQ.screens || {};
 
       var saved = ZQ.store.data || {};
       var equipped = (saved.equipped && saved.equipped.cart) || 'silver';
+      var constraints = lv.constraint || [];
+      var fullConstraint = ZQ.rules.constraintLabel(constraints) ||
+        ZQ.I18N.constraintAny.replace('{n}', lv.n);
+      var constraintText = constraints.length >= 3
+        ? ZQ.rules.constraintLabelCompact(constraints, true)
+        : (constraints.length === 2 ? ZQ.rules.constraintLabelCompact(constraints) : fullConstraint);
+      var ruleClass = constraints.length ? ' count-' + constraints.length : '';
 
       var el = document.createElement('div');
       el.className = 'stage screen-game';
@@ -141,9 +148,9 @@ ZQ.screens = ZQ.screens || {};
           '<div class="t-row"><span>' + ZQ.I18N.labelLevel + '</span><b>' + lv.levelId + '</b></div>' +
           '<div class="t-row t-budget"><span>' + ZQ.I18N.labelBudget + '</span><b>¥ ' + ZQ.money.fmtTrim(lv.budget) + '</b></div>' +
           '<div class="t-row"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' + lv.n + ' 件</b></div>' +
-          '<div class="t-rule"><span>' + ZQ.I18N.labelConstraint + '</span><b>' +
-            (ZQ.rules.constraintLabel(lv.constraint) || ZQ.I18N.constraintAny.replace('{n}', lv.n)) +
-          '</b></div>' +
+          '<div class="t-rule' + ruleClass + '" title="' + fullConstraint + '">' +
+            '<span>' + ZQ.I18N.labelConstraint + '</span><b>' + constraintText + '</b>' +
+          '</div>' +
         '</aside>' +
 
         // 顶部中央：独立计时器 + 剩余时间进度条

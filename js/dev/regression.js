@@ -83,6 +83,21 @@
       check(!ZQ.rules.chapterUnlocked(2, 99, false), '前章未通关时星数再高也不能解锁下一章');
       check(ZQ.rules.chapterUnlocked(2, 12, true), '星数达标且前章通关后应解锁下一章');
 
+      // 皮肤解锁曲线覆盖整个 42 关周期。
+      function skinNeed(id) {
+        for (var si = 0; si < ZQ.SKINS.length; si++) {
+          if (ZQ.SKINS[si].id === id) return ZQ.SKINS[si].need;
+        }
+        return -1;
+      }
+      check(skinNeed('starblue') === 3, '星空蓝应在 3 个三星通关后解锁');
+      check(skinNeed('straw') === 10, '草莓粉应在 10 个三星通关后解锁');
+      check(skinNeed('mint') === 22, '薄荷绿应在 22 个三星通关后解锁');
+      check(skinNeed('gold') === 36, '金光闪闪应在 36 个三星通关后解锁');
+      check(skinNeed('burger') === 10, '汉堡存钱罐应在 10 个三星通关后解锁');
+      check(skinNeed('donut') === 22, '甜甜圈存钱罐应在 22 个三星通关后解锁');
+      check(skinNeed('luckycat') === 36, '招财猫存钱罐应在 36 个三星通关后解锁');
+
       // 购物车件数 / 品类判定
       var lv = {
         budget: 700,
@@ -97,6 +112,15 @@
 
       var wrongCount = ZQ.rules.evaluateSelection([item('drink', 400)], lv);
       check(!wrongCount.valid && wrongCount.invalidReason === 'count', '错误件数应判定无效');
+
+      check(ZQ.rules.constraintLabelCompact(lv.constraint) === '饮品1 零食1',
+        '多品类约束应生成可单行展示的紧凑文案');
+      check(ZQ.rules.constraintLabelCompact([
+        { category: 'drink', count: 1 },
+        { category: 'snack', count: 1 },
+        { category: 'daily', count: 1 },
+        { category: 'seasoning', count: 1 },
+      ], true) === '饮1 零1 日1 调1', '四品类约束应使用单字缩写避免换行');
 
       var overspend = ZQ.rules.evaluateSelection([item('drink', 400), item('snack', 400)], lv);
       check(overspend.star === 0, '超支购物车应为 0 星');
@@ -169,12 +193,26 @@
       loaded = ZQ.store.load();
       check(loaded.coins === 13, '再次加载同一存档不应重复补发奖励金');
 
+      var legacyLuckyLedger = {};
+      for (var ll = 1; ll <= 36; ll++) legacyLuckyLedger[ll] = true;
       storageSet(SAVE_KEY, JSON.stringify({
         version: 3,
+        threeStarLedger: legacyLuckyLedger,
         equipped: { cart: 'silver', pig: 'zhaocai' },
       }));
       loaded = ZQ.store.load();
       check(loaded.equipped.pig === 'luckycat', '旧招财金猪应迁移为招财猫存钱罐');
+
+      var midLedger = {};
+      for (var ml = 1; ml <= 15; ml++) midLedger[ml] = true;
+      storageSet(SAVE_KEY, JSON.stringify({
+        version: 4,
+        threeStarLedger: midLedger,
+        equipped: { cart: 'gold', pig: 'luckycat' },
+      }));
+      loaded = ZQ.store.load();
+      check(loaded.equipped.cart === 'silver', '未达新门槛的旧购物车皮肤应回退为默认款');
+      check(loaded.equipped.pig === 'glass', '未达新门槛的旧存钱罐皮肤应回退为默认款');
 
       // 严格线性推进：缺任意前置关卡时，即使星数达标也不能跳章。
       storageSet(SAVE_KEY, JSON.stringify({

@@ -9,7 +9,10 @@ ZQ.screens = ZQ.screens || {};
     var html = '';
     for (var i = 1; i <= 3; i++) {
       html += '<span class="r-star s' + i + (i <= star ? '' : ' is-dim') + '">' +
-                '<i class="star-in">★</i>' +
+                '<svg class="star-in" viewBox="0 0 100 100" aria-hidden="true">' +
+                  '<path d="M50 8 L60.3 35.8 L90 37 L66.6 55.4 ' +
+                    'L74.7 84 L50 67.5 L25.3 84 L33.4 55.4 L10 37 L39.7 35.8 Z"/>' +
+                '</svg>' +
               '</span>';
     }
     return html;

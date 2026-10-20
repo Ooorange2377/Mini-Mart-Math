@@ -72,6 +72,18 @@ window.ZQ = window.ZQ || {};
     else if (save.equipped.pig === 'xiaohua' || save.equipped.pig === 'space') save.equipped.pig = 'glass';
   }
 
+  /** 门槛调整后，旧存档里已装备但当前仍锁定的皮肤回退到默认款。 */
+  function sanitizeEquippedSkins(save) {
+    if (!save.equipped || typeof save.equipped !== 'object' || !ZQ.rules) return;
+    var three = 0;
+    for (var key in save.threeStarLedger) {
+      if (save.threeStarLedger[key]) three++;
+    }
+    var unlocked = ZQ.rules.unlockedSkins(three);
+    if (!unlocked[save.equipped.cart]) save.equipped.cart = 'silver';
+    if (!unlocked[save.equipped.pig]) save.equipped.pig = 'glass';
+  }
+
   function defaultSave() {
     return {
       version: VERSION,
@@ -118,6 +130,7 @@ window.ZQ = window.ZQ || {};
     if (fromVersion < 2) migrateLevelIds(save);
     if (fromVersion < 3) migrateMomBonuses(save);
     if (fromVersion < 4) migratePigSkins(save);
+    sanitizeEquippedSkins(save);
     save.version = VERSION;
     return save;
   }
