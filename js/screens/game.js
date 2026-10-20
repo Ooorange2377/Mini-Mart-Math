@@ -341,8 +341,9 @@ ZQ.screens = ZQ.screens || {};
       var B = lv.budget;
       var star = evaluation.star;
       var rec = ZQ.store.recordResult(lv.levelId, star);
-      var coins = ZQ.rules.coinsOf(T, B, star, rec.clearIndex);
-      if (coins > 0) ZQ.store.addCoins(coins);
+      var award = ZQ.rules.coinsAward(T, B, star, rec.clearIndex, rec.momBonus);
+      // 妈妈奖励金已在 recordResult 内一次性入账，这里只补找零，避免重复发放。
+      if (award.changeCoins > 0) ZQ.store.addCoins(award.changeCoins);
 
       session.setState('result');
       ZQ.screens.result.show({
@@ -350,7 +351,8 @@ ZQ.screens = ZQ.screens || {};
         star: star,
         total: T,
         budget: B,
-        coins: coins,
+        coins: award.total,
+        momBonus: award.momBonus,
         invalidReason: evaluation.invalidReason,
         firstThreeStar: rec.firstThreeStar,
         onRetry: function () { goLevel(lv.levelId); },

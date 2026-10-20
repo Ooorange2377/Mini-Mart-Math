@@ -29,22 +29,40 @@ ZQ.rules = {
   },
 
   /**
-   * 零花钱：仅 1/2 星发放，`round(ceil((B-T)/100) * 递减倍率)`
-   * 3 星（找零为 0）与 0 星均不发放。
+   * 零花钱奖励拆分：
+   * - changeCoins：1/2 星按节省金额发放的找零
+   * - momBonus：首次 3 星获得的妈妈奖励金
    */
-  coinsOf: function (T, B, star, clearIndex) {
-    if (star !== 1 && star !== 2) return 0;
-    var base = Math.ceil((B - T) / 100);      // 向上取整到整数元
-    var coins = Math.round(base * ZQ.rules.decayMul(clearIndex));
-    return coins > 0 ? coins : 0;
+  coinsAward: function (T, B, star, clearIndex, momBonus) {
+    var changeCoins = 0;
+    if (star === 1 || star === 2) {
+      var base = Math.ceil((B - T) / 100);      // 向上取整到整数元
+      changeCoins = Math.round(base * ZQ.rules.decayMul(clearIndex));
+      if (changeCoins < 0) changeCoins = 0;
+    }
+    var bonus = star === 3 && momBonus ? momBonus : 0;
+    return {
+      changeCoins: changeCoins,
+      momBonus: bonus,
+      total: changeCoins + bonus,
+    };
   },
 
-  /** 章节是否已解锁：累计历史最高星之和 >= 该章门槛（星星不消耗） */
-  chapterUnlocked: function (chapterId, totalStars) {
+  /** 本次结算发放的零花钱总数 */
+  coinsOf: function (T, B, star, clearIndex, momBonus) {
+    return ZQ.rules.coinsAward(T, B, star, clearIndex, momBonus).total;
+  },
+
+  /**
+   * 章节是否已解锁：累计星数达标，且前置章节已经全部通关。
+   * previousChapterCleared 由存档层根据实际通关记录传入。
+   */
+  chapterUnlocked: function (chapterId, totalStars, previousChapterCleared) {
     for (var i = 0; i < ZQ.CHAPTERS.length; i++) {
       if (ZQ.CHAPTERS[i].id === chapterId) {
         var need = ZQ.CHAPTERS[i].unlockAt;
-        return need === null || totalStars >= need;
+        var starsOk = need === null || totalStars >= need;
+        return starsOk && previousChapterCleared !== false;
       }
     }
     return false;

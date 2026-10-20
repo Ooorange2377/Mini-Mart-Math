@@ -81,7 +81,7 @@ ZQ.screens = ZQ.screens || {};
     /**
      * 展示结算弹窗。
      * @param {object} ctx
-     *   lv, star, total, budget, coins, firstThreeStar,
+     *   lv, star, total, budget, coins, momBonus, firstThreeStar,
      *   onRetry, onNext, onMap  —— 按钮回调（调用方负责关闭弹窗与路由）
      * @returns {HTMLElement|undefined}
      */
@@ -111,14 +111,21 @@ ZQ.screens = ZQ.screens || {};
               '<span class="r-k">' + ZQ.I18N.resultBudget + '</span>' +
               '<b>' + ZQ.money.yuan2(ctx.budget) + '</b>' +
             '</div>' +
-            (ctx.coins > 0
+            (ctx.momBonus > 0
+              ? '<div class="r-row r-coins r-mom-bonus">💰 ' + ZQ.I18N.resultMomBonus + '：' +
+                  '<b class="coins-num">+0</b>' +
+                  '<span class="coins-pig" title="' + ZQ.I18N.mapCoins + '">' +
+                    ZQ.ui.slots.renderPig(pigSkin) +
+                  '</span>' +
+                '</div>'
+              : (ctx.coins > 0
               ? '<div class="r-row r-coins">💰 ' + ZQ.I18N.resultCoins + '：' +
                   '<b class="coins-num">+0</b>' +
                   '<span class="coins-pig" title="' + ZQ.I18N.mapCoins + '">' +
                     ZQ.ui.slots.renderPig(pigSkin) +
                   '</span>' +
                 '</div>'
-              : '') +
+              : '')) +
             (ctx.firstThreeStar
               ? '<div class="r-row r-medal">🏅 ' + ZQ.I18N.resultThreeStar + '：<b>+1</b></div>'
               : '') +

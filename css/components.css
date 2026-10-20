@@ -691,7 +691,9 @@
 .modal-mask.is-in { opacity: 1; }
 
 .modal-result {
-  width: min(46vw, 82vh, 560px);
+  width: min(92vw, 86vh, 560px);
+  max-height: 92vh;
+  overflow-y: auto;
   font-size: clamp(12px, 2.3vh, 24px);
   background: var(--paper);
   border: 3px solid var(--ink);

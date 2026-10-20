@@ -1,5 +1,5 @@
 /* 章节/关卡地图页：顶部统计（星星 / 三星通关数 / 零花钱）、可滚动章节卡片、底部商店与图鉴入口。
- * 解锁判定全部走 ZQ.store（章节门槛用累计历史最高星之和，关内逐关推进）。 */
+ * 解锁判定全部走 ZQ.store：星数门槛、前置章节通关、全局关卡顺序三重校验。 */
 window.ZQ = window.ZQ || {};
 ZQ.screens = ZQ.screens || {};
 
@@ -20,28 +20,65 @@ ZQ.screens = ZQ.screens || {};
     return 0;
   }
 
+  function chapterRequirements(status) {
+    var lines = [];
+    if (status.previousChapterId) {
+      lines.push(ZQ.I18N.mapNeedPreviousChapter.replace('{chapter}', status.previousChapterId));
+    }
+    if (status.starsNeeded > 0) {
+      lines.push(ZQ.I18N.mapNeedStars.replace('{n}', status.starsNeeded));
+    }
+    return lines;
+  }
+
+  function chapterLockText(status) {
+    var lines = chapterRequirements(status);
+    return lines.length ? lines.join('；') : ZQ.I18N.toastChapterLocked;
+  }
+
+  function levelLockText(lock) {
+    if (lock.reason === 'previous') {
+      return ZQ.I18N.toastLevelLocked.replace('{n}', lock.requiredLevel);
+    }
+    if (lock.reason === 'chapter') return chapterLockText(lock.chapterStatus);
+    return ZQ.I18N.toastChapterLocked;
+  }
+
   function chapterHtml(ch, cur) {
-    var total = ZQ.store.totalStars();
-    var unlocked = ZQ.store.chapterUnlocked(ch.id);
+    var lock = ZQ.store.chapterLockStatus(ch.id);
+    var unlocked = lock.unlocked;
     var chStars = 0;
     for (var k = ch.range[0]; k <= ch.range[1]; k++) chStars += ZQ.store.levelStars(k);
 
     var cells = '';
     for (var lv = ch.range[0]; lv <= ch.range[1]; lv++) {
       var star = ZQ.store.levelStars(lv);
-      var open = ZQ.store.levelUnlocked(lv);
+      var levelLock = ZQ.store.levelLockStatus(lv);
+      var open = levelLock.unlocked;
+      var lockHint = open ? '' : levelLockText(levelLock);
       var cls = 'lv';
-      if (!open) cls += ' is-locked';
+      if (!open) cls += ' is-locked' + (levelLock.reason === 'previous' ? ' is-gate-locked' : '');
       else if (star >= 3) cls += ' is-three';
       else if (star > 0) cls += ' is-cleared';
       if (lv === cur) cls += ' is-current';
-      cells += '<button class="' + cls + '" type="button" data-level="' + lv + '">' +
+      cells += '<button class="' + cls + '" type="button" data-level="' + lv + '"' +
+                 (open ? '' : ' title="' + lockHint + '" aria-label="第 ' + lv + ' 关，未解锁，' + lockHint + '"') +
+                 ' data-lock-reason="' + (levelLock.reason || '') + '">' +
                  '<span class="lv-no">' + lv + '</span>' +
                  '<span class="lv-stars">' + (open ? miniStars(star) : '🔒') + '</span>' +
                '</button>';
     }
 
-    return '<section class="chapter' + (unlocked ? '' : ' is-locked') + '" data-chapter="' + ch.id + '">' +
+    var requirements = '';
+    if (!unlocked) {
+      var lines = chapterRequirements(lock);
+      for (var r = 0; r < lines.length; r++) {
+        requirements += '<span class="ch-lock-req">' + lines[r] + '</span>';
+      }
+    }
+
+    return '<section class="chapter' + (unlocked ? '' : ' is-locked is-locked-' + lock.reason) +
+        '" data-chapter="' + ch.id + '">' +
       '<div class="ch-head">' +
         '<span class="ch-name">第 ' + ch.id + ' 章 · ' + ch.name + '</span>' +
         '<span class="ch-stars">★ ' + chStars + ' / ' + ch.maxStars + '</span>' +
@@ -50,7 +87,11 @@ ZQ.screens = ZQ.screens || {};
       '<div class="ch-grid">' + cells + '</div>' +
       (unlocked
         ? ''
-        : '<div class="ch-lock">' + ZQ.I18N.mapNeedStars.replace('{n}', ZQ.rules.chapterStarsNeeded(ch.id, total)) + '</div>') +
+        : '<div class="ch-lock is-' + lock.reason + '">' +
+            '<b class="ch-lock-title">🔒 ' +
+              ZQ.I18N.mapChapterLocked.replace('{chapter}', ch.id) +
+            '</b>' + requirements +
+          '</div>') +
     '</section>';
   }
 
@@ -119,13 +160,10 @@ ZQ.screens = ZQ.screens || {};
         var btn = t.closest('.lv[data-level]');
         if (!btn) return;
         var lv = parseInt(btn.getAttribute('data-level'), 10);
-        if (!ZQ.store.levelUnlocked(lv)) {
+        var lock = ZQ.store.levelLockStatus(lv);
+        if (!lock.unlocked) {
           ZQ.audio.error();
-          var ch = ZQ.chapterOf(lv);
-          ZQ.ui.toast.show(
-            ZQ.store.chapterUnlocked(ch.id) ? ZQ.I18N.toastLevelLocked : ZQ.I18N.toastChapterLocked,
-            { type: 'error' }
-          );
+          ZQ.ui.toast.show(levelLockText(lock), { type: 'error' });
           return;
         }
         ZQ.audio.unlock();

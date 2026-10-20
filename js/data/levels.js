@@ -116,6 +116,9 @@ ZQ.SKINS = [
 /* 零花钱重复通关递减倍率：第 1~5 次 100/80/60/40/20%，第 6 次及以后 0% */
 ZQ.DECAY_MUL = [1, 0.8, 0.6, 0.4, 0.2, 0];
 
+/* 首次三星通关奖励：妈妈奖励金（零花钱） */
+ZQ.MOM_BONUS_COINS = 3;
+
 ZQ.chapterOf = function (levelId) {
   for (var i = 0; i < ZQ.CHAPTERS.length; i++) {
     var c = ZQ.CHAPTERS[i];

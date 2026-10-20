@@ -6,6 +6,23 @@ ZQ.screens = ZQ.screens || {};
 (function () {
   var layer = null;
 
+  function howToHTML() {
+    return '<div class="howto-block">' +
+        '<div class="howto-head">' + ZQ.I18N.howToGoalTitle + '</div>' +
+        '<p>' + ZQ.I18N.howToGoalText + '</p>' +
+      '</div>' +
+      '<div class="howto-block">' +
+        '<div class="howto-head">' + ZQ.I18N.howToCoinsTitle + '</div>' +
+        '<ul class="howto-list">' +
+          '<li><b class="howto-mode">' + ZQ.I18N.howToSavingMode + '</b>：' +
+            ZQ.I18N.howToSavingText + '</li>' +
+          '<li><b class="howto-mode">' + ZQ.I18N.howToPerfectMode + '</b>：' +
+            ZQ.I18N.howToPerfectText.replace('{n}', ZQ.MOM_BONUS_COINS) +
+            '<span class="howto-first">（' + ZQ.I18N.howToFirstOnly + '）</span></li>' +
+        '</ul>' +
+      '</div>';
+  }
+
   /** 通用小弹窗：标题 + 正文 + 确定（可选：取消）；只走 #modal-layer */
   function openModal(o) {
     layer = layer || document.getElementById('modal-layer');
@@ -17,7 +34,7 @@ ZQ.screens = ZQ.screens || {};
     mask.innerHTML =
       '<div class="modal-simple">' +
         '<div class="ms-title">' + o.title + '</div>' +
-        '<div class="ms-text">' + o.text + '</div>' +
+        '<div class="ms-text' + (o.rich ? ' is-rich' : '') + '">' + (o.html || o.text) + '</div>' +
         '<div class="ms-actions">' +
           (o.cancel
             ? '<button class="btn-result btn-ghost ms-cancel" type="button">' + o.cancel + '</button>'
@@ -99,7 +116,12 @@ ZQ.screens = ZQ.screens || {};
 
       el.querySelector('.btn-howto').addEventListener('click', function () {
         ZQ.audio.click();
-        openModal({ title: ZQ.I18N.startHowTo, text: ZQ.I18N.howTo, ok: ZQ.I18N.btnOk });
+        openModal({
+          title: ZQ.I18N.startHowTo,
+          html: howToHTML(),
+          rich: true,
+          ok: ZQ.I18N.btnOk,
+        });
       });
 
       el.querySelector('.btn-reset').addEventListener('click', function () {

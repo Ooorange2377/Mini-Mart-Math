@@ -3,7 +3,7 @@ window.ZQ = window.ZQ || {};
 
 (function () {
   var KEY = 'zqdz_save_v1';
-  var VERSION = 2;
+  var VERSION = 3;
 
   /** v1（40 关）到 v2（42 关）的关卡编号迁移。 */
   function migratedLevelId(id) {
@@ -42,11 +42,35 @@ window.ZQ = window.ZQ || {};
     });
   }
 
+  /** v2 及更早存档：已获得三星的关卡补发一次妈妈奖励金。 */
+  function migrateMomBonuses(save) {
+    var granted = 0;
+    for (var key in save.threeStarLedger) {
+      if (!Object.prototype.hasOwnProperty.call(save.threeStarLedger, key)) continue;
+      if (!save.threeStarLedger[key]) continue;
+      var levelId = parseInt(key, 10);
+      if (!isFinite(levelId) || save.momBonusLedger[levelId]) continue;
+      save.momBonusLedger[levelId] = true;
+      granted++;
+    }
+    if (granted > 0) save.coins += granted * ZQ.MOM_BONUS_COINS;
+  }
+
+  function previousChapterOf(chapterId) {
+    for (var i = 0; i < ZQ.CHAPTERS.length; i++) {
+      if (ZQ.CHAPTERS[i].id === chapterId) {
+        return i > 0 ? ZQ.CHAPTERS[i - 1] : null;
+      }
+    }
+    return null;
+  }
+
   function defaultSave() {
     return {
       version: VERSION,
       levelStars: {},        // 每关历史最高星级（只增不减）
       threeStarLedger: {},   // 每关是否已计过「三星通关数」
+      momBonusLedger: {},    // 每关是否已领取「妈妈奖励金」
       coins: 0,              // 零花钱
       delayCards: 0,         // 延时卡片存量
       equipped: { cart: 'silver', pig: 'xiaohua' },
@@ -73,6 +97,7 @@ window.ZQ = window.ZQ || {};
     // 逐字段类型兜底
     if (typeof save.levelStars !== 'object' || !save.levelStars) save.levelStars = {};
     if (typeof save.threeStarLedger !== 'object' || !save.threeStarLedger) save.threeStarLedger = {};
+    if (typeof save.momBonusLedger !== 'object' || !save.momBonusLedger) save.momBonusLedger = {};
     if (typeof save.clearCounts !== 'object' || !save.clearCounts) save.clearCounts = {};
     if (typeof save.fixedQuestions !== 'object' || !save.fixedQuestions) save.fixedQuestions = {};
     if (typeof save.tutorialSeen !== 'object' || !save.tutorialSeen) save.tutorialSeen = {};
@@ -82,7 +107,9 @@ window.ZQ = window.ZQ || {};
     if (typeof save.coins !== 'number' || !isFinite(save.coins)) save.coins = 0;
     if (typeof save.delayCards !== 'number' || !isFinite(save.delayCards)) save.delayCards = 0;
     if (typeof save.settings !== 'object' || !save.settings) save.settings = base.settings;
-    if ((save.version || 1) < 2) migrateLevelIds(save);
+    var fromVersion = typeof save.version === 'number' ? save.version : 1;
+    if (fromVersion < 2) migrateLevelIds(save);
+    if (fromVersion < 3) migrateMomBonuses(save);
     save.version = VERSION;
     return save;
   }
@@ -141,31 +168,110 @@ window.ZQ = window.ZQ || {};
       return ZQ.store.levelStars(levelId) >= 1;
     },
 
-    /** 章节是否解锁 */
+    /** 某章节是否已通关全部关卡 */
+    chapterCleared: function (chapterId) {
+      var ch = null;
+      for (var i = 0; i < ZQ.CHAPTERS.length; i++) {
+        if (ZQ.CHAPTERS[i].id === chapterId) { ch = ZQ.CHAPTERS[i]; break; }
+      }
+      if (!ch) return false;
+      for (var lv = ch.range[0]; lv <= ch.range[1]; lv++) {
+        if (!ZQ.store.levelCleared(lv)) return false;
+      }
+      return true;
+    },
+
+    /** 章节锁定详情：星数门槛与前置章节通关条件会同时校验 */
+    chapterLockStatus: function (chapterId) {
+      var ch = null;
+      for (var i = 0; i < ZQ.CHAPTERS.length; i++) {
+        if (ZQ.CHAPTERS[i].id === chapterId) { ch = ZQ.CHAPTERS[i]; break; }
+      }
+      if (!ch) {
+        return {
+          unlocked: false,
+          reason: 'invalid',
+          starsNeeded: 0,
+          previousChapterId: 0,
+          previousChapterCleared: false,
+        };
+      }
+
+      var total = ZQ.store.totalStars();
+      var starsNeeded = ZQ.rules.chapterStarsNeeded(ch.id, total);
+      var prev = previousChapterOf(ch.id);
+      var previousCleared = !prev || ZQ.store.chapterCleared(prev.id);
+      var starsOk = starsNeeded === 0;
+      var reason = null;
+      if (!previousCleared && !starsOk) reason = 'both';
+      else if (!previousCleared) reason = 'previous';
+      else if (!starsOk) reason = 'stars';
+
+      return {
+        unlocked: starsOk && previousCleared,
+        reason: reason,
+        starsNeeded: starsNeeded,
+        previousChapterId: previousCleared ? 0 : prev.id,
+        previousChapterCleared: previousCleared,
+      };
+    },
+
+    /** 章节是否解锁：星数门槛 + 前置章节全部通关 */
     chapterUnlocked: function (chapterId) {
-      return ZQ.rules.chapterUnlocked(chapterId, ZQ.store.totalStars());
+      return ZQ.store.chapterLockStatus(chapterId).unlocked;
     },
 
     /**
-     * 关卡是否可挑战：所在章节已解锁，且本章内前一关已通关（逐关推进，不可跳关）
+     * 关卡锁定详情：章节已解锁，且全局前一关已通关。
      */
-    levelUnlocked: function (levelId) {
+    levelLockStatus: function (levelId) {
       var ch = ZQ.chapterOf(levelId);
-      if (!ch) return false;
-      if (!ZQ.store.chapterUnlocked(ch.id)) return false;
-      if (levelId === ch.range[0]) return true;
-      return ZQ.store.levelCleared(levelId - 1);
+      if (!ch) {
+        return { unlocked: false, reason: 'invalid', requiredLevel: 0, chapterId: 0, chapterStatus: null };
+      }
+      var chapterStatus = ZQ.store.chapterLockStatus(ch.id);
+      if (!chapterStatus.unlocked) {
+        return {
+          unlocked: false,
+          reason: 'chapter',
+          requiredLevel: 0,
+          chapterId: ch.id,
+          chapterStatus: chapterStatus,
+        };
+      }
+      if (levelId > ch.range[0] && !ZQ.store.levelCleared(levelId - 1)) {
+        return {
+          unlocked: false,
+          reason: 'previous',
+          requiredLevel: levelId - 1,
+          chapterId: ch.id,
+          chapterStatus: chapterStatus,
+        };
+      }
+      return {
+        unlocked: true,
+        reason: null,
+        requiredLevel: 0,
+        chapterId: ch.id,
+        chapterStatus: chapterStatus,
+      };
+    },
+
+    /** 关卡是否可挑战：严格按全局关卡顺序解锁，不可跳关或跳章 */
+    levelUnlocked: function (levelId) {
+      return ZQ.store.levelLockStatus(levelId).unlocked;
     },
 
     /**
      * 记录一次结算。
-     * @returns {{star:number, starsGained:number, firstThreeStar:boolean, clearIndex:number, twoStarAdded:boolean}}
+     * @returns {{star:number, starsGained:number, firstThreeStar:boolean, momBonus:number, clearIndex:number, twoStarAdded:boolean}}
      *  - starsGained：本次相较历史最高星新增的星数（0 表示未提升）
      *  - firstThreeStar：是否「首次」获得 3 星（用于三星通关数 +1）
+     *  - momBonus：本次入账的妈妈奖励金
      *  - clearIndex：本次结算在递减阶梯中的序号（用递增前的值）
      */
     recordResult: function (levelId, star) {
-      var res = { star: star, starsGained: 0, firstThreeStar: false, clearIndex: 0, twoStarAdded: false, levelNowThree: false };
+      var res = { star: star, starsGained: 0, firstThreeStar: false, momBonus: 0, clearIndex: 0, twoStarAdded: false, levelNowThree: false };
       var prev = ZQ.store.levelStars(levelId);
       if (star > prev) {
         res.starsGained = star - prev;
@@ -182,6 +288,11 @@ window.ZQ = window.ZQ || {};
       if (star === 3 && !data.threeStarLedger[levelId]) {
         data.threeStarLedger[levelId] = true;
         res.firstThreeStar = true;
+      }
+      if (star === 3 && data.threeStarLedger[levelId] && !data.momBonusLedger[levelId]) {
+        data.momBonusLedger[levelId] = true;
+        data.coins = Math.max(0, (data.coins || 0) + ZQ.MOM_BONUS_COINS);
+        res.momBonus = ZQ.MOM_BONUS_COINS;
       }
       res.levelNowThree = ZQ.store.levelStars(levelId) >= 3;
       if (res.levelNowThree) {

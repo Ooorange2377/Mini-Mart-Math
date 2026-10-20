@@ -229,6 +229,8 @@
 .lv.is-locked { background: #E7E3D9; border-color: rgba(27, 62, 111, .45); box-shadow: none; }
 .lv.is-locked .lv-no { color: rgba(27, 62, 111, .35); }
 .lv.is-locked .lv-stars { font-size: 1.9cqw; color: rgba(27, 62, 111, .42); }
+.lv.is-gate-locked { border-style: dashed; background: #EFEBE2; }
+.lv.is-gate-locked .lv-stars { opacity: .7; }
 .lv.is-current { animation: zq-lv-pulse 1.7s ease-in-out infinite; }
 
 @keyframes zq-lv-pulse {
@@ -241,15 +243,24 @@
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: .28cqw;
+  padding: 1cqw;
   text-align: center;
-  font-size: 2.1cqw;
+  font-size: 1.35cqw;
   font-weight: 900;
   color: var(--ink);
-  background: rgba(255, 253, 247, .55);
+  background: rgba(255, 253, 247, .82);
   border-radius: 13px;
   pointer-events: none;
+}
+.ch-lock-title { font-size: 1.85cqw; color: var(--blue); }
+.ch-lock-req {
+  font-size: 1.28cqw;
+  line-height: 1.3;
+  color: rgba(27, 62, 111, .72);
 }
 
 /* 底部：商店 / 图鉴入口 */
@@ -265,7 +276,9 @@
 
 /* ================= 通用小弹窗（玩法说明 / 重置确认） ================= */
 .modal-simple {
-  width: min(52vw, 86vh, 620px);
+  width: min(92vw, 86vh, 620px);
+  max-height: 92vh;
+  overflow-y: auto;
   font-size: clamp(12px, 2.3vh, 24px);
   background: var(--paper);
   border: 3px solid var(--ink);
@@ -289,6 +302,39 @@
   font-weight: 700;
   line-height: 1.6;
   color: rgba(27, 62, 111, .85);
+}
+.ms-text.is-rich { text-align: left; }
+.howto-block + .howto-block { margin-top: .9em; }
+.howto-head {
+  margin-bottom: .35em;
+  font-size: 1.05em;
+  font-weight: 900;
+  color: var(--ink);
+}
+.howto-block p { margin: 0; }
+.howto-list { display: grid; gap: .6em; }
+.howto-list li {
+  position: relative;
+  padding-left: 1.15em;
+  line-height: 1.5;
+}
+.howto-list li::before {
+  content: '';
+  position: absolute;
+  left: .28em;
+  top: .62em;
+  width: .38em;
+  height: .38em;
+  border-radius: 50%;
+  background: var(--orange);
+}
+.howto-mode { color: var(--blue); }
+.howto-first {
+  display: inline-block;
+  margin-left: .2em;
+  color: var(--orange);
+  font-size: .88em;
+  font-weight: 900;
 }
 .ms-actions { display: flex; gap: .6em; margin-top: 1.1em; }
 
