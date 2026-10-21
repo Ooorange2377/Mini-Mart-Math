@@ -65,11 +65,13 @@ window.ZQ = window.ZQ || {};
     return null;
   }
 
-  /** v3 及更早存档：旧存钱罐皮肤下线后迁移到当前可用款式。 */
+  /** v3 及更早存档：旧存钱罐皮肤下线后迁移到当前可用款式。
+   *  v5 扩展：burger/donut/luckycat 也下线了，统一回退 glass */
   function migratePigSkins(save) {
     if (!save.equipped || typeof save.equipped !== 'object') return;
-    if (save.equipped.pig === 'zhaocai') save.equipped.pig = 'luckycat';
-    else if (save.equipped.pig === 'xiaohua' || save.equipped.pig === 'space') save.equipped.pig = 'glass';
+    var valid = { glass: 1, gacha: 1, ufo: 1 };
+    var id = save.equipped.pig;
+    if (!id || !valid[id]) save.equipped.pig = 'glass';
   }
 
   /** 门槛调整后，旧存档里已装备但当前仍锁定的皮肤回退到默认款。 */

@@ -165,3 +165,302 @@
   0%   { opacity: 0; transform: translateY(7px) scale(.96); }
   100% { opacity: 1; transform: none; }
 }
+
+/* 首次多页货架：翻页器聚光圈轻呼吸 */
+@keyframes zq-pager-focus {
+  0%, 100% { border-color: var(--orange); box-shadow: 0 0 0 9999px rgba(27, 62, 111, .48), 0 0 0 7px rgba(239, 137, 47, .2); }
+  50%      { border-color: #FFB05E; box-shadow: 0 0 0 9999px rgba(27, 62, 111, .48), 0 0 0 12px rgba(239, 137, 47, .04); }
+}
+
+/* ================= 存钱罐仪式（pigshow.js） ================= */
+
+/* 玻璃罐：金币自由落体（--fall-dur 控制时长，--end-y 落到瓶口相对坐标） */
+.ceremony-coin {
+  position: absolute;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 28%, #FFE066, #E8A830 70%);
+  border: 2.5px solid #1B3E6F;
+  display: flex; align-items: center; justify-content: center;
+  color: #1B3E6F; font-size: 14px; font-weight: 900;
+  box-shadow: 0 3px 0 rgba(27, 62, 111, .35);
+  z-index: 6;
+  transform: translate(-50%, -50%);
+}
+.ceremony-coin-face { line-height: 1; }
+.ceremony-coin.is-fall {
+  animation: pig-coin-fall var(--fall-dur, .6s) cubic-bezier(.3, .8, .5, 1) forwards;
+}
+/* 玻璃罐：金币自由落体（--fall-dur 控制时长，--end-y 落到罐内底部）
+   coins 层 z-index 4 创建 stacking context → 金币被困在 coins 层内，总体低于 pig SVG(5)
+   落底后 opacity/scale 模拟被半透明玻璃遮挡 */
+@keyframes pig-coin-fall {
+  0%   { transform: translate(-50%, -50%) rotate(-10deg) scale(.85); opacity: 1; }
+  60%  { transform: translate(-50%, calc(-50% + var(--end-y))) rotate(25deg) scale(1.05); opacity: 1; }
+  80%  { transform: translate(-50%, calc(-50% + var(--end-y) - 3px)) rotate(25deg) scale(.95); opacity: .7; }
+  100% { transform: translate(-50%, calc(-50% + var(--end-y))) rotate(25deg) scale(.92); opacity: .62; }
+}
+
+/* 扭蛋机：投币前的特殊投币下落（比玻璃罐更精准，落到顶部投币口） */
+.ceremony-coin.is-slot-fall {
+  animation: pig-coin-slot-fall .72s cubic-bezier(.35, .8, .5, 1) forwards;
+}
+@keyframes pig-coin-slot-fall {
+  0%   { transform: translate(-50%, -50%) rotate(-8deg) scale(.9); }
+  70%  { transform: translate(-50%, calc(-50% + var(--end-y))) rotate(18deg) scale(1.05); }
+  85%  { transform: translate(-50%, calc(-50% + var(--end-y) - 2px)) rotate(18deg) scale(.92); }
+  100% { transform: translate(-50%, calc(-50% + var(--end-y))) rotate(20deg) scale(1); opacity: 0; }
+}
+
+/* 扭蛋机：机身震动（Squash & Stretch）—— 投币入槽瞬间 */
+.pig-gacha { transform-box: fill-box; transform-origin: 50% 55%; }
+.pig-gacha-balls { transform-box: fill-box; transform-origin: 50% 50%; }
+.pig-gacha.is-shake { animation: pig-gacha-shake .45s cubic-bezier(.2, 1.4, .4, 1) forwards; }
+@keyframes pig-gacha-shake {
+  0%   { transform: scale(1, 1); }
+  25%  { transform: scale(1.08, .92); }   /* 压扁 */
+  45%  { transform: scale(.94, 1.08); }   /* 拉细 */
+  70%  { transform: scale(1.02, .98); }
+  100% { transform: scale(1, 1); }
+}
+
+/* 扭蛋机摇杆：带阻滞感的 360° 旋转（卡顿两下再转过去） */
+.gacha-crank.is-crank { animation: pig-crank-stutter 1.65s cubic-bezier(.2, .4, .4, 1) forwards; }
+@keyframes pig-crank-stutter {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(90deg); }       /* 第一段快速 */
+  20%  { transform: rotate(92deg); }       /* 卡顿 1 */
+  25%  { transform: rotate(90deg); }       /* 回弹一下 */
+  35%  { transform: rotate(190deg); }      /* 第二段 */
+  42%  { transform: rotate(194deg); }      /* 卡顿 2 */
+  48%  { transform: rotate(190deg); }      /* 回弹 */
+  70%  { transform: rotate(300deg); }      /* 第三段 */
+  75%  { transform: rotate(296deg); }      /* 小卡顿 */
+  100% { transform: rotate(360deg); }      /* 收尾 */
+}
+
+/* 玻璃罩内扭蛋群疯狂翻滚 */
+.pig-gacha-balls.is-tumble { animation: pig-balls-tumble 1.55s linear infinite; }
+@keyframes pig-balls-tumble {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(-6px, -10px) rotate(-40deg); }
+  50%  { transform: translate(8px, 6px) rotate(30deg); }
+  75%  { transform: translate(-4px, 4px) rotate(-20deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.pig-gacha-balls.is-tumble circle { animation: pig-ball-spin .35s linear infinite; }
+@keyframes pig-ball-spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* 扭蛋：红白相间配色 + 蚌壳开蛋的两半结构 */
+.ceremony-gacha-capsule {
+  position: absolute;
+  width: 42px; height: 42px;
+  z-index: 7;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+/* 上半壳（红色） */
+.ceremony-gacha-capsule .cap-top {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 50% 50%;
+  clip-path: inset(0 0 50% 0);   /* 只显上半 */
+  background: linear-gradient(180deg, #FF6B6B, #D63C3C);
+  border: 3px solid #1B3E6F;
+  transform-origin: 50% 100%;
+}
+/* 下半壳（白色） */
+.ceremony-gacha-capsule .cap-bottom {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 50% 50%;
+  clip-path: inset(50% 0 0 0);   /* 只显下半 */
+  background: linear-gradient(0deg, #FFFFFF, #F0F0F0);
+  border: 3px solid #1B3E6F;
+  transform-origin: 50% 0%;
+}
+
+/* 扭蛋从出蛋口滑出 → 在地面弹跳两下停住 */
+.ceremony-gacha-capsule.is-slide-out {
+  opacity: 1;
+  animation: pig-capsule-bounce 1.25s cubic-bezier(.2, .4, .4, 1) forwards;
+}
+@keyframes pig-capsule-bounce {
+  0%   { transform: translate(-60%, -20%) rotate(-30deg); opacity: 0; }
+  10%  { opacity: 1; }
+  30%  { transform: translate(-20%, -5%) rotate(-10deg); }
+  45%  { transform: translate(5%, 0) rotate(0deg); }
+  55%  { transform: translate(20%, -12%) rotate(15deg); }    /* 弹跳 1 */
+  65%  { transform: translate(35%, 0) rotate(25deg); }
+  75%  { transform: translate(45%, -6%) rotate(30deg); }    /* 弹跳 2 */
+  85%  { transform: translate(55%, 0) rotate(35deg); }
+  100% { transform: translate(60%, 0) rotate(38deg); }
+}
+
+/* 蚌壳开蛋：上半壳向上飞走，下半壳原地不动 */
+.ceremony-gacha-capsule.is-pop .cap-top {
+  animation: pig-cap-top-fly .4s cubic-bezier(.2, 1.4, .4, 1) forwards;
+}
+.ceremony-gacha-capsule.is-pop .cap-bottom {
+  animation: pig-cap-bottom-fall .4s cubic-bezier(.3, .8, .5, 1) forwards;
+}
+@keyframes pig-cap-top-fly {
+  0%   { transform: rotate(0deg) scale(1); opacity: 1; }
+  60%  { transform: rotate(-45deg) scale(1.2); opacity: 1; }
+  100% { transform: rotate(-90deg) translate(-20px, -40px) scale(.8); opacity: 0; }
+}
+@keyframes pig-cap-bottom-fall {
+  0%   { transform: rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: rotate(25deg) translateY(20px) scale(.7); opacity: 0; }
+}
+
+/* 奖励纸条：从开蛋处「啵」地蹦出来 */
+.ceremony-reward {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(.3);
+  font-size: 28px; font-weight: 900;
+  font-family: "Comic Sans MS", "PingFang SC", sans-serif;
+  color: #1B3E6F;
+  background: #FFFBF0;
+  border: 3px solid #1B3E6F;
+  border-radius: 10px;
+  padding: 8px 18px;
+  box-shadow: 0 4px 0 rgba(27, 62, 111, .3);
+  z-index: 10;
+  opacity: 0;
+  white-space: nowrap;
+}
+.ceremony-reward.is-in {
+  animation: pig-note-pop 1.1s cubic-bezier(.2, 1.4, .4, 1) forwards;
+}
+@keyframes pig-note-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(-6deg); }
+  35%  { opacity: 1; transform: translate(-50%, -55%) scale(1.1) rotate(3deg); }
+  60%  { transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+  100% { opacity: 1; transform: translate(-50%, -45%) scale(1) rotate(0); }
+}
+
+/* UFO 光束：底部圆形发光罩 + 锥形光束 */
+.pig-ufo .ufo-beam-hood { transition: opacity .15s linear; }
+.pig-ufo.is-beaming .ufo-beam-hood { opacity: 1; }
+.ceremony-stage.is-ufo-beam::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 62%;
+  width: 22%; height: 70%;
+  transform: translateX(-50%) scaleY(0);
+  transform-origin: top center;
+  background: linear-gradient(180deg, rgba(143, 209, 79, .85), rgba(143, 209, 79, .1) 90%, transparent);
+  filter: blur(2px);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+  z-index: 3;
+  pointer-events: none;
+  animation: pig-beam-on .35s ease-out forwards, pig-beam-pulse .5s ease-in-out .35s infinite;
+}
+@keyframes pig-beam-on {
+  to { transform: translateX(-50%) scaleY(1); }
+}
+@keyframes pig-beam-pulse {
+  0%, 100% { opacity: .9; }
+  50%      { opacity: 1; }
+}
+/* 金币被光束吸起：向上飞到 --target-x / --target-y */
+.ceremony-coin.is-beam-up {
+  animation: pig-beam-up .95s cubic-bezier(.3, .3, .5, 1) forwards;
+}
+@keyframes pig-beam-up {
+  to {
+    left: var(--target-x);
+    top:  var(--target-y);
+    transform: translate(-50%, -50%) scale(.75);
+    opacity: .95;
+  }
+}
+/* 金币绕屏幕中心一圈椭圆轨道（--orbit-cx / --orbit-cy，--orbit-delay 错峰） */
+.ceremony-coin.is-orbit {
+  animation: pig-orbit 1.8s cubic-bezier(.4, .2, .6, 1) forwards;
+  animation-delay: var(--orbit-delay, 0s);
+  left: var(--orbit-cx); top: var(--orbit-cy);
+}
+@keyframes pig-orbit {
+  0%   { transform: translate(-50%, -50%) rotate(0) translateX(0) scale(.9); }
+  50%  { transform: translate(-50%, -50%) rotate(180deg) translateX(-40vw) scale(.7); opacity: .85; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) translateX(0) scale(.9); }
+}
+/* UFO 飞走：整体向上向右飞出 */
+.ceremony-pig.is-fly-away {
+  animation: pig-ufo-fly-away .85s cubic-bezier(.2, .8, .4, 1) forwards;
+}
+@keyframes pig-ufo-fly-away {
+  to { transform: translate(14vw, -30vh) scale(.5); opacity: 0; }
+}
+
+/* 仪式整体：浅黑色遮罩 + 全屏舞台。pigshow 仅通过 opacity 过渡入场/离场。 */
+.modal-mask.is-ceremony {
+  z-index: 50;
+  background: rgba(0, 0, 0, .55);
+  /* 遮罩自己的 opacity transition 已由基类 .modal-mask 提供（.25s ease） */
+}
+.modal-mask.is-ceremony.is-out { opacity: 0; }
+
+/* 舞台：铺满遮罩，所有特效元素 absolute 定位 */
+.ceremony-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* 存钱罐容器：居中，按 viewBox 220:180 的宽高比，尺寸自适应遮罩 */
+.ceremony-pig {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: min(46vw, 42vh, 520px);
+  aspect-ratio: 220 / 180;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+.ceremony-pig .pig-svg { width: 100%; height: auto; display: block; }
+.ceremony-pig.is-hit { animation: pig-hit .25s ease; }
+@keyframes pig-hit {
+  0%   { transform: translate(-50%, -50%) scale(1); }
+  45%  { transform: translate(-50%, -52%) scale(1.08); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 罐内金币裁剪容器：runGlass 动态定位（匹配玻璃罐 rect）+ clip-path 硬裁保证不超出 */
+.ceremony-jar-clipped {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ceremony-coins {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 4;   /* 给 gacha/ufo 的全屏特效金币用；glass 模式用 jar-clipped(3) 替代 */
+}
+
+/* 存钱罐下方的零花钱数据条 */
+.ceremony-total {
+  position: absolute;
+  left: 50%;
+  /* pig 中心在 50%，高度=width*180/220，所以 pig 底部在 50% + width*0.409，再加 18px 间距 */
+  top: calc(50% + min(46vw, 42vh, 520px) * 0.41 + 18px);
+  transform: translate(-50%, 0);
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFF5DC;
+  text-shadow: 0 2px 0 rgba(27,62,111,.8), 0 0 12px rgba(255,220,120,.35);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  z-index: 6;   /* 比 pig 高，确保文字不被遮挡 */
+}
+.ceremony-total b { color: #FFD866; font-size: 22px; }
+

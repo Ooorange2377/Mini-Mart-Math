@@ -108,10 +108,9 @@ ZQ.SKINS = [
   { id: 'straw',    type: 'cart', name: '草莓粉',     need: 10, desc: '完成 10 个关卡的三星挑战' },
   { id: 'mint',     type: 'cart', name: '薄荷绿',     need: 22, desc: '完成 22 个关卡的三星挑战' },
   { id: 'gold',     type: 'cart', name: '金光闪闪',   need: 36, desc: '完成 36 个关卡的三星挑战' },
-  { id: 'glass',    type: 'pig',  name: '普通玻璃存钱罐', need: 0,  desc: '初始默认存钱罐' },
-  { id: 'burger',   type: 'pig',  name: '汉堡存钱罐',     need: 10, desc: '完成 10 个关卡的三星挑战' },
-  { id: 'donut',    type: 'pig',  name: '甜甜圈存钱罐',   need: 22, desc: '完成 22 个关卡的三星挑战' },
-  { id: 'luckycat', type: 'pig',  name: '招财猫存钱罐',   need: 36, desc: '完成 36 个关卡的三星挑战' },
+  { id: 'glass',    type: 'pig',  name: '玻璃存钱罐', need: 0,  desc: '初始默认存钱罐' },
+  { id: 'gacha',    type: 'pig',  name: '扭蛋机存钱罐', need: 10, desc: '完成 10 个关卡的三星挑战' },
+  { id: 'ufo',      type: 'pig',  name: 'UFO 存钱罐', need: 22, desc: '完成 22 个关卡的三星挑战' },
 ];
 
 /* 零花钱重复通关递减倍率：第 1~5 次 100/80/60/40/20%，第 6 次及以后 0% */

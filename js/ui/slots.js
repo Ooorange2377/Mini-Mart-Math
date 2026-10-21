@@ -15,10 +15,9 @@ ZQ.ui = ZQ.ui || {};
   };
 
   var PIG_THEMES = {
-    glass:    { name: '普通玻璃存钱罐' },
-    burger:   { name: '汉堡存钱罐' },
-    donut:    { name: '甜甜圈存钱罐' },
-    luckycat: { name: '招财猫存钱罐' },
+    glass: { name: '玻璃存钱罐' },
+    gacha: { name: '扭蛋机存钱罐' },
+    ufo:   { name: 'UFO 存钱罐' },
   };
 
   /* 购物篮：顶视角铁丝篮位图（透明留白由 CSS 放大处理） */
@@ -27,64 +26,107 @@ ZQ.ui = ZQ.ui || {};
     return '<img class="cart-svg" src="' + encodeURI(t.src) + '" alt="' + t.name + '" draggable="false">';
   }
 
-  /* 存钱罐：四种独立造型，均保留 Q 版粗描边与圆润比例 */
+  /* 存钱罐：三款独立造型，Q 版粗描边 4px + 大圆角 */
   function pigSvg(skinId) {
     var id = PIG_THEMES[skinId] ? skinId : 'glass';
     var s = '<svg class="pig-svg" viewBox="0 0 220 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
       '<g stroke="' + INK + '" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">';
 
     if (id === 'glass') {
-      s += '<rect x="62" y="35" width="96" height="116" rx="34" fill="#DDF4FC"/>' +
-           '<rect x="58" y="20" width="104" height="24" rx="11" fill="#EDF9FD"/>' +
+      // 玻璃存钱罐：罐体半透明(.62)让罐内金币看得见但玻璃感够；高光弧 + 投币口 + 两只脚
+      s += '<rect x="62" y="35" width="96" height="116" rx="34" fill="rgba(221,244,252,.62)"/>' +
+           '<rect x="58" y="20" width="104" height="24" rx="11" fill="rgba(237,249,253,.70)"/>' +
            '<rect x="92" y="37" width="36" height="8" rx="4" fill="' + INK + '" stroke="none"/>' +
            '<path d="M78 62 C70 88 76 119 89 136" fill="none" stroke="#FFFFFF" stroke-width="5" opacity=".78"/>' +
-           '<circle cx="91" cy="126" r="9" fill="#F3C950" stroke-width="3"/>' +
-           '<circle cx="119" cy="132" r="8" fill="#F3C950" stroke-width="3"/>' +
-           '<rect x="76" y="148" width="20" height="10" rx="5" fill="#DDF4FC"/>' +
-           '<rect x="124" y="148" width="20" height="10" rx="5" fill="#DDF4FC"/>';
-    } else if (id === 'burger') {
-      s += '<path d="M48 88 C48 50 74 30 110 30 C146 30 172 50 172 88 Z" fill="#F2C56D"/>' +
-           '<rect x="96" y="48" width="28" height="7" rx="3" fill="' + INK + '" stroke="none"/>' +
-           '<g fill="#FFF3D0" stroke="none">' +
-             '<ellipse cx="78" cy="57" rx="7" ry="3" transform="rotate(-18 78 57)"/>' +
-             '<ellipse cx="111" cy="42" rx="7" ry="3" transform="rotate(8 111 42)"/>' +
-             '<ellipse cx="141" cy="62" rx="7" ry="3" transform="rotate(18 141 62)"/>' +
+           '<rect x="76" y="148" width="20" height="10" rx="5" fill="rgba(221,244,252,.70)"/>' +
+           '<rect x="124" y="148" width="20" height="10" rx="5" fill="rgba(221,244,252,.70)"/>';
+    } else if (id === 'gacha') {
+      // 扭蛋机存钱罐（重绘：猫咪造型 + 奶油黄机身 + 玻璃圆球罩 + 金黄扭蛋群）
+      // 关键：扭蛋群必须画在玻璃罩之前（SVG 后画在上层），这样半透明玻璃罩才能叠在扭蛋之上
+      s += '<g class="pig-gacha">' +
+           // —— defs：圆形 clipPath（严格限制扭蛋只在玻璃圆球内，不能超出）——
+           '<defs>' +
+             '<clipPath id="gacha-dome-clip">' +
+               '<circle cx="110" cy="65" r="52"/>' +
+             '</clipPath>' +
+           '</defs>' +
+           // —— 机身主体（奶油黄色圆角矩形 + 底部托盘）——
+           '<rect x="40" y="108" width="140" height="62" rx="14" fill="#FCE8BC"/>' +
+           '<rect x="40" y="108" width="140" height="62" rx="14" fill="none"/>' +
+           // 机身前檐（稍深奶油色，营造托盘感）
+           '<path d="M44 160 Q110 168 176 160 L176 170 L44 170 Z" fill="#F0D89A" stroke="' + INK + '"/>' +
+           // —— 猫咪耳朵（顶部左右两个小圆三角）——
+           '<path d="M56 108 L48 88 L68 96 Z" fill="#FCE8BC"/>' +
+           '<path d="M56 108 L48 88 L68 96 Z" fill="none"/>' +
+           '<path d="M164 108 L172 88 L152 96 Z" fill="#FCE8BC"/>' +
+           '<path d="M164 108 L172 88 L152 96 Z" fill="none"/>' +
+           // —— 扭蛋群（先画，在底层，被圆形 clipPath 严格裁切在玻璃球内）——
+           '<g class="pig-gacha-balls" clip-path="url(#gacha-dome-clip)">' +
+             '<circle cx="100" cy="55" r="13" fill="#FFD866" stroke="' + INK + '"/>' +
+             '<circle cx="125" cy="62" r="11" fill="#FFD866" stroke="' + INK + '"/>' +
+             '<circle cx="92" cy="72" r="12" fill="#FFE08A" stroke="' + INK + '"/>' +
+             '<circle cx="118" cy="80" r="10" fill="#FFD866" stroke="' + INK + '"/>' +
+             '<circle cx="138" cy="76" r="9" fill="#FFE08A" stroke="' + INK + '"/>' +
+             '<circle cx="82" cy="60" r="10" fill="#FFD866" stroke="' + INK + '"/>' +
+             '<circle cx="108" cy="85" r="11" fill="#FFE08A" stroke="' + INK + '"/>' +
+             '<circle cx="130" cy="48" r="9" fill="#FFD866" stroke="' + INK + '"/>' +
+             // 每颗球加一个左上高光点（白椭圆），增加立体感
+             '<ellipse cx="96" cy="51" rx="3" ry="2" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="121" cy="58" rx="2.5" ry="1.8" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="88" cy="68" rx="2.8" ry="2" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="114" cy="76" rx="2.3" ry="1.7" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="134" cy="72" rx="2.2" ry="1.5" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="78" cy="56" rx="2.2" ry="1.5" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="104" cy="81" rx="2.5" ry="1.8" fill="#FFFFFF" stroke="none"/>' +
+             '<ellipse cx="126" cy="44" rx="2.2" ry="1.5" fill="#FFFFFF" stroke="none"/>' +
            '</g>' +
-           '<path d="M45 94 C57 86 68 104 82 94 C96 84 108 104 122 94 C136 84 151 104 175 94 L172 110 H48 Z" fill="#7AB95A"/>' +
-           '<path d="M49 106 H171 L164 122 H55 Z" fill="#F4C84F"/>' +
-           '<rect x="50" y="116" width="120" height="20" rx="9" fill="#9D5B36"/>' +
-           '<path d="M50 132 H170 C167 153 145 162 110 162 C75 162 53 153 50 132 Z" fill="#E8B158"/>';
-    } else if (id === 'donut') {
-      s += '<path fill-rule="evenodd" fill="#E5AA5E" d="' +
-             'M110 18 C170 18 198 52 198 90 C198 130 163 158 110 158 C57 158 22 130 22 90 C22 52 50 18 110 18 Z ' +
-             'M110 70 C91 70 78 78 78 90 C78 104 92 112 110 112 C128 112 142 104 142 90 C142 78 129 70 110 70 Z"/>' +
-           '<path fill-rule="evenodd" fill="#F1AFC6" d="' +
-             'M110 25 C162 25 188 56 188 90 C188 123 158 148 110 148 C62 148 32 123 32 90 C32 56 58 25 110 25 Z ' +
-             'M110 74 C94 74 84 80 84 90 C84 101 95 106 110 106 C125 106 136 101 136 90 C136 80 126 74 110 74 Z"/>' +
-           '<rect x="96" y="29" width="28" height="7" rx="3" fill="' + INK + '" stroke="none"/>' +
-           '<g fill="none" stroke-width="5">' +
-             '<path d="M67 62 L77 57" stroke="#F4C84F"/>' +
-             '<path d="M93 46 L103 52" stroke="#5B91C4"/>' +
-             '<path d="M130 47 L139 53" stroke="#7DBE5D"/>' +
-             '<path d="M157 65 L165 73" stroke="#F4C84F"/>' +
-             '<path d="M62 78 L71 83" stroke="#5B91C4"/>' +
-             '<path d="M146 82 L157 82" stroke="#EF892F"/>' +
+           // —— 玻璃圆球罩（后画，叠在扭蛋群之上，半透明 + 高光）——
+           '<circle cx="110" cy="65" r="52" fill="rgba(210,240,255,.55)"/>' +
+           '<circle cx="110" cy="65" r="52" fill="none"/>' +
+           // 玻璃高光弧（左上）+ 光斑（右上）
+           '<path d="M78 42 Q92 28 110 28" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".75"/>' +
+           '<ellipse cx="142" cy="44" rx="7" ry="3.5" fill="#FFFFFF" opacity=".6" stroke="none"/>' +
+           // —— 投币口（圆球罩顶部正中间）——
+           '<rect x="102" y="18" width="16" height="5" rx="2" fill="' + INK + '" stroke="none"/>' +
+           '<rect x="98" y="15" width="24" height="3" rx="1.5" fill="' + INK + '" stroke="none"/>' +
+           // —— 深灰色方形出蛋口（机身底部正中间）——
+           '<rect x="92" y="142" width="36" height="16" rx="3" fill="#4A4A52"/>' +
+           '<rect x="92" y="142" width="36" height="16" rx="3" fill="none"/>' +
+           '<rect x="96" y="145" width="28" height="10" rx="2" fill="#2B2B33" stroke="none"/>' +
+           // —— 十字形摇杆（机身右侧中部）——
+           '<g class="gacha-crank" style="transform-origin:182px 132px">' +
+             '<circle cx="182" cy="132" r="13" fill="#D4D7DC"/>' +
+             '<line x1="169" y1="132" x2="195" y2="132" stroke-width="4"/>' +
+             '<line x1="182" y1="119" x2="182" y2="145" stroke-width="4"/>' +
+             '<circle cx="182" cy="132" r="4" fill="none"/>' +
+           '</g>' +
            '</g>';
     } else {
-      s += '<path d="M68 77 C52 101 48 135 60 154 L160 154 C172 135 168 101 152 77 Z" fill="#FFF8E7"/>' +
-           '<path d="M72 70 L69 30 L98 48 Z" fill="#FFF8E7"/>' +
-           '<path d="M148 70 L151 30 L122 48 Z" fill="#FFF8E7"/>' +
-           '<ellipse cx="110" cy="76" rx="49" ry="41" fill="#FFF8E7"/>' +
-           '<path d="M63 101 C45 88 39 66 51 55 C63 67 71 81 75 92" fill="#FFF8E7"/>' +
-           '<path d="M158 130 C180 121 185 99 176 86" fill="none"/>' +
-           '<rect x="96" y="43" width="28" height="7" rx="3" fill="' + INK + '" stroke="none"/>' +
-           '<circle cx="93" cy="74" r="4" fill="' + INK + '" stroke="none"/>' +
-           '<circle cx="127" cy="74" r="4" fill="' + INK + '" stroke="none"/>' +
-           '<path d="M106 84 Q110 88 114 84" fill="none"/>' +
-           '<path d="M82 82 H64 M156 82 H138 M84 91 L67 95 M154 91 L171 95" fill="none" stroke-width="3"/>' +
-           '<path d="M72 111 H148 L143 124 H77 Z" fill="#F4C84F"/>' +
-           '<circle cx="110" cy="128" r="13" fill="#F4C84F" stroke-width="3"/>' +
-           '<rect x="106" y="121" width="8" height="14" rx="3" fill="' + INK + '" stroke="none"/>';
+      // UFO 存钱罐
+      s += '<g class="pig-ufo">' +
+           // 圆罩（驾驶舱）
+           '<ellipse cx="110" cy="82" rx="48" ry="26" fill="rgba(180,220,240,.65)"/>' +
+           '<ellipse cx="110" cy="82" rx="48" ry="26" fill="none"/>' +
+           '<path d="M82 78 Q90 68 98 78" fill="none" stroke="#FFFFFF" stroke-width="3" opacity=".7"/>' +
+           // 底部金属底盘（扁椭圆）
+           '<ellipse cx="110" cy="106" rx="72" ry="24" fill="#C8D0DA"/>' +
+           '<ellipse cx="110" cy="106" rx="72" ry="24" fill="none"/>' +
+           '<line x1="60" y1="102" x2="160" y2="102" stroke-width="2"/>' +
+           // 舷窗
+           '<circle cx="78" cy="98" r="4" fill="#F6C1D8"/>' +
+           '<circle cx="110" cy="96" r="4" fill="#FFE066"/>' +
+           '<circle cx="142" cy="98" r="4" fill="#8FD14F"/>' +
+           // 底部光束罩（仪式里 .is-beam 会开启绿色光束动画）
+           '<ellipse class="ufo-beam-hood" cx="110" cy="132" rx="36" ry="10" fill="#8FD14F" opacity=".22"/>' +
+           '<path class="ufo-beam-hood" d="M74 132 Q110 126 146 132" fill="none"/>' +
+           // 支脚
+           '<line x1="68" y1="124" x2="58" y2="156" stroke-width="4"/>' +
+           '<line x1="152" y1="124" x2="162" y2="156" stroke-width="4"/>' +
+           '<line x1="110" y1="128" x2="110" y2="158" stroke-width="4"/>' +
+           '<circle cx="58" cy="156" r="5" fill="#C8D0DA"/>' +
+           '<circle cx="162" cy="156" r="5" fill="#C8D0DA"/>' +
+           '<circle cx="110" cy="158" r="5" fill="#C8D0DA"/>' +
+           '</g>';
     }
     return s + '</g></svg>';
   }

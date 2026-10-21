@@ -98,6 +98,72 @@ ZQ.screens = ZQ.screens || {};
     if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
   }
 
+  /** 首次遇到多页货架时，框选翻页器并暂停计时，关闭提示后再开始本关 */
+  function showPagerHint(pager, onClose) {
+    var layer = document.getElementById('modal-layer');
+    if (!layer) { onClose(); return; }
+
+    layer.innerHTML = '';
+    var mask = document.createElement('div');
+    mask.className = 'pager-tip-mask';
+    mask.innerHTML =
+      '<div class="pager-tip-spot" aria-hidden="true"></div>' +
+      '<div class="pager-tip-card" role="dialog" aria-modal="true">' +
+        '<div class="pager-tip-title">' + ZQ.I18N.pagerTipTitle + '</div>' +
+        '<div class="pager-tip-text">' + ZQ.I18N.pagerTipText + '</div>' +
+        '<button class="btn-result btn-primary pager-tip-ok" type="button">' +
+          ZQ.I18N.pagerTipOk +
+        '</button>' +
+      '</div>';
+    layer.appendChild(mask);
+
+    var spot = mask.querySelector('.pager-tip-spot');
+    var card = mask.querySelector('.pager-tip-card');
+    var ok = mask.querySelector('.pager-tip-ok');
+    var closed = false;
+
+    function position() {
+      var rect = pager.getBoundingClientRect();
+      var pad = 9;
+      spot.style.left = (rect.left - pad) + 'px';
+      spot.style.top = (rect.top - pad) + 'px';
+      spot.style.width = (rect.width + pad * 2) + 'px';
+      spot.style.height = (rect.height + pad * 2) + 'px';
+      card.style.left = (rect.left + rect.width / 2) + 'px';
+      card.style.top = (rect.top - 18) + 'px';
+    }
+
+    function close() {
+      if (closed) return;
+      closed = true;
+      window.removeEventListener('resize', position);
+      document.removeEventListener('keydown', onKey);
+      ZQ.store.markTutorial('shelfPager');
+      layer.innerHTML = '';
+      onClose();
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape' || e.key === 'Enter') close();
+    }
+
+    mask.addEventListener('click', function (e) {
+      if (!e.target.closest('.pager-tip-card')) close();
+    });
+    ok.addEventListener('click', function (e) {
+      e.stopPropagation();
+      ZQ.audio.click();
+      close();
+    });
+    window.addEventListener('resize', position);
+    document.addEventListener('keydown', onKey);
+    requestAnimationFrame(function () {
+      position();
+      mask.classList.add('is-in');
+      ok.focus();
+    });
+  }
+
   ZQ.screens.game = {
     /** 当前关卡实例 */
     current: null,
@@ -129,10 +195,18 @@ ZQ.screens = ZQ.screens || {};
       var constraints = lv.constraint || [];
       var fullConstraint = ZQ.rules.constraintLabel(constraints) ||
         ZQ.I18N.constraintAny.replace('{n}', lv.n);
-      var constraintText = constraints.length >= 3
-        ? ZQ.rules.constraintLabelCompact(constraints, true)
-        : (constraints.length === 2 ? ZQ.rules.constraintLabelCompact(constraints) : fullConstraint);
+      var constraintLines = ZQ.rules.constraintLabelLines(constraints);
       var ruleClass = constraints.length ? ' count-' + constraints.length : '';
+      var constraintHtml = '';
+      if (constraintLines.length) {
+        for (var cl = 0; cl < constraintLines.length; cl++) {
+          constraintHtml += '<span class="t-rule-line">' +
+            constraintLines[cl] + '</span>';
+        }
+      } else {
+        constraintHtml = '<span class="t-rule-line">' +
+          ZQ.I18N.constraintAny.replace('{n}', lv.n) + '</span>';
+      }
 
       var el = document.createElement('div');
       el.className = 'stage screen-game';
@@ -149,7 +223,8 @@ ZQ.screens = ZQ.screens || {};
           '<div class="t-row t-budget"><span>' + ZQ.I18N.labelBudget + '</span><b>¥ ' + ZQ.money.fmtTrim(lv.budget) + '</b></div>' +
           '<div class="t-row"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' + lv.n + ' 件</b></div>' +
           '<div class="t-rule' + ruleClass + '" title="' + fullConstraint + '">' +
-            '<span>' + ZQ.I18N.labelConstraint + '</span><b>' + constraintText + '</b>' +
+            '<span class="t-rule-label">' + ZQ.I18N.labelConstraint + '</span>' +
+            '<b class="t-rule-value">' + constraintHtml + '</b>' +
           '</div>' +
         '</aside>' +
 
@@ -522,6 +597,11 @@ ZQ.screens = ZQ.screens || {};
 
     refresh();
     updateCardBtn();
-    startTimer();
+    var pager = el.querySelector('.shelf-pager');
+    if (lv.pages > 1 && pager && !ZQ.store.tutorialSeen('shelfPager')) {
+      requestAnimationFrame(function () { showPagerHint(pager, startTimer); });
+    } else {
+      startTimer();
+    }
   }
 })();

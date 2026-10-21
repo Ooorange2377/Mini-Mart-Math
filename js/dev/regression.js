@@ -113,14 +113,15 @@
       var wrongCount = ZQ.rules.evaluateSelection([item('drink', 400)], lv);
       check(!wrongCount.valid && wrongCount.invalidReason === 'count', '错误件数应判定无效');
 
-      check(ZQ.rules.constraintLabelCompact(lv.constraint) === '饮品1 零食1',
-        '多品类约束应生成可单行展示的紧凑文案');
-      check(ZQ.rules.constraintLabelCompact([
+      check(ZQ.rules.constraintLabel(lv.constraint) === '饮品*1、零食*1',
+        '品类约束应使用完整名称与星号数量格式');
+      check(JSON.stringify(ZQ.rules.constraintLabelLines([
         { category: 'drink', count: 1 },
         { category: 'snack', count: 1 },
         { category: 'daily', count: 1 },
         { category: 'seasoning', count: 1 },
-      ], true) === '饮1 零1 日1 调1', '四品类约束应使用单字缩写避免换行');
+      ])) === JSON.stringify(['饮品*1、零食*1', '日用品*1、调味品*1']),
+      '四品类约束应分成两行且每行最多两条');
 
       var overspend = ZQ.rules.evaluateSelection([item('drink', 400), item('snack', 400)], lv);
       check(overspend.star === 0, '超支购物车应为 0 星');
@@ -147,6 +148,9 @@
       var loaded = ZQ.store.load();
       check(loaded.version === 4 && loaded.equipped.cart === 'silver' && loaded.equipped.pig === 'glass',
         '空存档应加载默认值');
+      check(!ZQ.store.tutorialSeen('shelfPager'), '首次多页货架提示初始应为未读');
+      ZQ.store.markTutorial('shelfPager');
+      check(ZQ.store.tutorialSeen('shelfPager'), '首次多页货架提示应只记录一次');
 
       storageSet(SAVE_KEY, JSON.stringify({
         version: 1,

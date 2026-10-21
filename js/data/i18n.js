@@ -37,6 +37,9 @@ ZQ.I18N = {
   toastNeedMore: '还差 {n} 件商品',
   toastConstraint: '商品品类还没满足本关要求',
   toastResetDone: '存档已重置',
+  pagerTipTitle: '货架分页啦',
+  pagerTipText: '这一关的商品超过 12 件。点击底部的翻页箭头或圆点，可以查看下一页商品。',
+  pagerTipOk: '知道了',
 
   // 通用按钮
   btnOk: '确定',
@@ -106,6 +109,14 @@ ZQ.I18N = {
   skinsEquip: '装备',
   skinsEquipped: '已装备',
   skinsDefault: '默认',
+
+  // 存钱罐仪式弹窗
+  pigShowTitle: '存进存钱罐啦！',
+  pigShowOk: '好耶~',
+  pigSkip: '跳过',
+  gachaRewardCoins: '零花钱 +1',
+  gachaRewardCard: '延时卡 +1',
+  gachaRewardNone: '谢谢惠顾，再接再厉~',
 
   // 游戏内
   timerLabel: '倒计时',

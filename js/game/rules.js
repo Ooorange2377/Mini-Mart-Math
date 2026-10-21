@@ -133,18 +133,20 @@ ZQ.rules = {
   constraintLabel: function (constraint) {
     if (!constraint || !constraint.length) return '';
     return constraint.map(function (c) {
-      return ZQ.CATEGORY_NAMES[c.category] + ' × ' + c.count;
-    }).join(' · ');
+      return ZQ.CATEGORY_NAMES[c.category] + '*' + c.count;
+    }).join('、');
   },
 
-  /** 多条件紧凑文案：如「饮品1 零食2」；abbreviate=true 时用单字品类 */
-  constraintLabelCompact: function (constraint, abbreviate) {
-    if (!constraint || !constraint.length) return '';
-    return constraint.map(function (c) {
-      var name = ZQ.CATEGORY_NAMES[c.category] || c.category;
-      if (abbreviate) name = name.charAt(0);
-      return name + c.count;
-    }).join(' ');
+  /** 品类约束分行：每行最多两条，保留完整品类名称 */
+  constraintLabelLines: function (constraint) {
+    if (!constraint || !constraint.length) return [];
+    var lines = [];
+    for (var i = 0; i < constraint.length; i += 2) {
+      lines.push(constraint.slice(i, i + 2).map(function (c) {
+        return ZQ.CATEGORY_NAMES[c.category] + '*' + c.count;
+      }).join('、'));
+    }
+    return lines;
   },
 
   /**

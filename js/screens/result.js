@@ -32,54 +32,6 @@ ZQ.screens = ZQ.screens || {};
     }, Math.max(55, dur / steps));
   }
 
-  /** 单枚硬币：从存钱罐上方落下，命中后挤一下存钱罐并响一声 */
-  function dropCoin(pigBox, pigEl) {
-    var size = Math.max(11, pigBox.width * 0.42);
-    var fromX = pigBox.left + pigBox.width * (0.28 + Math.random() * 0.44);
-    var fromY = pigBox.top - pigBox.height * 1.7;
-
-    var wrap = document.createElement('div');
-    wrap.className = 'fx-fly';
-    wrap.style.left = fromX + 'px';
-    wrap.style.top = fromY + 'px';
-    wrap.style.width = size + 'px';
-    wrap.style.height = size + 'px';
-    wrap.style.setProperty('--dy', ((pigBox.top + pigBox.height * 0.62) - fromY).toFixed(1) + 'px');
-    wrap.style.setProperty('--lift', '6px');
-    wrap.style.setProperty('--fly-dur', '0.42s');
-    wrap.innerHTML = '<div class="fx-fly-x"><div class="fx-fly-y"><span class="coin"></span></div></div>';
-    document.body.appendChild(wrap);
-
-    var done = false;
-    function finish() {
-      if (done) return;
-      done = true;
-      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
-      pigEl.classList.remove('is-hit');
-      void pigEl.offsetWidth;
-      pigEl.classList.add('is-hit');
-      ZQ.audio.coin();
-    }
-    wrap.querySelector('.fx-fly-y').addEventListener('animationend', finish);
-    window.setTimeout(finish, 700);   // 动画事件兜底
-  }
-
-  /** 硬币落罐：逐枚错峰落下（数量随零花钱自适应，最多 6 枚） */
-  function coinRain(pigEl, total) {
-    if (!pigEl) return;
-    var box = pigEl.getBoundingClientRect();
-    if (box.width < 2) return;
-    var n = Math.min(6, Math.max(3, total));
-    for (var i = 0; i < n; i++) {
-      (function (i) {
-        window.setTimeout(function () {
-          var b = pigEl.getBoundingClientRect();   // 重测：弹窗缩放动画结束后位置已稳定
-          dropCoin(b, pigEl);
-        }, i * 120);
-      })(i);
-    }
-  }
-
   ZQ.screens.result = {
     /**
      * 展示结算弹窗。
@@ -117,16 +69,10 @@ ZQ.screens = ZQ.screens || {};
             (ctx.momBonus > 0
               ? '<div class="r-row r-coins r-mom-bonus">💰 ' + ZQ.I18N.resultMomBonus + '：' +
                   '<b class="coins-num">+0</b>' +
-                  '<span class="coins-pig" title="' + ZQ.I18N.mapCoins + '">' +
-                    ZQ.ui.slots.renderPig(pigSkin) +
-                  '</span>' +
                 '</div>'
               : (ctx.coins > 0
               ? '<div class="r-row r-coins">💰 ' + ZQ.I18N.resultCoins + '：' +
                   '<b class="coins-num">+0</b>' +
-                  '<span class="coins-pig" title="' + ZQ.I18N.mapCoins + '">' +
-                    ZQ.ui.slots.renderPig(pigSkin) +
-                  '</span>' +
                 '</div>'
               : '')) +
             (ctx.firstThreeStar
@@ -147,13 +93,11 @@ ZQ.screens = ZQ.screens || {};
       layer.appendChild(mask);
       requestAnimationFrame(function () { mask.classList.add('is-in'); });
 
-      // 硬币落罐 + 数字滚动：等弹窗缩放动画（.3s）稳定后再测量存钱罐位置，避免落点错位
+      // 数字滚动（.3s 后等弹窗缩放稳定再测量位置）
       if (ctx.coins > 0) {
         window.setTimeout(function () {
           var numEl = mask.querySelector('.coins-num');
-          var pigEl = mask.querySelector('.coins-pig');
           if (numEl) countUp(numEl, ctx.coins, 700);
-          coinRain(pigEl, ctx.coins);
         }, 360);
       }
 
@@ -163,14 +107,25 @@ ZQ.screens = ZQ.screens || {};
         if (ctx.star > 0) ZQ.audio.win(); else ZQ.audio.lose();
       }, fail ? 160 : 560);
 
+      // 按钮：直接调用原回调 + 关闭结算弹窗
       mask.querySelector('.btn-primary').addEventListener('click', function () {
         ZQ.audio.click();
-        if (fail) ctx.onRetry(); else ctx.onNext();
+        var ok = fail ? ctx.onRetry : ctx.onNext;
+        ZQ.screens.result.close();
+        ok && ok();
       });
       mask.querySelector('.btn-ghost').addEventListener('click', function () {
         ZQ.audio.back();
-        ctx.onMap();
+        ZQ.screens.result.close();
+        ctx.onMap && ctx.onMap();
       });
+
+      // 自动存钱罐仪式：有零花钱才弹（失败星/没奖励不弹），叠在结算弹窗之上
+      if (!fail && ctx.coins > 0) {
+        window.setTimeout(function () {
+          ZQ.screens.pigshow.show({ skin: pigSkin, coins: ctx.coins });
+        }, 800);
+      }
       return mask;
     },
 
