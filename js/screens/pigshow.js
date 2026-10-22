@@ -10,8 +10,6 @@ window.ZQ = window.ZQ || {};
 ZQ.screens = ZQ.screens || {};
 
 (function () {
-  var INK = '#1B3E6F';
-
   /** 生成一枚金币 DOM（绝对定位到遮罩内，坐标由 runXXX 设定） */
   function coinEl(size) {
     var w = size || 34;
@@ -26,26 +24,90 @@ ZQ.screens = ZQ.screens || {};
   /** 随机整数：[min, max] 闭区间 */
   function rint(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-  /** 极简 countUp：把 el 里的数字滚到 target（纯数字，不带 + 号） */
-  function countUp(el, target, dur) {
-    var cur = parseInt((el.textContent || '0').replace(/\D/g, ''), 10) || 0;
-    if (target <= cur) { el.textContent = target; return; }
-    var steps = 18;
-    var stepDur = Math.max(20, (dur || 420) / steps);
-    var delta = target - cur;
-    var i = 0;
-    var timer = window.setInterval(function () {
-      i++;
-      cur += Math.round(delta / (steps - i + 1));
-      if (cur >= target) cur = target;
-      el.textContent = cur;
-      if (cur >= target || i >= steps) window.clearInterval(timer);
-    }, stepDur);
+  /** —— torph 式逐位数字滚动（参考 torph.lochie.me 的文字连续性效果）——
+   * 每个数字位是一个 overflow:hidden 竖槽，内部 0-9 数字条 translateY 滚动；
+   * 旧值→新值只滚变化的位（不变位保持不动 = 文字连续性），位数增减时左侧槽展开/收起，
+   * 从右往左 45ms 级联延迟，模拟机械进位感；弹性缓动带轻微过冲 = 老虎机手感。 */
+  var T_STEP = 1.2;   // 每位槽高（em），必须与 CSS .t-strip span 高度一致
+
+  function makeCol(digit) {
+    var col = document.createElement('span');
+    col.className = 't-col';
+    var strip = document.createElement('span');
+    strip.className = 't-strip';
+    for (var n = 0; n <= 9; n++) {
+      var s = document.createElement('span');
+      s.textContent = n;
+      strip.appendChild(s);
+    }
+    // 插入 DOM 前就定位好 → 首次渲染不触发过渡
+    strip.style.transform = 'translateY(' + (-(digit * T_STEP)).toFixed(3) + 'em)';
+    col.appendChild(strip);
+    return col;
+  }
+
+  /** 初始化滚动器：清空 el，按 value 建列；el._tval 记录当前值供后续滚动 */
+  function initRoller(el, value) {
+    if (!el) return;
+    el._tval = String(Math.max(0, Math.floor(value || 0)));
+    el.textContent = '';
+    var str = el._tval;
+    for (var i = 0; i < str.length; i++) el.appendChild(makeCol(+str[i]));
+  }
+
+  /** 滚到新值：只滚变化的位 + 位数增减时左侧槽展开/收起 */
+  function setRoller(el, target) {
+    if (!el || !el._tval) return;
+    var next = String(Math.max(0, Math.floor(target || 0)));
+    var old = el._tval;
+    if (next === old) return;
+    el._tval = next;
+
+    // 位数增加：左侧补新槽（先 0 宽，下一帧展开）
+    if (next.length > old.length) {
+      var add = next.length - old.length;
+      for (var a = add - 1; a >= 0; a--) {
+        var nc = makeCol(+next[a]);
+        nc.classList.add('t-in');
+        el.insertBefore(nc, el.firstChild);
+      }
+      requestAnimationFrame(function () {
+        var ins = el.querySelectorAll('.t-col.t-in');
+        for (var i = 0; i < ins.length; i++) ins[i].classList.remove('t-in');
+      });
+    }
+
+    // 位数减少：左侧多余槽收起后移除
+    if (next.length < old.length) {
+      var outs = el.querySelectorAll('.t-col:not(.t-out)');
+      var rem = old.length - next.length;
+      for (var r = 0; r < rem && r < outs.length; r++) {
+        (function (node) {
+          node.classList.add('t-out');
+          window.setTimeout(function () {
+            if (node.parentNode) node.parentNode.removeChild(node);
+          }, 360);
+        })(outs[r]);
+      }
+    }
+
+    // 共享位逐个滚：从右往左（个位先滚 = 进位感），不变位保持不动
+    var cols = el.querySelectorAll('.t-col:not(.t-out)');
+    var shared = Math.min(old.length, next.length);
+    for (var j = 0; j < shared; j++) {
+      var od = old.charAt(old.length - 1 - j);
+      var nd = next.charAt(next.length - 1 - j);
+      if (od === nd) continue;
+      var col = cols[cols.length - 1 - j];
+      if (!col) continue;
+      var strip = col.firstChild;
+      strip.style.transitionDelay = (j * 45) + 'ms';
+      strip.style.transform = 'translateY(' + (-(+nd * T_STEP)).toFixed(3) + 'em)';
+    }
   }
 
   /** 极简外壳：jar-clipped 层(z3) 放罐内金币（被 clip-path 硬裁 + SVG 罐身盖住），pig(z5) 是 SVG 罐子本身。gacha/ufo 时 jar-clipped 为空、hidden。 */
-  function shellHTML(skinId, initialTotal) {
-    var init = initialTotal || 0;
+  function shellHTML(skinId) {
     return '' +
       '<div class="ceremony-stage">' +
         '<div class="ceremony-jar-clipped"></div>' +
@@ -53,7 +115,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="ceremony-pig">' +
           (ZQ.ui.slots.renderPig(skinId)) +
         '</div>' +
-        '<div class="ceremony-total">零花钱：<b>' + init + '</b></div>' +
+        '<div class="ceremony-total">零花钱总额：<b></b></div>' +
         '<div class="ceremony-gacha-capsule" aria-hidden="true">' +
           '<div class="cap-top"></div><div class="cap-bottom"></div>' +
         '</div>' +
@@ -69,16 +131,19 @@ ZQ.screens = ZQ.screens || {};
     var initialTotal = Math.max(0, storeCoins - (ctx.coins || 0));
     var wrap = document.createElement('div');
     wrap.className = 'modal-mask is-ceremony';
-    wrap.innerHTML = shellHTML(ctx.skin, initialTotal);
+    wrap.innerHTML = shellHTML(ctx.skin);
+    // torph 式滚动器：初始值 = 当前 store 总零花钱 - 本次新增
+    initRoller(wrap.querySelector('.ceremony-total b'), initialTotal);
     layer.appendChild(wrap);
     requestAnimationFrame(function () { wrap.classList.add('is-in'); });
     return wrap;
   }
 
-  /** —— 分支 1：玻璃罐 —— clip-path 硬裁不溢出 + 静态金币堆(store 历史)+ 本次动画掉落 + 底部总量滚动 */
+  /** —— 分支 1：玻璃罐 —— 静态金币堆(store 历史) + 动画金币从投币口上方 1/2 罐高处斜落入罐 + 底部总量逐位滚动 */
   function runGlass(wrap, finishLater, coinCount) {
     var pig = wrap.querySelector('.ceremony-pig');
     var clipped = wrap.querySelector('.ceremony-jar-clipped');
+    var coinsBox = wrap.querySelector('.ceremony-coins');
     var totalEl = wrap.querySelector('.ceremony-total b');
     var pigBox = pig.getBoundingClientRect();
 
@@ -99,7 +164,7 @@ ZQ.screens = ZQ.screens || {};
     clipped.style.webkitClipPath = 'inset(0 round ' + jarRx + 'px)';
 
     // —— 静态金币堆：store 历史总量（即 baseTotal），上限 8 枚，罐底内堆叠 ——
-    var baseTotal = parseInt((totalEl && totalEl.textContent) || '0', 10) || 0;
+    var baseTotal = (totalEl && totalEl._tval) ? (parseInt(totalEl._tval, 10) || 0) : 0;
     var pileCount = Math.min(baseTotal, 8);
     var coinD = 28;   // 金币直径（跟 coinEl(28) 统一）
     // 堆叠策略：底行优先，每行最多 floor((jarW - 4) / (coinD + 3))，层间交错 1/2 金币
@@ -130,27 +195,30 @@ ZQ.screens = ZQ.screens || {};
     var done = 0;
 
     function onHit() {
-      pig.classList.remove('is-hit'); void pig.offsetWidth; pig.classList.add('is-hit');
-      ZQ.audio.coin();
+      ZQ.audio.coinDrop();   // 每枚金币落底一声「叮」，几枚就有几声
       done++;
-      if (totalEl) countUp(totalEl, baseTotal + done, 360);
+      if (totalEl) setRoller(totalEl, baseTotal + done);
       if (done >= num) {
         window.setTimeout(finishLater, 2100);   // 最后一枚落底后多停 1s 回味
       }
     }
 
-    // 动画金币也放到 jar-clipped（clip-path 硬裁保证不超出）
-    // 起点在 jar-clipped 内部靠上（投币口下方，相对 jar-clipped 的 y≈10），竖直掉到底部随机位置
+    // 动画金币放到全屏 coins 层（z4 低于 pig SVG z5 → 落入罐内后被半透明玻璃盖住）
+    // 起点在投币口（SVG 110,41）上方约 1/2 罐身高度处，斜着落进罐底随机位置
+    var slotX = pigBox.left + pw * (110 / 220);
+    var slotY = pigBox.top + ph * (41 / 180);
+    var startY = slotY - ph * 0.5;   // 距投币口约半个罐身高度
     for (var i = 0; i < num; i++) {
       var coin = coinEl(30);
-      var landX = Math.max(4, Math.min(jarW - 34, (jarW - 8) * Math.random() + 4));
-      var landY = Math.max(jarH - 34 - 10, jarH - 34 - 6 - Math.random() * 10);
-      var coinTopStart = 10;   // jar-clipped 内部相对坐标，对应 SVG 投币口下方
-      coin.style.left = landX + 'px';
-      coin.style.top  = coinTopStart + 'px';
-      coin.style.setProperty('--end-y', (landY - coinTopStart) + 'px');
+      var landX = jarLeft + Math.max(4, Math.min(jarW - 34, (jarW - 8) * Math.random() + 4));
+      var landY = jarTop + Math.max(jarH - 34 - 10, jarH - 34 - 6 - Math.random() * 10);
+      var startX = landX + (slotX - landX) * 0.55;   // 起点偏向投币口 → 斜线落进罐内
+      coin.style.left = startX + 'px';
+      coin.style.top = startY + 'px';
+      coin.style.setProperty('--end-x', (landX - startX) + 'px');
+      coin.style.setProperty('--end-y', (landY - startY) + 'px');
       coin.style.setProperty('--fall-dur', (0.62 + Math.random() * 0.12).toFixed(2) + 's');
-      clipped.appendChild(coin);
+      coinsBox.appendChild(coin);
       (function (el, delay) {
         window.setTimeout(function () {
           el.classList.add('is-fall');
@@ -160,8 +228,9 @@ ZQ.screens = ZQ.screens || {};
     }
   }
 
-  /** —— 分支 2：扭蛋机 —— 投币 → 震动+叮 → 摇杆卡顿旋转+扭蛋翻滚 → 出蛋弹跳 → 蚌壳开蛋 → 纸条蹦出 */
-  function runGacha(wrap, finishLater) {
+  /** —— 分支 2：扭蛋机 —— 先投币（几枚零花钱投几枚，总额逐位滚动）→ 仅 coins===3 时：
+   *  机身震动 → 摇杆卡顿旋转 + 扭蛋翻滚 → 出蛋弹跳 → 蚌壳开蛋 → 随机奖励纸条 */
+  function runGacha(wrap, finishLater, coinCount) {
     var pig = wrap.querySelector('.ceremony-pig');
     var gacha = pig.querySelector('.pig-gacha');
     var balls = pig.querySelector('.pig-gacha-balls');
@@ -169,150 +238,234 @@ ZQ.screens = ZQ.screens || {};
     var coinsBox = wrap.querySelector('.ceremony-coins');
     var capsule = wrap.querySelector('.ceremony-gacha-capsule');
     var rewardEl = wrap.querySelector('.ceremony-reward');
+    var totalEl = wrap.querySelector('.ceremony-total b');
+    var baseTotal = (totalEl && totalEl._tval) ? (parseInt(totalEl._tval, 10) || 0) : 0;
 
-    // 坐标参考：所有元素靠 pig.getBoundingClientRect() 定位，用 requestAnimationFrame 等布局稳定
+    var coins = Math.min(Math.max(1, coinCount || 1), 3);
+    var fullShow = (coins === 3);   // 零花钱=3 才触发摇杆掉扭蛋的完整流程
+
     requestAnimationFrame(function () {
       var pigBox = pig.getBoundingClientRect();
 
-      // —— Step 1: 投币（t=0 开始下落，精准掉入圆球罩顶部投币口）——
-      // 投币口在新猫咪扭蛋机 SVG viewBox (110, 16.5)
-      var slotCenterX = pigBox.left + pigBox.width * (110 / 220);       // 50%
-      var slotCenterY = pigBox.top + pigBox.height * (16.5 / 180);       // 9.2%（比之前更高）
-      var coin = coinEl(26);
-      var startOffset = 150;   // 投币口上方起始距离
-      coin.style.left = slotCenterX + 'px';
-      coin.style.top = (slotCenterY - startOffset) + 'px';
-      coin.style.setProperty('--end-y', startOffset + 'px');            // 下落距离 = startOffset
-      coin.style.setProperty('--fall-dur', '.72s');
-      coinsBox.appendChild(coin);
-      coin.classList.add('is-slot-fall');
+      // —— Phase 1: 投币 —— 起点距投币口（SVG 110,16.5）约 1/2 罐身高度，逐枚落入，总额逐位滚动
+      var slotX = pigBox.left + pigBox.width * (110 / 220);
+      var slotY = pigBox.top + pigBox.height * (16.5 / 180);
+      var startY = slotY - pigBox.height * 0.5;
+      var landed = 0;
 
-      // —— Step 2: 硬币入槽瞬间（~t=720ms）→ 机身震动（Squash & Stretch）+ 叮声 ——
-      window.setTimeout(function () {
+      var _loop = function (i) {
+        var coin = coinEl(26);
+        coin.style.left = (slotX + (Math.random() - 0.5) * 10) + 'px';
+        coin.style.top = startY + 'px';
+        coin.style.setProperty('--end-y', (slotY - startY) + 'px');
+        coin.style.setProperty('--fall-dur', '.72s');
+        coinsBox.appendChild(coin);
+        window.setTimeout(function () {
+          coin.classList.add('is-slot-fall');
+          coin.addEventListener('animationend', function () {
+            ZQ.audio.coin();
+            landed++;
+            setRoller(totalEl, baseTotal + landed);
+            if (landed >= coins) window.setTimeout(phase2, 350);
+          }, { once: true });
+        }, i * 200);
+      };
+      for (var i = 0; i < coins; i++) _loop(i);
+
+      // —— Phase 2: 仅 coins===3 → 震动 → 摇杆 + 翻滚 → 出蛋 → 开蛋 ——
+      function phase2() {
+        if (!fullShow) { window.setTimeout(finishLater, 2100); return; }
+
+        // 机身接住最后一枚币震一下（Squash & Stretch）
         gacha.classList.add('is-shake');
-        ZQ.audio.coin();   // 复用 coin 音效做「叮」
-      }, 720);
 
-      // —— Step 3: 摇杆卡顿旋转 + 扭蛋群疯狂翻滚（~t=900ms 启动）——
-      window.setTimeout(function () {
-        if (crank) {
-          crank.classList.add('is-crank');
-          var crankTicker = window.setInterval(function () { ZQ.audio.crank(); }, 130);
-          window.setTimeout(function () { window.clearInterval(crankTicker); }, 1700);
-        }
-        if (balls) balls.classList.add('is-tumble');
-      }, 900);
+        // 摇杆卡顿旋转 + 扭蛋群疯狂翻滚
+        window.setTimeout(function () {
+          if (crank) {
+            crank.classList.add('is-crank');
+            var crankTicker = window.setInterval(function () { ZQ.audio.crank(); }, 130);
+            window.setTimeout(function () { window.clearInterval(crankTicker); }, 1700);
+          }
+          if (balls) balls.classList.add('is-tumble');
+        }, 300);
 
-      // —— Step 4: 摇杆/翻滚结束（~t=2550ms），扭蛋从机身底部出蛋口滑出并弹跳两下 ——
-      window.setTimeout(function () {
-        if (balls) balls.classList.remove('is-tumble');
-        ZQ.audio.gachaDrop();
+        // 摇杆/翻滚结束 → 扭蛋从出蛋口（SVG 110,150）滑出并弹跳两下
+        window.setTimeout(function () {
+          if (balls) balls.classList.remove('is-tumble');
+          ZQ.audio.gachaDrop();
+          var exitX = pigBox.left + pigBox.width * (110 / 220);
+          var exitY = pigBox.top + pigBox.height * (150 / 180);
+          capsule.style.left = exitX + 'px';
+          capsule.style.top = exitY + 'px';
+          capsule.classList.add('is-slide-out');
+        }, 2050);
 
-        // 新猫咪款出蛋口位置：SVG viewBox (110, 150)，占比 150/180 ≈ 83.3%
-        var exitX = pigBox.left + pigBox.width * (110 / 220);
-        var exitY = pigBox.top + pigBox.height * (150 / 180);
-        capsule.style.left = exitX + 'px';
-        capsule.style.top = exitY + 'px';
-        capsule.classList.add('is-slide-out');
-      }, 2650);
+        // 蚌壳开蛋 + 随机奖励纸条
+        window.setTimeout(function () {
+          ZQ.audio.gachaPop();
+          capsule.classList.add('is-pop');
 
-      // —— Step 5: 扭蛋弹开（~t=3900ms）→ 蚌壳开蛋 + 随机奖励纸条 ——
-      window.setTimeout(function () {
-        ZQ.audio.gachaPop();
-        capsule.classList.add('is-pop');
+          var roll = Math.random();
+          var reward, text;
+          if (roll < 0.40) {
+            reward = 'coin'; text = '零花钱 ×1';
+            ZQ.store.addCoins(1);
+            setRoller(totalEl, baseTotal + coins + 1);   // 奖励金币也计入总额滚动
+          } else if (roll < 0.70) {
+            reward = 'card'; text = '延时卡 ×1';
+            ZQ.store.addCards(1);
+          } else {
+            reward = 'none'; text = '谢谢惠顾';
+          }
 
-        var roll = Math.random();
-        var reward, text;
-        if (roll < 0.40) {
-          reward = 'coin'; text = '零花钱 ×1';
-          ZQ.store.addCoins(1);
-        } else if (roll < 0.70) {
-          reward = 'card'; text = '延时卡 ×1';
-          ZQ.store.addCards(1);
-        } else {
-          reward = 'none'; text = '谢谢惠顾';
-        }
+          var capBox = capsule.getBoundingClientRect();
+          rewardEl.style.left = capBox.left + 'px';
+          rewardEl.style.top = (capBox.top - 10) + 'px';
+          rewardEl.textContent = text;
+          rewardEl.classList.add('is-in');
+          if (reward === 'none') ZQ.audio.rewardAw(); else ZQ.audio.rewardDing();
 
-        // 纸条从开蛋位置蹦出（位置随扭蛋弹出稍偏右下）
-        var capBox = capsule.getBoundingClientRect();
-        rewardEl.style.left = capBox.left + 'px';
-        rewardEl.style.top  = (capBox.top - 10) + 'px';
-        rewardEl.textContent = text;
-        rewardEl.classList.add('is-in');
-        if (reward === 'none') ZQ.audio.rewardAw(); else ZQ.audio.rewardDing();
-
-        // 纸条展示 1.1s + 回味 1s → 自动消失
-        window.setTimeout(finishLater, 2100);
-      }, 3900);
+          window.setTimeout(finishLater, 2100);
+        }, 3300);
+      }
     });
   }
 
-  /** —— 分支 3：UFO —— 先落一币到底部光束罩 → 光束亮起 → 多币吸起 → 绕圈 → 飞走 */
+  /** —— 分支 3：UFO（参考「猫咪被 UFO 绑架」桥段）——
+   * 金币静置画面中心 → UFO 从远处飞来悬停上方 → 绿光闪烁后光束把金币逐枚吸上去（总额逐位滚动）
+   * → UFO 居中故障闪烁快速缩小消失 → 留下黑色晶石 → 用户点击晶石上下裂开露出随机奖励
+   * 奖励池：零花钱 1-3 枚 / 延时卡 1-2 张 / 「这只是一块普通的石头...」 */
   function runUfo(wrap, finishLater, coinCount) {
     var pig = wrap.querySelector('.ceremony-pig');
+    var stage = wrap.querySelector('.ceremony-stage');
     var coinsBox = wrap.querySelector('.ceremony-coins');
-    var hood = pig.querySelector('.ufo-beam-hood');
+    var rewardEl = wrap.querySelector('.ceremony-reward');
+    var totalEl = wrap.querySelector('.ceremony-total b');
+    var baseTotal = (totalEl && totalEl._tval) ? (parseInt(totalEl._tval, 10) || 0) : 0;
+    var n = Math.min(Math.max(1, coinCount || 1), 6);
+    var absorbed = 0;
 
     requestAnimationFrame(function () {
-      var pigBox = pig.getBoundingClientRect();
-      // UFO 底部光束罩中心：SVG viewBox cx=110 cy=132（占比 110/220=50%, 132/180≈73.3%）
-      var hoodCenterX = pigBox.left + pigBox.width * 0.50;
-      var hoodCenterY = pigBox.top + pigBox.height * 0.73;
+      // —— UFO 从远处飞来（远方很小 → 飞到画面上方悬停）——
+      pig.classList.add('is-fly-in');
+      ZQ.audio.ufoIn();
 
-      // —— Step 1: 1 枚金币从顶部精准掉到光束罩上 + coin 音效 ——
-      var dropCoin = coinEl(30);
-      dropCoin.style.left = hoodCenterX + 'px';
-      dropCoin.style.top = (hoodCenterY - 170) + 'px';
-      dropCoin.style.setProperty('--end-y', '170px');
-      dropCoin.style.setProperty('--fall-dur', '.75s');
-      coinsBox.appendChild(dropCoin);
-      dropCoin.classList.add('is-slot-fall');
-      dropCoin.addEventListener('animationend', function () {
-        ZQ.audio.coin();
-      }, { once: true });
+      // —— 金币（替换猫咪的位置）静置在画面中心 ——
+      var cx = window.innerWidth / 2;
+      var cy = window.innerHeight / 2;
+      var sit = [];
+      for (var i = 0; i < n; i++) {
+        var c = coinEl(30);
+        c.style.left = (cx + (i - (n - 1) / 2) * 42) + 'px';
+        c.style.top = (cy + (i % 2 === 0 ? -6 : 8)) + 'px';
+        coinsBox.appendChild(c);
+        sit.push(c);
+      }
 
-      // —— Step 2: 光束亮起 + 嗡鸣（~t=900ms）——
+      // —— t≈1.0s 到位：绿光闪两下 + 光束张开 + 嗡鸣，逐枚把金币吸上去 ——
       window.setTimeout(function () {
+        stage.classList.add('is-ufo-beam');
         ZQ.audio.ufoHum();
-        if (hood) hood.classList.add('is-beam');
+        var pb = pig.getBoundingClientRect();   // fly-in 动画结束后的实际悬停位置
+        var tx = pb.left + pb.width * 0.50;
+        var ty = pb.top + pb.height * 0.73;     // 底部光束罩中心（SVG 132/180）
+        sit.forEach(function (el, i) {
+          el.style.setProperty('--target-x', tx + 'px');
+          el.style.setProperty('--target-y', ty + 'px');
+          window.setTimeout(function () { el.classList.add('is-beam-up'); }, 1450 + i * 260);
+          window.setTimeout(function () {           // 金币到达 UFO → 入账 + 总额滚动
+            ZQ.audio.coin();
+            absorbed++;
+            setRoller(totalEl, baseTotal + absorbed);
+          }, 1450 + i * 260 + 950);
+        });
+      }, 1000);
 
-        // —— Step 3: 吸起多枚金币（屏幕底部分散位置往上吸，数量由 ctx.coins 决定，上限 6）——
-        var n = Math.min(coinCount || 4, 6);
-        for (var i = 0; i < n; i++) {
-          var coin = coinEl(28);
-          coin.style.left = rint(100, window.innerWidth - 100) + 'px';
-          coin.style.top = rint(window.innerHeight * 0.65, window.innerHeight * 0.88) + 'px';
-          coin.style.setProperty('--target-x', hoodCenterX + 'px');
-          coin.style.setProperty('--target-y', hoodCenterY + 'px');
-          coinsBox.appendChild(coin);
-          (function (el, d) {
-            window.setTimeout(function () { el.classList.add('is-beam-up'); }, d);
-          })(coin, i * 100);
-        }
-      }, 900);
-
-      // —— Step 4: 全部飞到光束中心后，绕中心一圈椭圆轨道（~1.8s）——
+      // —— 全部吸完：居中故障闪烁 + 快速缩小消失 ——
+      var lastArrive = 1450 + (n - 1) * 260 + 950;
       window.setTimeout(function () {
-        var all = coinsBox.querySelectorAll('.ceremony-coin');
-        for (var j = 0; j < all.length; j++) {
-          var el = all[j];
-          el.style.setProperty('--orbit-cx', hoodCenterX + 'px');
-          el.style.setProperty('--orbit-cy', hoodCenterY + 'px');
-          el.style.setProperty('--orbit-delay', (j * 0.15).toFixed(2) + 's');
-          el.classList.remove('is-beam-up');
-          el.classList.add('is-orbit');
-        }
-      }, 1900);
+        stage.classList.remove('is-ufo-beam');
+        stage.classList.add('is-zap');
+        pig.classList.add('is-vanish');
+        ZQ.audio.ufoZap();
+      }, lastArrive + 350);
 
-      // —— Step 5: 飞走 + 嗖声 ——
-      window.setTimeout(function () {
-        ZQ.audio.ufoFly();
-        if (hood) hood.classList.remove('is-beam');
-        pig.classList.add('is-fly-away');
-      }, 3700);
-
-      window.setTimeout(finishLater, 5700);
+      // —— 消失处留下黑色晶石 ——
+      window.setTimeout(showCrystal, lastArrive + 970);
     });
+
+    function showCrystal() {
+      var crystal = document.createElement('div');
+      crystal.className = 'ceremony-crystal';
+      crystal.innerHTML = crystalHTML();
+      stage.appendChild(crystal);
+
+      var opened = false;
+      var fallback = window.setTimeout(openCrystal, 8000);   // 兜底：8s 未点击自动裂开
+      crystal.addEventListener('click', function () {
+        window.clearTimeout(fallback);
+        openCrystal();
+      });
+
+      function openCrystal() {
+        if (opened) return;
+        opened = true;
+        crystal.classList.add('is-open');
+        crystal.style.pointerEvents = 'none';
+        ZQ.audio.gachaPop();
+
+        var cx = window.innerWidth / 2;
+        var cy = window.innerHeight / 2;
+        var roll = Math.random();
+        var text;
+        if (roll < 0.40) {
+          var m = rint(1, 3);
+          text = '零花钱 ×' + m;
+          ZQ.store.addCoins(m);
+          setRoller(totalEl, baseTotal + n + m);   // 奖励金币计入总额滚动
+          for (var i = 0; i < m; i++) {
+            (function (idx) {
+              var pc = coinEl(28);
+              pc.style.left = (cx + (idx - (m - 1) / 2) * 40) + 'px';
+              pc.style.top = cy + 'px';
+              pc.style.setProperty('--prize-delay', (idx * 0.13).toFixed(2) + 's');
+              pc.classList.add('is-prize');
+              coinsBox.appendChild(pc);
+            })(i);
+          }
+          ZQ.audio.rewardDing();
+        } else if (roll < 0.75) {
+          var k = rint(1, 2);
+          text = '延时卡 ×' + k;
+          ZQ.store.addCards(k);
+          ZQ.audio.rewardDing();
+        } else {
+          text = '这只是一块普通的石头...';
+          ZQ.audio.rewardAw();
+        }
+
+        rewardEl.style.left = cx + 'px';
+        rewardEl.style.top = (cy - 10) + 'px';
+        rewardEl.textContent = text;
+        rewardEl.classList.add('is-in');
+
+        window.setTimeout(finishLater, 2300);
+      }
+    }
+  }
+
+  /** 黑色晶石：同一颗宝石 SVG 用上下两个裁切容器各露一半，点击后两半向上下裂开 */
+  function crystalHTML() {
+    var gem =
+      '<svg width="120" height="140" viewBox="0 0 120 140" aria-hidden="true">' +
+        '<polygon points="60,4 104,34 112,84 60,136 8,84 16,34" fill="#141420" stroke="#1B3E6F" stroke-width="4" stroke-linejoin="round"/>' +
+        '<polygon points="60,4 104,34 60,58 16,34" fill="#23233A" stroke="#1B3E6F" stroke-width="3" stroke-linejoin="round"/>' +
+        '<polygon points="16,34 60,58 60,136 8,84" fill="#1B1B2C" stroke="#1B3E6F" stroke-width="3" stroke-linejoin="round"/>' +
+        '<polygon points="104,34 60,58 60,136 112,84" fill="#0D0D18" stroke="#1B3E6F" stroke-width="3" stroke-linejoin="round"/>' +
+        '<polyline points="26,44 46,66" fill="none" stroke="#8FA8FF" stroke-width="4" stroke-linecap="round" opacity=".5"/>' +
+      '</svg>';
+    return '<div class="crystal-half is-top">' + gem + '</div>' +
+           '<div class="crystal-half is-bottom">' + gem + '</div>';
   }
 
   ZQ.screens.pigshow = {
@@ -335,7 +488,7 @@ ZQ.screens = ZQ.screens || {};
 
       var skin = ctx.skin || 'glass';
       var coins = ctx.coins || 1;
-      if (skin === 'gacha') runGacha(wrap, finish);
+      if (skin === 'gacha') runGacha(wrap, finish, coins);
       else if (skin === 'ufo') runUfo(wrap, finish, coins);
       else runGlass(wrap, finish, coins);
 

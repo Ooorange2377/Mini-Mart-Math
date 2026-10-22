@@ -18,20 +18,6 @@ ZQ.screens = ZQ.screens || {};
     return html;
   }
 
-  /** 数字滚动递增：+0 → +total（分若干步，避免只跳一次） */
-  function countUp(el, total, dur) {
-    if (!el) return;
-    var steps = Math.min(total, 8);
-    var per = Math.max(1, Math.ceil(total / steps));
-    var cur = 0;
-    el.textContent = '+0';
-    var timer = window.setInterval(function () {
-      cur += per;
-      if (cur >= total) { cur = total; window.clearInterval(timer); }
-      el.textContent = '+' + cur;
-    }, Math.max(55, dur / steps));
-  }
-
   ZQ.screens.result = {
     /**
      * 展示结算弹窗。
@@ -68,11 +54,11 @@ ZQ.screens = ZQ.screens || {};
             '</div>' +
             (ctx.momBonus > 0
               ? '<div class="r-row r-coins r-mom-bonus">💰 ' + ZQ.I18N.resultMomBonus + '：' +
-                  '<b class="coins-num">+0</b>' +
+                  '<b class="coins-num">+' + ctx.momBonus + '</b>' +
                 '</div>'
               : (ctx.coins > 0
               ? '<div class="r-row r-coins">💰 ' + ZQ.I18N.resultCoins + '：' +
-                  '<b class="coins-num">+0</b>' +
+                  '<b class="coins-num">+' + ctx.coins + '</b>' +
                 '</div>'
               : '')) +
             (ctx.firstThreeStar
@@ -92,14 +78,6 @@ ZQ.screens = ZQ.screens || {};
 
       layer.appendChild(mask);
       requestAnimationFrame(function () { mask.classList.add('is-in'); });
-
-      // 数字滚动（.3s 后等弹窗缩放稳定再测量位置）
-      if (ctx.coins > 0) {
-        window.setTimeout(function () {
-          var numEl = mask.querySelector('.coins-num');
-          if (numEl) countUp(numEl, ctx.coins, 700);
-        }, 360);
-      }
 
       // 音效：星星逐颗响起；整体胜/负音在星星入场后兜底
       for (var i = 1; i <= ctx.star; i++) ZQ.audio.star(i);
