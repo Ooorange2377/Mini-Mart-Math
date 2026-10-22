@@ -121,6 +121,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="room"><div class="room-floor"></div></div>' +
 
         '<div class="map-top">' +
+          '<button class="btn-back-start" type="button" aria-label="返回初始界面">← 返回</button>' +
           '<div class="map-title">' + ZQ.I18N.mapTitle + '</div>' +
           '<div class="map-stats">' +
             '<span class="stat"><i class="ic ic-star">★</i><b>' + ZQ.store.totalStars() + '</b>' +
@@ -145,6 +146,12 @@ ZQ.screens = ZQ.screens || {};
       el.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
+
+        if (t.closest('.btn-back-start')) {
+          ZQ.audio.click();
+          ZQ.app.go('start');
+          return;
+        }
 
         if (t.closest('.btn-shop')) {
           ZQ.audio.click();
