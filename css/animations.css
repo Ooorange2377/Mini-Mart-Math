@@ -352,8 +352,9 @@
 .ceremony-stage.is-ufo-beam::after {
   content: '';
   position: absolute;
-  left: 50%; top: 31%;
-  width: 20%; height: 24%;
+  /* 光束几何由 JS 预计算写入 CSS 变量：顶端对准 UFO 底盘光束罩，向下展开到金币位置 */
+  left: var(--beam-x, 50%); top: var(--beam-top, 45%);
+  width: var(--beam-w, 180px); height: var(--beam-h, 220px);
   transform: translateX(-50%) scaleY(0);
   transform-origin: top center;
   background: linear-gradient(180deg, rgba(143, 209, 79, .85), rgba(143, 209, 79, .1) 90%, transparent);
@@ -386,6 +387,12 @@
     transform: translate(-50%, -50%) scale(.75);
     opacity: .95;
   }
+}
+/* 吸收完毕清场：!important 压过 pig-beam-up 的 forwards 定格帧，金币随 UFO 消失一起缩小淡出 */
+.ceremony-coins.is-clear .ceremony-coin {
+  transition: opacity .35s ease, transform .35s ease;
+  opacity: 0 !important;
+  transform: translate(-50%, -50%) scale(0) !important;
 }
 
 /* UFO 从远处飞来：远方很小 → 飞到画面上方悬停（fly-in 结束后 getBoundingClientRect 可取实际位置） */
@@ -455,6 +462,24 @@
   0%, 100% { filter: drop-shadow(0 0 8px rgba(130, 170, 255, .35)); }
   50%      { filter: drop-shadow(0 0 26px rgba(160, 200, 255, .9)); }
 }
+
+/* 晶石下方呼吸提示：呼吸感明暗闪烁，点击后随晶石一起消失 */
+.ceremony-crystal-hint {
+  position: absolute; left: 50%; top: 152px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 16px; font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 2px 0 #1B3E6F, 0 0 14px rgba(160, 200, 255, .75);
+  pointer-events: none;
+  opacity: 0;
+  animation: pig-hint-breathe 1.8s ease-in-out .5s infinite;
+}
+@keyframes pig-hint-breathe {
+  0%, 100% { opacity: .3; }
+  50%      { opacity: 1; }
+}
+.ceremony-crystal.is-open .ceremony-crystal-hint { animation: none; opacity: 0; }
 
 /* 奖励金币：从晶石中心蹦出向上飘散（零花钱 ×N，--prize-delay 错峰） */
 .ceremony-coin.is-prize {

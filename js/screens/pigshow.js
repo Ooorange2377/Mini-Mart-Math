@@ -332,8 +332,8 @@ ZQ.screens = ZQ.screens || {};
   }
 
   /** —— 分支 3：UFO（参考「猫咪被 UFO 绑架」桥段）——
-   * 金币静置画面中心 → UFO 从远处飞来悬停上方 → 绿光闪烁后光束把金币逐枚吸上去（总额逐位滚动）
-   * → UFO 居中故障闪烁快速缩小消失 → 留下黑色晶石 → 用户点击晶石上下裂开露出随机奖励
+   * 金币静置在 UFO 底盘下方约 1/3 罐高处 → UFO 从远处飞来悬停上方 → 绿光从底盘向下展开闪烁并把金币逐枚吸上去（总额逐位滚动）
+   * → UFO 居中故障闪烁快速缩小消失 → 仅零花钱=3 时留下黑色晶石 → 用户点击晶石上下裂开露出随机奖励
    * 奖励池：零花钱 1-3 枚 / 延时卡 1-2 张 / 「这只是一块普通的石头...」 */
   function runUfo(wrap, finishLater, coinCount) {
     var pig = wrap.querySelector('.ceremony-pig');
@@ -343,21 +343,36 @@ ZQ.screens = ZQ.screens || {};
     var totalEl = wrap.querySelector('.ceremony-total b');
     var baseTotal = (totalEl && totalEl._tval) ? (parseInt(totalEl._tval, 10) || 0) : 0;
     var n = Math.min(Math.max(1, coinCount || 1), 6);
+    var fullShow = ((coinCount || 0) === 3);   // 仅零花钱=3 才留晶石开奖励
     var absorbed = 0;
 
     requestAnimationFrame(function () {
+      // —— 预计算 UFO 悬停后的实际位置（fly-in 终点固定：舞台中心上方 -78% 罐高，transform 不影响 offsetWidth）——
+      var stageRect = stage.getBoundingClientRect();
+      var pw = pig.offsetWidth;
+      var ph = pw * 180 / 220;                       // SVG viewBox 220x180 等比
+      var cx = stageRect.left + stageRect.width / 2;
+      var pigTop = stageRect.top + stageRect.height / 2 - ph * 0.78;
+      var pigBottom = pigTop + ph;
+      var hoodY = pigTop + ph * 0.73;                // 底盘光束罩中心（SVG 132/180）
+      var coinY = pigBottom + ph / 3 * 0.7;          // 金币距底盘约 1/3 罐高，整体上移 30%（≈0.23 罐高）
+
+      // —— 光束几何：从底盘向下展开到金币位置（CSS 变量定位）——
+      stage.style.setProperty('--beam-x', cx + 'px');
+      stage.style.setProperty('--beam-top', (hoodY - ph * 0.04) + 'px');
+      stage.style.setProperty('--beam-h', (coinY - hoodY + ph * 0.22) + 'px');
+      stage.style.setProperty('--beam-w', (pw * 0.55) + 'px');
+
       // —— UFO 从远处飞来（远方很小 → 飞到画面上方悬停）——
       pig.classList.add('is-fly-in');
       ZQ.audio.ufoIn();
 
-      // —— 金币（替换猫咪的位置）静置在画面中心 ——
-      var cx = window.innerWidth / 2;
-      var cy = window.innerHeight / 2;
+      // —— 金币（替换猫咪的位置）静置：一排，位于 UFO 底盘下方 1/3 罐高处 ——
       var sit = [];
       for (var i = 0; i < n; i++) {
         var c = coinEl(30);
         c.style.left = (cx + (i - (n - 1) / 2) * 42) + 'px';
-        c.style.top = (cy + (i % 2 === 0 ? -6 : 8)) + 'px';
+        c.style.top = (coinY + (i % 2 === 0 ? -6 : 8)) + 'px';
         coinsBox.appendChild(c);
         sit.push(c);
       }
@@ -366,12 +381,9 @@ ZQ.screens = ZQ.screens || {};
       window.setTimeout(function () {
         stage.classList.add('is-ufo-beam');
         ZQ.audio.ufoHum();
-        var pb = pig.getBoundingClientRect();   // fly-in 动画结束后的实际悬停位置
-        var tx = pb.left + pb.width * 0.50;
-        var ty = pb.top + pb.height * 0.73;     // 底部光束罩中心（SVG 132/180）
         sit.forEach(function (el, i) {
-          el.style.setProperty('--target-x', tx + 'px');
-          el.style.setProperty('--target-y', ty + 'px');
+          el.style.setProperty('--target-x', cx + 'px');
+          el.style.setProperty('--target-y', hoodY + 'px');
           window.setTimeout(function () { el.classList.add('is-beam-up'); }, 1450 + i * 260);
           window.setTimeout(function () {           // 金币到达 UFO → 入账 + 总额滚动
             ZQ.audio.coin();
@@ -381,23 +393,27 @@ ZQ.screens = ZQ.screens || {};
         });
       }, 1000);
 
-      // —— 全部吸完：居中故障闪烁 + 快速缩小消失 ——
+      // —— 全部吸完：居中故障闪烁 + 快速缩小消失；残留金币随 UFO 一起清掉 ——
       var lastArrive = 1450 + (n - 1) * 260 + 950;
       window.setTimeout(function () {
         stage.classList.remove('is-ufo-beam');
         stage.classList.add('is-zap');
         pig.classList.add('is-vanish');
         ZQ.audio.ufoZap();
+        coinsBox.classList.add('is-clear');   // 吸走的金币已停在光束罩位置，随消失一起缩小淡出
+        window.setTimeout(function () { coinsBox.innerHTML = ''; }, 420);
       }, lastArrive + 350);
 
-      // —— 消失处留下黑色晶石 ——
-      window.setTimeout(showCrystal, lastArrive + 970);
+      // —— 仅零花钱=3：消失处留下黑色晶石；否则故障消失后稍作停顿直接返回结算 ——
+      if (fullShow) window.setTimeout(showCrystal, lastArrive + 970);
+      else window.setTimeout(finishLater, lastArrive + 2100);
     });
 
     function showCrystal() {
       var crystal = document.createElement('div');
       crystal.className = 'ceremony-crystal';
-      crystal.innerHTML = crystalHTML();
+      crystal.innerHTML = crystalHTML() +
+        '<div class="ceremony-crystal-hint">点击看看里面是什么？</div>';
       stage.appendChild(crystal);
 
       var opened = false;
