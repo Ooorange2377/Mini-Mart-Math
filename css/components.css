@@ -766,9 +766,27 @@
   padding: .48cqw .9cqw .58cqw;
   transition: transform .08s ease, box-shadow .08s ease;
 }
-.btn-delaycard:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
+.btn-delaycard:active { transform: translate(2px, calc(1.4cqw + 2px)); box-shadow: 2px 2px 0 var(--ink-soft); }
 .btn-delaycard .dc-count { color: var(--blue); }
 .btn-delaycard.is-off { opacity: .5; }
+
+/* 游戏界面左上角纯图标返回按钮 */
+.btn-back-game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: linear-gradient(180deg, var(--paper), #FFFDF8);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btn-back-game:hover { color: var(--blue); }
+.btn-back-game:active { transform: translate(2px, calc(1.4cqw + 2px)); box-shadow: 2px 2px 0 var(--ink-soft); }
+.btn-back-game svg { display: block; }
 
 /* 结账按钮下方的首次提示小字 */
 .checkout-hint {

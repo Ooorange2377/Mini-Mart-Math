@@ -212,6 +212,12 @@ ZQ.screens = ZQ.screens || {};
       el.className = 'stage screen-game';
 
       el.innerHTML =
+        '<button class="btn-back-game" type="button" aria-label="返回地图">' +
+          '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
+            '<path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M15 5L8 12l7 7"/>' +
+          '</svg>' +
+        '</button>' +
+
         '<div class="room"><div class="room-floor"></div></div>' +
 
         // 左侧任务卡：标签与值左右对齐
@@ -238,13 +244,13 @@ ZQ.screens = ZQ.screens || {};
           '<div class="timer-track"><span class="timer-fill"></span></div>' +
         '</div>' +
 
-        // 左上：延时卡片按钮，位于任务面板上方、倒计时面板左侧
+        // 延时卡片按钮：CSS 绝对定位到右上角、查看明细正上方
         '<button class="btn-delaycard" type="button">' +
           '<span class="dc-label">' + ZQ.I18N.useCard + '</span>' +
           '<span class="dc-count"></span>' +
         '</button>' +
 
-        // 右侧纵向功能区：详情下拉 + 购物篮
+        // 右侧纵向功能区：详情下拉 + 购物篮（hud-items 保持在 panel-basket 内，不动）
         '<aside class="panel-basket">' +
           '<div class="hud-items is-empty">' +
             '<button class="note-head" type="button" aria-expanded="false" aria-controls="cart-details">' +
@@ -455,6 +461,7 @@ ZQ.screens = ZQ.screens || {};
 
     /** 回地图；P5 地图页就绪前回退为重开本关 */
     function goMap() {
+      stopTimer();
       ZQ.screens.result.close();
       if (ZQ.screens.map) ZQ.app.go('map');
       else ZQ.app.go('game', { levelId: lv.levelId });
@@ -504,6 +511,13 @@ ZQ.screens = ZQ.screens || {};
     el.addEventListener('click', function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
+
+      // 返回地图
+      if (t.closest('.btn-back-game')) {
+        ZQ.audio.click();
+        goMap();
+        return;
+      }
 
       // 清单行 → 取消选择
       var row = t.closest('.items-row[data-slot]');

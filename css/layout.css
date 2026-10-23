@@ -47,7 +47,7 @@
   z-index: 8;
 }
 
-/* 右侧：查看明细 + 购物篮 */
+/* 右侧：查看明细 + 购物篮（保持原位，不动） */
 .panel-basket {
   position: absolute;
   right: 3%;
@@ -60,7 +60,7 @@
   gap: .8cqw;
 }
 
-.hud-items {
+.panel-basket .hud-items {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
@@ -97,13 +97,26 @@
   width: 100%;
 }
 
-/* 左上：延时卡片按钮 */
+/* 延时卡按钮：右上角、查看明细正上方；用 translateY 下移到与倒计时面板垂直中心对齐 */
 .btn-delaycard {
   position: absolute;
-  left: 3%;
-  top: 2.2%;
-  width: 18.5%;
-  z-index: 7;
+  right: 3%;
+  top: 1.2%;
+  width: 20%;
+  z-index: 9;
+  white-space: nowrap;
+  transform: translateY(1.4cqw);
+}
+
+/* 游戏界面左上角纯图标返回按钮，与倒计时面板垂直中心对齐 */
+.btn-back-game {
+  position: absolute;
+  left: 2%;
+  top: 1.2%;
+  width: 3.4cqw;
+  height: 3.4cqw;
+  z-index: 8;
+  transform: translateY(1.4cqw);
 }
 
 /* 结账按钮上方的首次提示小字 */
