@@ -12,7 +12,7 @@ ZQ.screens = ZQ.screens || {};
       (s.tag ? '<span class="card-tag">' + s.tag + '</span>' : '') +
       '<div class="card-icon"><span class="ci-plus">+30s</span><span class="ci-clock">⏱</span></div>' +
       '<div class="card-count">× ' + s.count + '</div>' +
-      '<div class="card-price">💰 <b>' + s.price + '</b></div>' +
+      '<div class="card-price"><i class="ic-img ic-img-coin"></i> <b>' + s.price + '</b></div>' +
       '<button class="btn-menu btn-buy" type="button">' + ZQ.I18N.shopBuy + '</button>' +
     '</div>';
   }
@@ -51,7 +51,7 @@ ZQ.screens = ZQ.screens || {};
           '<button class="btn-menu btn-back" type="button">\u2039 ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="page-title">' + ZQ.I18N.shopTitle + '</div>' +
           '<div class="page-balance">' +
-            '<span class="stat"><i class="ic">💰</i><b class="js-coins">' + (save.coins || 0) + '</b>' +
+            '<span class="stat"><i class="ic-img ic-img-coin"></i><b class="js-coins">' + (save.coins || 0) + '</b>' +
               '<em>' + ZQ.I18N.mapCoins + '</em></span>' +
             '<span class="stat"><i class="ic">⏱</i><b class="js-own">' + (save.delayCards || 0) + '</b>' +
               '<em>' + ZQ.I18N.shopOwn + '</em></span>' +
@@ -67,7 +67,7 @@ ZQ.screens = ZQ.screens || {};
 
         if (t.closest('.btn-back')) {
           ZQ.audio.back();
-          ZQ.app.go('map');
+          ZQ.app.go('start');
           return;
         }
 

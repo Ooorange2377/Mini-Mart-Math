@@ -50,7 +50,7 @@ ZQ.I18N = {
   resultBudget: '预算',
   resultCoins: '零花钱',
   resultMomBonus: '妈妈的奖励金',
-  resultThreeStar: '三星通关数',
+  resultThreeStar: '三星奖牌',
   resultBtnRetry: '再来一次',
   resultBtnNext: '下一关',
   resultBtnMap: '回到地图',
@@ -69,14 +69,12 @@ ZQ.I18N = {
   // 地图页
   mapTitle: '选择关卡',
   mapTotalStars: '星星',
-  mapThreeStar: '三星通关数',
+  mapThreeStar: '三星奖牌',
   mapCoins: '零花钱',
-  mapNeedStars: '还需 {n} 颗星解锁',
+  mapNeedStars: '还需 {n} 颗星星解锁',
   mapChapterLocked: '第 {chapter} 章尚未解锁',
   mapNeedPreviousChapter: '先通关第 {chapter} 章全部关卡',
   mapLevelNeedPrevious: '先通关第 {n} 关',
-  mapShop: '零花钱商店',
-  mapSkins: '皮肤图鉴',
 
   // 开始页
   startBegin: '开始游戏',
@@ -92,7 +90,7 @@ ZQ.I18N = {
   topCoins: '零花钱',
   howToGoalTitle: '🛒 购物目标',
   howToGoalText: '挑选商品凑出妈妈的预算，<b>千万不要超支哦！</b>',
-  howToCoinsTitle: '💰 怎么赚零花钱？',
+  howToCoinsTitle: '怎么赚零花钱？',
   howToSavingMode: '省钱模式（1～2星）',
   howToSavingText: '帮妈妈省下的钱，直接作为“找零”奖励给你！',
   howToPerfectMode: '完美模式（3星）',
@@ -102,7 +100,7 @@ ZQ.I18N = {
 
   // 商店页
   shopTitle: '零花钱商店',
-  shopOwn: '持有延时卡片',
+  shopOwn: '延时卡数量',
   shopPrice: '零花钱',
   shopBuy: '兑换',
   shopBack: '返回',
@@ -112,7 +110,7 @@ ZQ.I18N = {
   skinsTitle: '皮肤图鉴',
   skinsCart: '购物车',
   skinsPig: '存钱罐',
-  skinsNeed: '需 {n} 个三星通关',
+  skinsNeed: '需 {n} 个三星奖牌',
   skinsEquip: '装备',
   skinsEquipped: '已装备',
   skinsDefault: '默认',

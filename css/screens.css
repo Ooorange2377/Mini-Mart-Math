@@ -48,14 +48,14 @@
   top: 2.5%;
   display: flex;
   align-items: center;
-  gap: 1cqw;
+  gap: .25cqw;
   z-index: 5;
 }
 .top-pill {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: .6cqw;
-  padding: .5cqw 1.2cqw .6cqw .8cqw;
+  padding: .35cqw .9cqw .35cqw .6cqw;
   background: #FFFDF7;
   border: 3px solid var(--ink);
   border-radius: 999px;
@@ -63,11 +63,24 @@
   font-size: 2.6cqw;
   font-weight: 900;
   color: var(--ink);
+  line-height: 1;
 }
-.top-pill svg { display: block; flex-shrink: 0; width: 2cqw; height: 2cqw; }
+.top-pill-ic {
+  width: 2.8cqw;
+  height: 2.8cqw;
+  flex-shrink: 0;
+  margin-right: .4cqw;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(1px 1px 0 var(--ink-soft));
+  pointer-events: none;
+}
+.top-pill-ic-star { background-size: 102%; }
+.top-pill-ic-medal { background-size: 165%; }
+.top-pill-ic-coin  { background-size: 98%; }
 .btn-settings {
-  width: 3.6cqw;
-  height: 3.6cqw;
+  width: 4cqw;
+  height: 4cqw;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,16 +250,31 @@
   font-weight: 900;
 }
 .stat .ic { font-style: normal; font-size: 2.2cqw; line-height: 1; }
-.stat .ic-star { color: var(--orange); -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill; }
 .stat em { font-style: normal; font-size: 1.45cqw; font-weight: 800; color: rgba(27, 62, 111, .68); }
+
+/* 统一资源图标：星星 / 三星奖牌 / 零花钱（与大厅同款素材，按原图留白比例补偿缩放） */
+.ic-img {
+  display: inline-block;
+  flex: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+}
+.ic-img-star  { background-image: url('../图标素材/三星通关数.jpg'); background-size: 102%; }
+.ic-img-medal { background-image: url('../图标素材/奖牌.png');      background-size: 165%; }
+.ic-img-coin  { background-image: url('../图标素材/零花钱.jpg');    background-size: 98%; }
+.stat .ic-img { width: 2.5cqw; height: 2.5cqw; }
+.r-row .ic-img { width: 1.15em; height: 1.15em; }
+.card-price .ic-img { width: 1.9cqw; height: 1.9cqw; vertical-align: -.35cqw; }
+.howto-head .ic-img { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .25em; }
 
 .map-body {
   position: absolute;
-  left: 4%; right: 4%; top: 12%; bottom: 13%;
+  left: 4%; right: 4%; top: 15%; bottom: 5%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(var(--chapter-rows, 2), minmax(12cqw, 1fr));
-  gap: 1.35cqw 2cqw;
+  gap: 1cqw 2cqw;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -271,7 +299,16 @@
 
 .ch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1cqw; }
 .ch-name { font-size: 2cqw; font-weight: 900; }
-.ch-stars { font-size: 1.65cqw; font-weight: 900; color: var(--orange); white-space: nowrap; }
+.ch-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: .35cqw;
+  font-size: 1.65cqw;
+  font-weight: 900;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.ch-stars .ic-img { width: 1.75cqw; height: 1.75cqw; }
 .ch-desc {
   margin-top: .35cqw;
   font-size: 1.25cqw;
@@ -354,17 +391,6 @@
   line-height: 1.3;
   color: rgba(27, 62, 111, .72);
 }
-
-/* 底部：商店 / 图鉴入口 */
-.map-foot {
-  position: absolute;
-  left: 0; right: 0; bottom: 3%;
-  display: flex;
-  justify-content: center;
-  gap: 2.4cqw;
-  z-index: 4;
-}
-.map-foot .btn-menu { font-size: 2.3cqw; padding: .55cqw 2.6cqw .7cqw; }
 
 /* ================= 通用小弹窗（玩法说明 / 重置确认） ================= */
 .modal-simple {
@@ -458,7 +484,7 @@
 /* ================= 零花钱商店 ================= */
 .shop-grid {
   position: absolute;
-  left: 8%; right: 8%; top: 17%;
+  left: 8%; right: 8%; top: 28%;
   display: flex;
   justify-content: center;
   gap: 3cqw;

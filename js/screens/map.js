@@ -81,7 +81,7 @@ ZQ.screens = ZQ.screens || {};
         '" data-chapter="' + ch.id + '">' +
       '<div class="ch-head">' +
         '<span class="ch-name">第 ' + ch.id + ' 章 · ' + ch.name + '</span>' +
-        '<span class="ch-stars">★ ' + chStars + ' / ' + ch.maxStars + '</span>' +
+        '<span class="ch-stars"><i class="ic-img ic-img-star"></i>' + chStars + ' / ' + ch.maxStars + '</span>' +
       '</div>' +
       '<div class="ch-desc">' + ch.desc + '</div>' +
       '<div class="ch-grid">' + cells + '</div>' +
@@ -124,11 +124,11 @@ ZQ.screens = ZQ.screens || {};
           '<button class="btn-back-start" type="button" aria-label="返回初始界面">← 返回</button>' +
           '<div class="map-title">' + ZQ.I18N.mapTitle + '</div>' +
           '<div class="map-stats">' +
-            '<span class="stat"><i class="ic ic-star">★</i><b>' + ZQ.store.totalStars() + '</b>' +
+            '<span class="stat"><i class="ic-img ic-img-star"></i><b>' + ZQ.store.totalStars() + '</b>' +
               '<em>' + ZQ.I18N.mapTotalStars + '</em></span>' +
-            '<span class="stat"><i class="ic ic-medal">🏅</i><b>' + ZQ.store.threeStarCount() + '</b>' +
+            '<span class="stat"><i class="ic-img ic-img-medal"></i><b>' + ZQ.store.threeStarCount() + '</b>' +
               '<em>' + ZQ.I18N.mapThreeStar + '</em></span>' +
-            '<span class="stat"><i class="ic ic-coin">💰</i><b>' + (saved.coins || 0) + '</b>' +
+            '<span class="stat"><i class="ic-img ic-img-coin"></i><b>' + (saved.coins || 0) + '</b>' +
               '<em>' + ZQ.I18N.mapCoins + '</em></span>' +
           '</div>' +
         '</div>' +
@@ -136,11 +136,6 @@ ZQ.screens = ZQ.screens || {};
         '<div class="map-body" style="--chapter-rows:' + Math.ceil(ZQ.CHAPTERS.length / 2) +
           ';--chapter-cols:' + chapterColumns() + '">' +
           chapters +
-        '</div>' +
-
-        '<div class="map-foot">' +
-          '<button class="btn-menu btn-shop" type="button">💰 ' + ZQ.I18N.mapShop + '</button>' +
-          '<button class="btn-menu btn-skins" type="button">🏅 ' + ZQ.I18N.mapSkins + '</button>' +
         '</div>';
 
       el.addEventListener('click', function (e) {
@@ -150,17 +145,6 @@ ZQ.screens = ZQ.screens || {};
         if (t.closest('.btn-back-start')) {
           ZQ.audio.click();
           ZQ.app.go('start');
-          return;
-        }
-
-        if (t.closest('.btn-shop')) {
-          ZQ.audio.click();
-          if (ZQ.screens.shop) ZQ.app.go('shop');
-          return;
-        }
-        if (t.closest('.btn-skins')) {
-          ZQ.audio.click();
-          if (ZQ.screens.skins) ZQ.app.go('skins');
           return;
         }
 

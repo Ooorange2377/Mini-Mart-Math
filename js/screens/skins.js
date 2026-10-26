@@ -73,7 +73,7 @@ ZQ.screens = ZQ.screens || {};
           '<button class="btn-menu btn-back" type="button">\u2039 ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="page-title">' + ZQ.I18N.skinsTitle + '</div>' +
           '<div class="page-balance">' +
-            '<span class="stat"><i class="ic">🏅</i><b>' + ZQ.store.threeStarCount() + '</b>' +
+            '<span class="stat"><i class="ic-img ic-img-medal"></i><b>' + ZQ.store.threeStarCount() + '</b>' +
               '<em>' + ZQ.I18N.mapThreeStar + '</em></span>' +
           '</div>' +
         '</div>' +
@@ -89,7 +89,7 @@ ZQ.screens = ZQ.screens || {};
 
         if (t.closest('.btn-back')) {
           ZQ.audio.back();
-          ZQ.app.go('map');
+          ZQ.app.go('start');
           return;
         }
 

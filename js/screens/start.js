@@ -119,7 +119,7 @@ ZQ.screens = ZQ.screens || {};
         '<p>' + ZQ.I18N.howToGoalText + '</p>' +
       '</div>' +
       '<div class="howto-block">' +
-        '<div class="howto-head">' + ZQ.I18N.howToCoinsTitle + '</div>' +
+        '<div class="howto-head"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.howToCoinsTitle + '</div>' +
         '<ul class="howto-list">' +
           '<li><b class="howto-mode">' + ZQ.I18N.howToSavingMode + '</b>：' +
             ZQ.I18N.howToSavingText + '</li>' +
@@ -187,9 +187,9 @@ ZQ.screens = ZQ.screens || {};
 
         // 顶部横排：星数 / 三星数 / 零花钱 / 设置
         '<div class="top-bar">' +
-          '<div class="top-pill">' + ICO.star + '<span>' + totalStars + '</span></div>' +
-          '<div class="top-pill">' + ICO.medal + '<span>' + threeStars + '</span></div>' +
-          '<div class="top-pill">' + ICO.coin + '<span>' + coins + '</span></div>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-star" style="background-image:url(\'图标素材/三星通关数.jpg\')"></div><span>' + totalStars + '</span></div>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-medal" style="background-image:url(\'图标素材/奖牌.png\')"></div><span>' + threeStars + '</span></div>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-coin" style="background-image:url(\'图标素材/零花钱.jpg\')"></div><span>' + coins + '</span></div>' +
           '<button class="btn-settings" type="button" aria-label="' + ZQ.I18N.btnSettings + '"><img src="图标素材/设置.PNG" alt=""></button>' +
         '</div>' +
 
