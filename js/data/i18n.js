@@ -109,7 +109,7 @@ ZQ.I18N = {
   shopTip: '延时卡片：结算前额外获得 30 秒思考时间，每关最多使用 3 张',
 
   // 图鉴页
-  skinsTitle: '皮肤图鉴',
+  skinsTitle: '我的皮肤',
   skinsCart: '购物车',
   skinsPig: '存钱罐',
   skinsNeed: '需达到 {n} 个三星奖牌',
