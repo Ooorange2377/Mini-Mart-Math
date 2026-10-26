@@ -101,16 +101,16 @@ ZQ.SHOP_ITEMS = [
 ZQ.DELAY_CARD_MAX_PER_LEVEL = 3;   // 每关最多使用 3 张
 ZQ.DELAY_CARD_SECONDS = 30;        // 每张 +30 秒
 
-/* 皮肤表：按「三星通关数」解锁，不可用零花钱购买 */
+/* 皮肤表：按「三星奖牌数」解锁，不可用零花钱购买 */
 ZQ.SKINS = [
-  { id: 'silver',   type: 'cart', name: '普通银色',   need: 0,  desc: '初始默认皮肤' },
-  { id: 'starblue', type: 'cart', name: '星空蓝',     need: 3,  desc: '完成 3 个关卡的三星挑战' },
-  { id: 'straw',    type: 'cart', name: '草莓粉',     need: 10, desc: '完成 10 个关卡的三星挑战' },
-  { id: 'mint',     type: 'cart', name: '薄荷绿',     need: 22, desc: '完成 22 个关卡的三星挑战' },
-  { id: 'gold',     type: 'cart', name: '金光闪闪',   need: 36, desc: '完成 36 个关卡的三星挑战' },
-  { id: 'glass',    type: 'pig',  name: '玻璃存钱罐', need: 0,  desc: '初始默认存钱罐' },
-  { id: 'gacha',    type: 'pig',  name: '扭蛋机存钱罐', need: 10, desc: '完成 10 个关卡的三星挑战' },
-  { id: 'ufo',      type: 'pig',  name: 'UFO 存钱罐', need: 22, desc: '完成 22 个关卡的三星挑战' },
+  { id: 'silver',   type: 'cart', name: '普通银色',   need: 0 },
+  { id: 'starblue', type: 'cart', name: '星空蓝',     need: 3 },
+  { id: 'straw',    type: 'cart', name: '草莓粉',     need: 10 },
+  { id: 'mint',     type: 'cart', name: '薄荷绿',     need: 22 },
+  { id: 'gold',     type: 'cart', name: '金光闪闪',   need: 36 },
+  { id: 'glass',    type: 'pig',  name: '玻璃存钱罐', need: 0 },
+  { id: 'gacha',    type: 'pig',  name: '扭蛋机存钱罐', need: 10 },
+  { id: 'ufo',      type: 'pig',  name: 'UFO 存钱罐', need: 22 },
 ];
 
 /* 零花钱重复通关递减倍率：第 1~5 次 100/80/60/40/20%，第 6 次及以后 0% */

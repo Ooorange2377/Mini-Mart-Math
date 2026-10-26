@@ -37,9 +37,8 @@ ZQ.screens = ZQ.screens || {};
       var cls = 'skin-card' + (ok ? '' : ' is-locked') + (isEq ? ' is-equipped' : '');
       var preview = type === 'cart' ? cartSwatchHtml(s.id) : ZQ.ui.slots.renderPig(s.id);
       var label = isEq ? ZQ.I18N.skinsEquipped : (ok ? ZQ.I18N.skinsEquip : '🔒');
-      var sub = ok
-        ? (s.need === 0 ? ZQ.I18N.skinsDefault : s.desc)
-        : ZQ.I18N.skinsNeed.replace('{n}', s.need);
+      /* 解锁条件统一文案：默认皮肤显示「默认」，其余一律「需达到 N 个三星奖牌」 */
+      var sub = s.need === 0 ? ZQ.I18N.skinsDefault : ZQ.I18N.skinsNeed.replace('{n}', s.need);
 
       cards += '<div class="' + cls + '" data-type="' + type + '" data-skin="' + s.id + '">' +
           '<div class="skin-preview">' + preview + '</div>' +

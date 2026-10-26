@@ -42,11 +42,13 @@ window.ZQ = window.ZQ || {};
      文件随包放在 audio/ 下，用 <audio> 循环播放，避免合成音色失真。 */
   var MUSIC_VOL = 0.28;                          // 0~1，音乐音量（混在音效之下）
   var MUSIC_SRC = 'audio/lets_go_shopping.mp3';
+  var MUSIC_XFADE = 2.4;                         // 结尾交叉淡化时长（秒）
 
   var musicOn = true;      // 用户开关（设置里可单独关）
   var wantMusic = false;   // 当前界面是否需要 BGM
-  var musicEl = null;      // 循环播放的音乐元素（懒创建，避免首屏就下载音频）
-  var fadeTimer = null;
+  var musicEl = null;      // 当前在播的那一路
+  var musicEl2 = null;     // 交叉淡化用的备用路（懒创建）
+  var loopTimer = null;    // 临近结尾的监测
   var pauseTimer = null;
   var noiseBuf = null;
 
@@ -92,64 +94,102 @@ window.ZQ = window.ZQ || {};
     s.start(t); s.stop(t + 0.09);
   }
 
-  /** 懒创建音乐元素：loop 循环、预加载，音量从 0 起以便淡入 */
-  function getMusicEl() {
-    if (musicEl) return musicEl;
+  /** 新建一路音乐元素：预加载、音量从 0 起以便淡入 */
+  function makeEl() {
     var el = new Audio();
     el.src = MUSIC_SRC;
-    el.loop = true;
+    el.loop = true;        // 兜底：极端情况下（时长未知）仍能循环，不至于断掉
     el.preload = 'auto';
     el.volume = 0;
-    musicEl = el;
-    return musicEl;
+    return el;
   }
 
-  /** 音量渐变到 target（0~1），结束后可回调 */
-  function fadeTo(target, ms, done) {
-    if (!musicEl) { if (done) done(); return; }
-    if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
-    var el = musicEl;
+  /** 单路音量渐变；每个元素各挂一个定时器，两路可以同时互不干扰 */
+  function ramp(el, target, ms, done) {
+    if (el._fade) { clearInterval(el._fade); el._fade = null; }
     var from = el.volume;
     var steps = Math.max(1, Math.round(ms / 40));
     var i = 0;
-    fadeTimer = setInterval(function () {
+    el._fade = setInterval(function () {
       i++;
       var v = from + (target - from) * (i / steps);
       el.volume = Math.min(1, Math.max(0, v));
       if (i >= steps) {
-        clearInterval(fadeTimer); fadeTimer = null;
+        clearInterval(el._fade); el._fade = null;
         if (done) done();
       }
     }, 40);
   }
 
-  /** 清掉淡入淡出与兜底暂停的定时器（切歌时机冲突时统一取消） */
+  /** 清掉两路的渐变定时器、循环监测与兜底暂停 */
   function clearAudioTimers() {
-    if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+    [musicEl, musicEl2].forEach(function (el) {
+      if (el && el._fade) { clearInterval(el._fade); el._fade = null; }
+    });
+    if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
     if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+  }
+
+  /** 结尾交叉淡化：备用路从头起播，两路一进一出，衔接处听不出断点 */
+  function crossfade() {
+    var out = musicEl;
+    var inc = musicEl2 || (musicEl2 = makeEl());
+    /* 淡出的一路关掉 loop，避免它在这 2.4 秒内先播到结尾又回卷重播，出现一声突兀的重来 */
+    out.loop = false;
+    inc.loop = true;
+    try { inc.currentTime = 0; } catch (e) {}
+    inc.volume = 0;
+    var p = inc.play();
+    if (p && p.catch) p.catch(function () {});
+    var ms = MUSIC_XFADE * 1000;
+    ramp(inc, MUSIC_VOL, ms);
+    ramp(out, 0, ms, function () { out.pause(); });
+    /* 交换角色：下一轮由新的一路接续 */
+    musicEl = inc;
+    musicEl2 = out;
+  }
+
+  /** 监测当前一路是否临近结尾，到点就交叉淡化 */
+  function watchLoop() {
+    if (loopTimer) return;
+    loopTimer = setInterval(function () {
+      var el = musicEl;
+      if (!el || el.paused) return;
+      var d = el.duration;
+      if (!d || !isFinite(d)) return;
+      if (d - el.currentTime <= MUSIC_XFADE) crossfade();
+    }, 250);
   }
 
   function startMusic() {
     if (!musicOn || !wantMusic || !gestured) return;
-    var el = getMusicEl();
     clearAudioTimers();
+    var el = musicEl || (musicEl = makeEl());
     /* 只在真正暂停时才 play，重复调用不会再起一层播放 */
     if (el.paused) {
+      var d = el.duration;
+      /* 暂停点已贴近结尾时跳回开头，避免刚恢复就立刻淡化 */
+      if (d && isFinite(d) && d - el.currentTime <= MUSIC_XFADE) el.currentTime = 0;
+      el.loop = true;
       el.volume = 0;
       var p = el.play();
       if (p && p.catch) p.catch(function () {});
     }
-    fadeTo(MUSIC_VOL, 800);
+    ramp(el, MUSIC_VOL, 800);
+    watchLoop();
   }
 
   function stopMusic() {
     clearAudioTimers();
-    if (!musicEl) return;
-    var el = musicEl;
-    /* 淡出后暂停，同时挂一个兜底 timeout：即使淡出定时器被后续 startMusic 清掉，
-       也不会出现"标记已停但声音还在响"的状态 */
-    fadeTo(0, 220, function () { el.pause(); });
-    pauseTimer = setTimeout(function () { pauseTimer = null; el.pause(); }, 260);
+    [musicEl, musicEl2].forEach(function (el) {
+      if (!el) return;
+      ramp(el, 0, 220, function () { el.pause(); });
+    });
+    /* 兜底：即使渐变定时器被后续 startMusic 清掉，也一定会暂停 */
+    pauseTimer = setTimeout(function () {
+      pauseTimer = null;
+      [musicEl, musicEl2].forEach(function (el) { if (el) el.pause(); });
+    }, 260);
   }
 
   ZQ.audio = {

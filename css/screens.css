@@ -239,8 +239,6 @@
   box-shadow: 0 0 0 var(--btn-wall), 0 .1cqw .2cqw rgba(27, 62, 111, .3);
   transform: translateY(.6cqw);
 }
-.btn-hall .btn-icon { display: flex; align-items: center; }
-.btn-hall .btn-icon svg { display: block; width: 2.6cqw; height: 2.6cqw; }
 .btn-hall .btn-text { letter-spacing: 1px; }
 
 .btn-hall-primary {
@@ -260,7 +258,6 @@
   -webkit-text-stroke: 1.4px var(--ink);
   paint-order: stroke fill;
 }
-.btn-hall-secondary .btn-icon svg { stroke: var(--ink); }
 
 /* ---------- 右侧竖排：商店 / 道具 ---------- */
 .hall-side {

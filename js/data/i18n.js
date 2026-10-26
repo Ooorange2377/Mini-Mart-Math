@@ -112,7 +112,7 @@ ZQ.I18N = {
   skinsTitle: '皮肤图鉴',
   skinsCart: '购物车',
   skinsPig: '存钱罐',
-  skinsNeed: '需 {n} 个三星奖牌',
+  skinsNeed: '需达到 {n} 个三星奖牌',
   skinsEquip: '装备',
   skinsEquipped: '已装备',
   skinsDefault: '默认',
