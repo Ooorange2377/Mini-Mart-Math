@@ -37,31 +37,20 @@ window.ZQ = window.ZQ || {};
     osc.stop(t0 + dur + 0.03);
   }
 
-  /* ================= 背景音乐：便利店 Bossa（纯合成，小节队列调度） ================= */
-  var MUSIC_VOL = 0.16;
-  var BPM = 88;
-  var BEAT = 60 / BPM;
-  var BAR = BEAT * 4;
-  /* 4 小节循环：Cmaj7 → Am7 → Dm7 → G7（电钢和弦音 MIDI + 贝斯根音 MIDI） */
-  var PROG = [
-    { notes: [60, 64, 67, 71], bass: 48 },
-    { notes: [57, 60, 64, 67], bass: 45 },
-    { notes: [62, 65, 69, 72], bass: 50 },
-    { notes: [55, 59, 62, 65], bass: 43 }
-  ];
+  /* ================= 背景音乐：Let's Go Shopping（Purrple Cat） =================
+     来源 https://opengameart.org/content/lets-go-shopping-0 ，CC-BY 4.0，
+     文件随包放在 audio/ 下，用 <audio> 循环播放，避免合成音色失真。 */
+  var MUSIC_VOL = 0.28;                          // 0~1，音乐音量（混在音效之下）
+  var MUSIC_SRC = 'audio/lets_go_shopping.mp3';
 
   var musicOn = true;      // 用户开关（设置里可单独关）
   var wantMusic = false;   // 当前界面是否需要 BGM
-  var musicPlaying = false;
-  var musicTimer = null;
-  var nextBarTime = 0;
-  var barIndex = 0;
-  var musicGain = null;
+  var musicEl = null;      // 循环播放的音乐元素（懒创建，避免首屏就下载音频）
+  var fadeTimer = null;
+  var pauseTimer = null;
   var noiseBuf = null;
 
-  function mf(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
-
-  /** 0.5s 白噪声缓冲，刷镲与沙锤共用（只生成一次） */
+  /** 0.5s 白噪声缓冲：笑声字头的送气声复用（只生成一次） */
   function noise() {
     if (!noiseBuf) {
       noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.5), ctx.sampleRate);
@@ -71,147 +60,96 @@ window.ZQ = window.ZQ || {};
     return noiseBuf;
   }
 
-  /** 电钢琴：正弦基音 + 弱八度泛音，低通滤掉毛刺，软起音长衰减 */
-  function ep(t, freq, dur, vol) {
-    if (!ctx || !musicGain) return;
-    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    var g1 = ctx.createGain(), g2 = ctx.createGain();
-    var lp = ctx.createBiquadFilter();
-    o1.type = 'sine'; o1.frequency.setValueAtTime(freq, t);
-    o2.type = 'sine'; o2.frequency.setValueAtTime(freq * 2, t);
-    g2.gain.setValueAtTime(0.28, t);
-    lp.type = 'lowpass'; lp.frequency.setValueAtTime(2400, t);
-    g1.gain.setValueAtTime(0, t);
-    g1.gain.linearRampToValueAtTime(vol, t + 0.014);
-    g1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o1.connect(g1); o2.connect(g2); g2.connect(g1);
-    g1.connect(lp); lp.connect(musicGain);
-    o1.start(t); o1.stop(t + dur + 0.05);
-    o2.start(t); o2.stop(t + dur + 0.05);
-  }
+  /** 单声笑「哈」：三角波急速下滑 + 双共振峰做元音 a，再叠一点送气噪声当字头 */
+  function laughHa(c, t, freq, vol, isLast) {
+    var dur = isLast ? 0.16 : 0.10;
+    var o = c.createOscillator(), g = c.createGain();
+    var f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(freq, t);
+    /* 每声内部音高快速下滑，这是「笑出来」而不是「唱出来」的关键 */
+    o.frequency.exponentialRampToValueAtTime(freq * 0.82, t + dur * 0.7);
 
-  /** 拨弦贝斯：三角波 + 低通压到 420Hz，短促有弹性 */
-  function bass(t, freq, dur, vol) {
-    if (!ctx || !musicGain) return;
-    var o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
-    o.type = 'triangle'; o.frequency.setValueAtTime(freq, t);
-    lp.type = 'lowpass'; lp.frequency.setValueAtTime(420, t);
+    /* 元音 a 的两个共振峰：880Hz 定音色、1350Hz 提亮度 */
+    f1.type = 'bandpass'; f1.frequency.setValueAtTime(880, t); f1.Q.setValueAtTime(2.2, t);
+    f2.type = 'bandpass'; f2.frequency.setValueAtTime(1350, t); f2.Q.setValueAtTime(3, t);
+
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.linearRampToValueAtTime(vol, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(lp); lp.connect(musicGain);
-    o.start(t); o.stop(t + dur + 0.05);
+    o.connect(f1); o.connect(f2);
+    f1.connect(g); f2.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+
+    /* 字头「h」的送气声：短促高频噪声，比元音早一丝，笑才有颗粒感 */
+    var s = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain();
+    s.buffer = noise();
+    bp.type = 'bandpass'; bp.frequency.setValueAtTime(2200, t); bp.Q.setValueAtTime(1.1, t);
+    ng.gain.setValueAtTime(0, t);
+    ng.gain.linearRampToValueAtTime(vol * 0.5, t + 0.01);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    s.connect(bp); bp.connect(ng); ng.connect(c.destination);
+    s.start(t); s.stop(t + 0.09);
   }
 
-  /** 轻刷鼓：白噪声过带通，模拟鼓刷扫过鼓皮的沙沙声 */
-  function brush(t, vol) {
-    if (!ctx || !musicGain) return;
-    var s = ctx.createBufferSource(); s.buffer = noise();
-    var bp = ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.setValueAtTime(2600, t);
-    bp.Q.setValueAtTime(0.9, t);
-    var g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    s.connect(bp); bp.connect(g); g.connect(musicGain);
-    s.start(t); s.stop(t + 0.22);
+  /** 懒创建音乐元素：loop 循环、预加载，音量从 0 起以便淡入 */
+  function getMusicEl() {
+    if (musicEl) return musicEl;
+    var el = new Audio();
+    el.src = MUSIC_SRC;
+    el.loop = true;
+    el.preload = 'auto';
+    el.volume = 0;
+    musicEl = el;
+    return musicEl;
   }
 
-  /** 沙锤：高频噪声极短衰减，落在八分音符上 */
-  function shaker(t, vol) {
-    if (!ctx || !musicGain) return;
-    var s = ctx.createBufferSource(); s.buffer = noise();
-    var hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.setValueAtTime(6500, t);
-    var g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-    s.connect(hp); hp.connect(g); g.connect(musicGain);
-    s.start(t); s.stop(t + 0.07);
+  /** 音量渐变到 target（0~1），结束后可回调 */
+  function fadeTo(target, ms, done) {
+    if (!musicEl) { if (done) done(); return; }
+    if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+    var el = musicEl;
+    var from = el.volume;
+    var steps = Math.max(1, Math.round(ms / 40));
+    var i = 0;
+    fadeTimer = setInterval(function () {
+      i++;
+      var v = from + (target - from) * (i / steps);
+      el.volume = Math.min(1, Math.max(0, v));
+      if (i >= steps) {
+        clearInterval(fadeTimer); fadeTimer = null;
+        if (done) done();
+      }
+    }, 40);
   }
 
-  /** 门铃点缀：两个高音正弦，模拟便利店自动门 */
-  function bell(t) {
-    if (!ctx || !musicGain) return;
-    [1568, 2093].forEach(function (f, i) {
-      var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(f, t);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(i ? 0.016 : 0.026, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-      o.connect(g); g.connect(musicGain);
-      o.start(t); o.stop(t + 0.95);
-    });
-  }
-
-  /** 排一小节：电钢切分和弦 + 贝斯 根音/五度/提前根音 + 刷镲 + 沙锤 + 偶发门铃 */
-  function playBar(i, t0) {
-    var p = PROG[i % 4];
-    var next = PROG[(i + 1) % 4];
-
-    [0, 1.5, 2.5].forEach(function (b) {
-      p.notes.forEach(function (m) { ep(t0 + b * BEAT, mf(m), 0.85, 0.045); });
-    });
-
-    bass(t0, mf(p.bass), 0.55, 0.10);
-    bass(t0 + 2.5 * BEAT, mf(p.bass + 7), 0.5, 0.075);
-    bass(t0 + 3.5 * BEAT, mf(next.bass), 0.35, 0.06);
-
-    brush(t0 + 1 * BEAT, 0.05);
-    brush(t0 + 3 * BEAT, 0.05);
-
-    for (var s = 0; s < 8; s++) shaker(t0 + s * BEAT / 2, s % 2 ? 0.012 : 0.008);
-
-    if (i % 4 === 3) bell(t0 + 2 * BEAT + Math.random() * 0.3);
-  }
-
-  /** 前瞻调度：提前 0.4s 把后续小节排进音频时间轴，循环无缝 */
-  function scheduleMusic() {
-    if (!ctx) return;
-    while (nextBarTime < ctx.currentTime + 0.4) {
-      playBar(barIndex, nextBarTime);
-      barIndex++;
-      nextBarTime += BAR;
-    }
+  /** 清掉淡入淡出与兜底暂停的定时器（切歌时机冲突时统一取消） */
+  function clearAudioTimers() {
+    if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
   }
 
   function startMusic() {
-    if (musicPlaying || !musicOn || !wantMusic || !gestured) return;
-    var c = ensureCtx();
-    if (!c) return;
-    if (c.state !== 'running') {
-      if (c.resume) {
-        c.resume().then(function () {
-          if (c.state === 'running') startMusic();
-        }).catch(function () {});
-      }
-      return;
+    if (!musicOn || !wantMusic || !gestured) return;
+    var el = getMusicEl();
+    clearAudioTimers();
+    /* 只在真正暂停时才 play，重复调用不会再起一层播放 */
+    if (el.paused) {
+      el.volume = 0;
+      var p = el.play();
+      if (p && p.catch) p.catch(function () {});
     }
-    musicGain = musicGain || c.createGain();
-    musicGain.connect(c.destination);
-    musicGain.gain.cancelScheduledValues(c.currentTime);
-    musicGain.gain.setValueAtTime(0.0001, c.currentTime);
-    musicGain.gain.linearRampToValueAtTime(MUSIC_VOL, c.currentTime + 1.2);
-    musicPlaying = true;
-    barIndex = 0;
-    nextBarTime = c.currentTime + 0.15;
-    if (musicTimer) clearInterval(musicTimer);
-    musicTimer = setInterval(scheduleMusic, 60);
-    scheduleMusic();
+    fadeTo(MUSIC_VOL, 800);
   }
 
   function stopMusic() {
-    if (!musicPlaying) return;
-    musicPlaying = false;
-    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
-    if (ctx && musicGain) {
-      musicGain.gain.cancelScheduledValues(ctx.currentTime);
-      musicGain.gain.setValueAtTime(musicGain.gain.value, ctx.currentTime);
-      musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-    }
+    clearAudioTimers();
+    if (!musicEl) return;
+    var el = musicEl;
+    /* 淡出后暂停，同时挂一个兜底 timeout：即使淡出定时器被后续 startMusic 清掉，
+       也不会出现"标记已停但声音还在响"的状态 */
+    fadeTo(0, 220, function () { el.pause(); });
+    pauseTimer = setTimeout(function () { pauseTimer = null; el.pause(); }, 260);
   }
 
   ZQ.audio = {
@@ -246,6 +184,19 @@ window.ZQ = window.ZQ || {};
     lose:  function () { [440, 370, 294].forEach(function (f, i) { tone(f, 0.26, 'sine', 0.12, i * 0.14); }); },
     tick:  function () { tone(1500, 0.05, 'square', 0.06, 0); },
     page:  function () { tone(420, 0.08, 'sine', 0.09, 0); tone(620, 0.08, 'sine', 0.07, 0.05); },
+
+    /** 妈妈招呼：一串短促俏皮的笑声「哈哈哈哈哈」（四声抬调，气声 + 元音共鸣） */
+    momGreet: function () {
+      if (!enabled) return;
+      var c = ensureCtx();
+      if (!c) return;
+      var t0 = c.currentTime + 0.02;
+      /* 四声逐级抬高音高，越笑越亮；音量递减做出收尾的语气 */
+      var seq = [470, 512, 556, 610];
+      seq.forEach(function (f, i) {
+        laughHa(c, t0 + i * 0.095, f, i === seq.length - 1 ? 0.13 : 0.15, i === 3);
+      });
+    },
 
     /* — 存钱罐仪式专用 — */
     /** 金币掉进玻璃瓶：低频落底闷点 + 高频玻璃脆响（每枚金币落底时各响一次） */

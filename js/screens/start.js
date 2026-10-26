@@ -194,7 +194,11 @@ ZQ.screens = ZQ.screens || {};
         '<div class="hall-bg"></div>' +
 
         // 左侧妈妈人物
-        '<img class="hall-mom" src="图标素材/妈妈人物.PNG" alt="妈妈" aria-hidden="true">' +
+        '<div class="hall-mom" aria-hidden="true">' +
+          '<img src="图标素材/妈妈人物.PNG" alt="">' +
+          '<span class="mom-light"></span>' +
+          '<div class="mom-bubble">' + ZQ.I18N.momGreet + '</div>' +
+        '</div>' +
 
         // 顶部横排：星数 / 三星数 / 零花钱 / 设置
         '<div class="top-bar">' +
@@ -235,6 +239,32 @@ ZQ.screens = ZQ.screens || {};
           '</button>' +
         '</div>';
 
+      /* ---------- 点击妈妈立绘：切成 V2 表情，5 秒后自动换回 ---------- */
+      var mom = el.querySelector('.hall-mom');
+      var momImg = mom && mom.querySelector('img');
+      var momTimer = null;
+      function setMom(v2) {
+        if (!momImg) return;
+        momImg.src = v2 ? '图标素材/妈妈人物V2.PNG' : '图标素材/妈妈人物.PNG';
+        /* 环境光层的遮罩跟着换，保证光影仍贴合新立绘轮廓 */
+        mom.style.setProperty('--mom-src', v2
+          ? "url('图标素材/妈妈人物V2.PNG')"
+          : "url('图标素材/妈妈人物.PNG')");
+        mom.classList.toggle('is-greet', v2);
+      }
+      if (mom) {
+        mom.addEventListener('click', function () {
+          if (momTimer) clearTimeout(momTimer);
+          ZQ.audio.momGreet();
+          setMom(true);
+          momTimer = setTimeout(function () {
+            momTimer = null;
+            if (!mom.isConnected) return;
+            setMom(false);
+          }, 3000);
+        });
+      }
+
       /* ---------- 事件绑定 ---------- */
       el.querySelector('.btn-hall-primary').addEventListener('click', function () {
         ZQ.audio.unlock(); ZQ.audio.click();
@@ -270,6 +300,9 @@ ZQ.screens = ZQ.screens || {};
           html: '<div style="font-size:2.2cqw;line-height:1.8">' +
             row('sound-toggle', '音效', sndOn) +
             row('music-toggle', '音乐', musOn) +
+            '<div style="margin-top:.9cqw;font-size:1.5cqw;line-height:1.5;color:rgba(27,62,111,.55)">' +
+              ZQ.I18N.musicCredit +
+            '</div>' +
           '</div>',
           rich: true,
           ok: ZQ.I18N.btnOk,

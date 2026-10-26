@@ -35,10 +35,100 @@
   left: 3cqw;
   bottom: 0;
   height: 82%;
+  z-index: 6;
+  /* 立绘可点击（点一下换表情）；容器本身就要接管事件，避免只让 img 可点导致透明区域点不到 */
+  pointer-events: auto;
+  cursor: pointer;
+  /* 立绘地址集中在变量里：JS 换图时同步改它，环境光的遮罩会跟着换 */
+  --mom-src: url('../图标素材/妈妈人物.PNG');
+}
+/* 地面接触阴影：让她站在这个空间里，而不是贴在画面上 */
+.hall-mom::before {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: -6%;
+  bottom: -.4cqw;
+  height: 3cqw;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(27, 62, 111, .24), rgba(27, 62, 111, 0) 72%);
+  filter: blur(1px);
+  z-index: -1;
+}
+.hall-mom > img {
+  display: block;
+  height: 100%;
   width: auto;
-  z-index: 2;
+  /* 压一点饱和度并入暖调，再用双层投影裹一圈轮廓光（暖白内晕 + 冷蓝落地影） */
+  filter: saturate(.94) contrast(.98) brightness(1.01)
+          drop-shadow(0 0 .55cqw rgba(255, 226, 178, .34))
+          drop-shadow(3px 5px 6px rgba(27, 62, 111, .18));
+}
+/* 头顶右上方对话气泡：手绘描边 + 硬阴影；宽度压在标题左边缘之内，避开标题图 */
+.mom-bubble {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + .9cqw);
+  width: 25cqw;
+  padding: 1.1cqw 1.3cqw;
+  background: var(--cream, #FFF8EC);
+  border: 3px solid var(--ink, #1B3E6F);
+  border-radius: 1.6cqw;
+  box-shadow: 4px 4px 0 rgba(27, 62, 111, .9);
+  color: var(--ink, #1B3E6F);
+  font-size: 1.5cqw;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: left;
+  opacity: 0;
+  transform: translateY(.7cqw) scale(.9);
+  transform-origin: 42% 100%;
+  transition: opacity .18s ease-out, transform .24s cubic-bezier(.34, 1.56, .64, 1);
   pointer-events: none;
-  filter: drop-shadow(3px 4px 5px rgba(27, 62, 111, .18));
+}
+/* 气泡尾巴：旋转方块压在底部，指向人物头顶 */
+.mom-bubble::after {
+  content: '';
+  position: absolute;
+  left: 42%;
+  bottom: -.8cqw;
+  width: 1.4cqw;
+  height: 1.4cqw;
+  background: var(--cream, #FFF8EC);
+  border-left: 3px solid var(--ink, #1B3E6F);
+  border-bottom: 3px solid var(--ink, #1B3E6F);
+  transform: rotate(-45deg);
+}
+.hall-mom.is-greet .mom-bubble {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+
+/* 环境光：按人物 alpha 轮廓裁切，把背景的冷柜蓝光、柜台暖光与地面反射投到她身上 */
+.mom-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, rgba(120, 190, 230, .55) 0%, rgba(120, 190, 230, 0) 34%),
+    linear-gradient(260deg, rgba(255, 206, 130, .5) 0%, rgba(255, 206, 130, 0) 30%),
+    linear-gradient(0deg, rgba(44, 84, 128, .3) 0%, rgba(44, 84, 128, 0) 26%),
+    linear-gradient(180deg, rgba(255, 245, 220, .22) 0%, rgba(255, 245, 220, 0) 45%);
+  mix-blend-mode: soft-light;
+  -webkit-mask-image: var(--mom-src);
+  mask-image: var(--mom-src);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+/* 下半身再压一层 multiply，模拟被室内地面反光吃掉的明度 */
+.mom-light::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(38, 74, 116, .42) 0%, rgba(38, 74, 116, 0) 30%);
+  mix-blend-mode: multiply;
 }
 
 /* ---------- 顶部统计条 ---------- */
