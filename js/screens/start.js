@@ -7,6 +7,15 @@ ZQ.screens = ZQ.screens || {};
 (function () {
   var layer = null;
 
+  /** 最新可玩关卡：第一个已解锁且未通关的关卡，全部通关则返回 0 */
+  function latestLevel() {
+    for (var lv = 1; lv <= ZQ.totalLevels; lv++) {
+      if (!ZQ.store.levelUnlocked(lv)) return 0;
+      if (ZQ.store.levelStars(lv) < 1) return lv;
+    }
+    return 0;
+  }
+
   /* ---------- 隐藏渐变定义（所有 SVG 共用，避免 id 冲突） ---------- */
   var DEFS = '<svg width="0" height="0" style="position:absolute" aria-hidden="true">' +
     '<defs>' +
@@ -227,7 +236,9 @@ ZQ.screens = ZQ.screens || {};
       /* ---------- 事件绑定 ---------- */
       el.querySelector('.btn-hall-primary').addEventListener('click', function () {
         ZQ.audio.unlock(); ZQ.audio.click();
-        ZQ.app.go('map');
+        var lv = latestLevel();
+        if (lv) ZQ.app.go('game', { levelId: lv });
+        else ZQ.app.go('map');
       });
       el.querySelector('.btn-hall-secondary').addEventListener('click', function () {
         ZQ.audio.unlock(); ZQ.audio.click();

@@ -79,6 +79,12 @@
   50%      { box-shadow: var(--shadow-lg), 0 0 0 9px rgba(125, 190, 93, 0); }
 }
 
+/* 挤出塑料按钮的呼吸态：侧壁厚度不变，只让外圈光晕扩张 */
+@keyframes zq-extrude-breathe {
+  0%, 100% { box-shadow: 0 .6cqw 0 var(--btn-wall), 0 .8cqw .7cqw rgba(27, 62, 111, .3), 0 0 0 0 rgba(255, 184, 77, .5); }
+  50%      { box-shadow: 0 .6cqw 0 var(--btn-wall), 0 .8cqw .7cqw rgba(27, 62, 111, .3), 0 0 0 .9cqw rgba(255, 184, 77, 0); }
+}
+
 /* ================= 计时告急脉冲 ================= */
 @keyframes zq-timer-urgent {
   0%, 100% { transform: translateX(-50%) scale(1); }
