@@ -159,8 +159,10 @@ ZQ.screens = ZQ.screens || {};
     layer.appendChild(mask);
     requestAnimationFrame(function () { mask.classList.add('is-in'); });
     mask.querySelector('.ms-ok').addEventListener('click', function () {
-      ZQ.audio.click(); closeModal();
+      ZQ.audio.click();
+      /* 先执行回调再关闭：回调可能需要读取弹窗内的表单元素 */
       if (o.onOk) o.onOk();
+      closeModal();
     });
     var c = mask.querySelector('.ms-cancel');
     if (c) c.addEventListener('click', function () { ZQ.audio.back(); closeModal(); });
@@ -254,20 +256,28 @@ ZQ.screens = ZQ.screens || {};
       });
       el.querySelector('.btn-settings').addEventListener('click', function () {
         ZQ.audio.click();
-        var cur = ZQ.store.data && ZQ.store.data.settings && ZQ.store.data.settings.sound !== false;
+        var st = (ZQ.store.data && ZQ.store.data.settings) || {};
+        var sndOn = st.sound !== false;
+        var musOn = ZQ.audio.isMusicEnabled();
+        function row(id, label, on) {
+          return '<label style="display:flex;align-items:center;gap:.8cqw;cursor:pointer">' +
+            '<input type="checkbox" id="' + id + '" ' + (on ? 'checked' : '') + ' style="width:1.6cqw;height:1.6cqw">' +
+            '<span>' + label + (on ? '（已开启）' : '（已关闭）') + '</span>' +
+          '</label>';
+        }
         openModal({
           title: ZQ.I18N.btnSettings,
           html: '<div style="font-size:2.2cqw;line-height:1.8">' +
-            '<label style="display:flex;align-items:center;gap:.8cqw;cursor:pointer">' +
-              '<input type="checkbox" id="sound-toggle" ' + (cur ? 'checked' : '') + ' style="width:1.6cqw;height:1.6cqw">' +
-              '<span>音效' + (cur ? '（已开启）' : '（已关闭）') + '</span>' +
-            '</label>' +
+            row('sound-toggle', '音效', sndOn) +
+            row('music-toggle', '音乐', musOn) +
           '</div>',
           rich: true,
           ok: ZQ.I18N.btnOk,
           onOk: function () {
-            var cb = document.getElementById('sound-toggle');
-            if (cb) ZQ.audio.setEnabled(cb.checked);
+            var sCb = document.getElementById('sound-toggle');
+            var mCb = document.getElementById('music-toggle');
+            if (sCb) { ZQ.audio.setEnabled(sCb.checked); ZQ.store.setSound(sCb.checked); }
+            if (mCb) { ZQ.audio.setMusicEnabled(mCb.checked); ZQ.store.setMusic(mCb.checked); }
           },
         });
       });

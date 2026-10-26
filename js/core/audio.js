@@ -1,9 +1,11 @@
-/* 音效：用 WebAudio 合成，无需任何音频素材。含全局静音开关（存于存档 settings.sound）。 */
+/* 音效与背景音乐：全部用 WebAudio 实时合成，无需任何音频素材。
+   含全局静音开关（存于存档 settings.sound）与独立的音乐开关（settings.music）。 */
 window.ZQ = window.ZQ || {};
 
 (function () {
   var ctx = null;
   var enabled = true;
+  var gestured = false;
 
   function ensureCtx() {
     if (!ctx) {
@@ -35,11 +37,204 @@ window.ZQ = window.ZQ || {};
     osc.stop(t0 + dur + 0.03);
   }
 
+  /* ================= 背景音乐：便利店 Bossa（纯合成，小节队列调度） ================= */
+  var MUSIC_VOL = 0.16;
+  var BPM = 88;
+  var BEAT = 60 / BPM;
+  var BAR = BEAT * 4;
+  /* 4 小节循环：Cmaj7 → Am7 → Dm7 → G7（电钢和弦音 MIDI + 贝斯根音 MIDI） */
+  var PROG = [
+    { notes: [60, 64, 67, 71], bass: 48 },
+    { notes: [57, 60, 64, 67], bass: 45 },
+    { notes: [62, 65, 69, 72], bass: 50 },
+    { notes: [55, 59, 62, 65], bass: 43 }
+  ];
+
+  var musicOn = true;      // 用户开关（设置里可单独关）
+  var wantMusic = false;   // 当前界面是否需要 BGM
+  var musicPlaying = false;
+  var musicTimer = null;
+  var nextBarTime = 0;
+  var barIndex = 0;
+  var musicGain = null;
+  var noiseBuf = null;
+
+  function mf(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  /** 0.5s 白噪声缓冲，刷镲与沙锤共用（只生成一次） */
+  function noise() {
+    if (!noiseBuf) {
+      noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.5), ctx.sampleRate);
+      var d = noiseBuf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuf;
+  }
+
+  /** 电钢琴：正弦基音 + 弱八度泛音，低通滤掉毛刺，软起音长衰减 */
+  function ep(t, freq, dur, vol) {
+    if (!ctx || !musicGain) return;
+    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
+    var g1 = ctx.createGain(), g2 = ctx.createGain();
+    var lp = ctx.createBiquadFilter();
+    o1.type = 'sine'; o1.frequency.setValueAtTime(freq, t);
+    o2.type = 'sine'; o2.frequency.setValueAtTime(freq * 2, t);
+    g2.gain.setValueAtTime(0.28, t);
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(2400, t);
+    g1.gain.setValueAtTime(0, t);
+    g1.gain.linearRampToValueAtTime(vol, t + 0.014);
+    g1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o1.connect(g1); o2.connect(g2); g2.connect(g1);
+    g1.connect(lp); lp.connect(musicGain);
+    o1.start(t); o1.stop(t + dur + 0.05);
+    o2.start(t); o2.stop(t + dur + 0.05);
+  }
+
+  /** 拨弦贝斯：三角波 + 低通压到 420Hz，短促有弹性 */
+  function bass(t, freq, dur, vol) {
+    if (!ctx || !musicGain) return;
+    var o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    o.type = 'triangle'; o.frequency.setValueAtTime(freq, t);
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(420, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(lp); lp.connect(musicGain);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  /** 轻刷鼓：白噪声过带通，模拟鼓刷扫过鼓皮的沙沙声 */
+  function brush(t, vol) {
+    if (!ctx || !musicGain) return;
+    var s = ctx.createBufferSource(); s.buffer = noise();
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(2600, t);
+    bp.Q.setValueAtTime(0.9, t);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    s.connect(bp); bp.connect(g); g.connect(musicGain);
+    s.start(t); s.stop(t + 0.22);
+  }
+
+  /** 沙锤：高频噪声极短衰减，落在八分音符上 */
+  function shaker(t, vol) {
+    if (!ctx || !musicGain) return;
+    var s = ctx.createBufferSource(); s.buffer = noise();
+    var hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.setValueAtTime(6500, t);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    s.connect(hp); hp.connect(g); g.connect(musicGain);
+    s.start(t); s.stop(t + 0.07);
+  }
+
+  /** 门铃点缀：两个高音正弦，模拟便利店自动门 */
+  function bell(t) {
+    if (!ctx || !musicGain) return;
+    [1568, 2093].forEach(function (f, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(i ? 0.016 : 0.026, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(g); g.connect(musicGain);
+      o.start(t); o.stop(t + 0.95);
+    });
+  }
+
+  /** 排一小节：电钢切分和弦 + 贝斯 根音/五度/提前根音 + 刷镲 + 沙锤 + 偶发门铃 */
+  function playBar(i, t0) {
+    var p = PROG[i % 4];
+    var next = PROG[(i + 1) % 4];
+
+    [0, 1.5, 2.5].forEach(function (b) {
+      p.notes.forEach(function (m) { ep(t0 + b * BEAT, mf(m), 0.85, 0.045); });
+    });
+
+    bass(t0, mf(p.bass), 0.55, 0.10);
+    bass(t0 + 2.5 * BEAT, mf(p.bass + 7), 0.5, 0.075);
+    bass(t0 + 3.5 * BEAT, mf(next.bass), 0.35, 0.06);
+
+    brush(t0 + 1 * BEAT, 0.05);
+    brush(t0 + 3 * BEAT, 0.05);
+
+    for (var s = 0; s < 8; s++) shaker(t0 + s * BEAT / 2, s % 2 ? 0.012 : 0.008);
+
+    if (i % 4 === 3) bell(t0 + 2 * BEAT + Math.random() * 0.3);
+  }
+
+  /** 前瞻调度：提前 0.4s 把后续小节排进音频时间轴，循环无缝 */
+  function scheduleMusic() {
+    if (!ctx) return;
+    while (nextBarTime < ctx.currentTime + 0.4) {
+      playBar(barIndex, nextBarTime);
+      barIndex++;
+      nextBarTime += BAR;
+    }
+  }
+
+  function startMusic() {
+    if (musicPlaying || !musicOn || !wantMusic || !gestured) return;
+    var c = ensureCtx();
+    if (!c) return;
+    if (c.state !== 'running') {
+      if (c.resume) {
+        c.resume().then(function () {
+          if (c.state === 'running') startMusic();
+        }).catch(function () {});
+      }
+      return;
+    }
+    musicGain = musicGain || c.createGain();
+    musicGain.connect(c.destination);
+    musicGain.gain.cancelScheduledValues(c.currentTime);
+    musicGain.gain.setValueAtTime(0.0001, c.currentTime);
+    musicGain.gain.linearRampToValueAtTime(MUSIC_VOL, c.currentTime + 1.2);
+    musicPlaying = true;
+    barIndex = 0;
+    nextBarTime = c.currentTime + 0.15;
+    if (musicTimer) clearInterval(musicTimer);
+    musicTimer = setInterval(scheduleMusic, 60);
+    scheduleMusic();
+  }
+
+  function stopMusic() {
+    if (!musicPlaying) return;
+    musicPlaying = false;
+    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+    if (ctx && musicGain) {
+      musicGain.gain.cancelScheduledValues(ctx.currentTime);
+      musicGain.gain.setValueAtTime(musicGain.gain.value, ctx.currentTime);
+      musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    }
+  }
+
   ZQ.audio = {
     setEnabled: function (v) { enabled = !!v; },
     isEnabled: function () { return enabled; },
     /** 首次用户手势时调用，解锁音频上下文 */
-    unlock: function () { ensureCtx(); },
+    unlock: function () {
+      gestured = true;
+      ensureCtx();
+      startMusic();
+    },
+
+    /* ---- 背景音乐控制 ---- */
+    setMusicEnabled: function (v) {
+      musicOn = !!v;
+      if (musicOn) startMusic(); else stopMusic();
+    },
+    isMusicEnabled: function () { return musicOn; },
+    /** 按界面切换 BGM：游戏内静音，其余界面循环播放 */
+    bgm: function (screen) {
+      wantMusic = screen !== 'game';
+      if (wantMusic) startMusic(); else stopMusic();
+    },
 
     ding:  function () { tone(1180, 0.16, 'sine', 0.14, 0); tone(1760, 0.12, 'sine', 0.08, 0.03); },
     click: function () { tone(520, 0.06, 'triangle', 0.10, 0); },

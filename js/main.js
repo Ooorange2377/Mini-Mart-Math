@@ -6,6 +6,9 @@ window.ZQ = window.ZQ || {};
     ZQ.store.load();
     var d = ZQ.store.data;
     ZQ.audio.setEnabled(!(d.settings && d.settings.sound === false));
+    ZQ.audio.setMusicEnabled(!(d.settings && d.settings.music === false));
+    /* 浏览器要求先有用户手势才能出声：首次任意点击即解锁并起播 BGM */
+    document.addEventListener('pointerdown', function () { ZQ.audio.unlock(); }, { once: true });
 
     ZQ.state = { screen: 'start' };
     render();
@@ -33,6 +36,7 @@ window.ZQ = window.ZQ || {};
 
     app.innerHTML = '';
     app.appendChild(view);
+    ZQ.audio.bgm(ZQ.state.screen);
   }
 
   ZQ.app = {

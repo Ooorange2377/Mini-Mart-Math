@@ -98,7 +98,7 @@ window.ZQ = window.ZQ || {};
       clearCounts: {},       // 每关成功通关次数（递减倍率用）
       fixedQuestions: {},    // 未满星关卡的固定题
       tutorialSeen: {},
-      settings: { sound: true },
+      settings: { sound: true, music: true },
     };
   }
 
@@ -390,6 +390,11 @@ window.ZQ = window.ZQ || {};
 
     setSound: function (on) {
       data.settings.sound = !!on;
+      save();
+    },
+
+    setMusic: function (on) {
+      data.settings.music = !!on;
       save();
     },
   };
