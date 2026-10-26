@@ -16,97 +16,175 @@
 }
 .btn-menu:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
 
-/* ================= 开始页 ================= */
-.start-board {
+/* ================= 开始页（Little Chef 风格：米白纯底 + 双层描边大字 + 角落装饰道具 + 虚线边框） ================= */
+
+/* 大厅背景：便利店内景图 + 浅色遮罩（覆盖旧 room::before / room-floor） */
+.hall-bg {
   position: absolute;
-  left: 50%; top: 5.5%;
-  transform: translateX(-50%);
-  width: 52%;
-  z-index: 3;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.62), rgba(255,250,235,.62)),
+    url('../便利店内环境参考图.jpg') center/cover no-repeat;
+  z-index: 0;
 }
-.board-awning {
-  height: 2.6cqw;
-  background: repeating-linear-gradient(90deg, var(--awning) 0 5.2%, var(--paper) 5.2% 10.4%);
+.screen-start .room { display: none; }
+
+/* ---------- 左侧妈妈人物 ---------- */
+.hall-mom {
+  position: absolute;
+  left: 3cqw;
+  bottom: 0;
+  height: 82%;
+  width: auto;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(3px 4px 5px rgba(27, 62, 111, .18));
+}
+
+/* ---------- 顶部统计条 ---------- */
+.top-bar {
+  position: absolute;
+  right: 4%;
+  top: 2.5%;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  z-index: 5;
+}
+.top-pill {
+  display: flex;
+  align-items: center;
+  gap: .6cqw;
+  padding: .5cqw 1.2cqw .6cqw .8cqw;
+  background: #FFFDF7;
   border: 3px solid var(--ink);
-  border-bottom: none;
-  border-radius: 14px 14px 0 0;
-}
-.board-face {
-  padding: 1.1cqw 1cqw 1.5cqw;
-  text-align: center;
-  background: linear-gradient(180deg, var(--yellow-lt), var(--yellow));
-  border: 3px solid var(--ink);
-  border-radius: 0 0 16px 16px;
-  box-shadow: var(--shadow);
-}
-.start-title {
-  font-size: 6.4cqw;
-  line-height: 1;
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink-soft);
+  font-size: 2.6cqw;
   font-weight: 900;
-  letter-spacing: 2px;
-  color: var(--orange);
-  -webkit-text-stroke: 2px var(--paper);
-  paint-order: stroke fill;
-}
-.start-sub {
-  margin-top: .7cqw;
-  font-size: 2.5cqw;
-  font-weight: 900;
-  letter-spacing: .55cqw;
   color: var(--ink);
 }
+.top-pill svg { display: block; flex-shrink: 0; width: 2cqw; height: 2cqw; }
+.btn-settings {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform .08s ease;
+}
+.btn-settings svg { width: 2.2cqw; height: 2.2cqw; }
+.btn-settings img { width: 3.1cqw; height: 3.1cqw; object-fit: contain; }
+.btn-settings:active { transform: translate(2px, 2px); }
 
-/* 开始页主视觉：Q 版购物车（动画层级见 animations.css） */
-.start-cart {
+/* ---------- 中央标题图片（居中偏上） ---------- */
+.hall-title {
   position: absolute;
-  left: 50%; top: 36%;
-  width: 22.1%;
-  aspect-ratio: 340 / 250;
+  left: 50%;
+  top: 10%;
   transform: translateX(-50%);
-  z-index: 3;
+  width: 44cqw;
+  z-index: 4;
   pointer-events: none;
 }
-.start-cart-float {
-  position: relative;
+.hall-title img {
+  display: block;
   width: 100%;
-  height: 100%;
-  will-change: transform;
+  height: auto;
+  filter: drop-shadow(3px 5px 6px rgba(27, 62, 111, .18));
 }
-.start-cart-visual {
-  position: absolute;
-  inset: 0;
-  transform: scaleX(-1);
-}
-.start-cart-back,
-.start-cart-front {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.start-cart-back { z-index: 0; }
-.start-cart-front { z-index: 2; }
 
-/* 底部菜单 */
-.start-menu {
+/* ---------- 中央双主按钮 ---------- */
+.hall-buttons {
   position: absolute;
-  left: 50%; bottom: 5.5%;
+  left: 50%;
+  top: 60%;
   transform: translateX(-50%);
-  width: 34%;
   display: flex;
   flex-direction: column;
-  gap: 1.5cqw;
+  gap: 1.3cqw;
   z-index: 4;
 }
-.start-menu .menu-row { display: flex; gap: 1.5cqw; }
-.start-menu .menu-row .btn-menu { flex: 1; font-size: 2.3cqw; padding: .65cqw 0 .8cqw; }
-.btn-menu.btn-start {
+.btn-hall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1cqw;
+  min-width: 32cqw;
+  padding: 1.3cqw 2.1cqw;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  font-size: 2.9cqw;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .08s ease;
+  font-family: inherit;
+}
+.btn-hall:active { transform: translate(2px, 2px); }
+.btn-hall .btn-icon { display: flex; align-items: center; }
+.btn-hall .btn-icon svg { display: block; width: 2.6cqw; height: 2.6cqw; }
+.btn-hall .btn-text { letter-spacing: 1px; }
+
+.btn-hall-primary {
+  background: linear-gradient(180deg, #FFE57A, #FFB84D);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  animation: zq-breathe 1.9s ease-in-out infinite;
+}
+.btn-hall-primary:active { box-shadow: 1px 1px 0 var(--ink); }
+
+.btn-hall-secondary {
+  background: linear-gradient(180deg, #7EC4F0, #5B91C4);
   color: var(--paper);
   -webkit-text-stroke: 1.4px var(--ink);
   paint-order: stroke fill;
-  background: linear-gradient(180deg, #99D16F, #78BC58);
-  animation: zq-breathe 1.9s ease-in-out infinite;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.btn-hall-secondary:active { box-shadow: 1px 1px 0 var(--ink); }
+.btn-hall-secondary .btn-icon svg { stroke: var(--ink); }
+
+/* ---------- 右侧竖排：商店 / 道具 ---------- */
+.hall-side {
+  position: absolute;
+  right: 5%;
+  top: 52%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+  z-index: 4;
+}
+.btn-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .4cqw;
+  width: 8.5cqw;
+  height: 9.5cqw;
+  background: #FFFDF7;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 3px 3px 0 var(--ink-soft);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .08s ease;
+  font-family: inherit;
+}
+.btn-side:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink-soft); }
+.btn-side-icon { display: flex; align-items: center; }
+.btn-side-icon svg { display: block; width: 3.4cqw; height: 3.4cqw; }
+.btn-side-icon img { display: block; width: 4.6cqw; height: 4.6cqw; object-fit: contain; }
+.btn-side-label {
+  font-size: 2cqw;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: .5px;
 }
 
 /* ================= 地图页 ================= */

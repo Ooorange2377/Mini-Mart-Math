@@ -2,8 +2,8 @@
 window.ZQ = window.ZQ || {};
 
 ZQ.I18N = {
-  title: '零钱大作战',
-  subtitle: '便利店精算师',
+  title: '便利店 购物大作战',
+  subtitle: '益智·收集·闯关',
 
   // 状态词
   stateSelecting: '挑选中',
@@ -81,8 +81,15 @@ ZQ.I18N = {
   // 开始页
   startBegin: '开始游戏',
   startContinue: '继续游戏',
+  startLevelSelect: '关卡选择',
   startHowTo: '玩法说明',
   startReset: '重置存档',
+  btnShop: '商店',
+  btnItem: '皮肤',
+  btnSettings: '设置',
+  topStars: '星数',
+  topThreeStar: '三星',
+  topCoins: '零花钱',
   howToGoalTitle: '🛒 购物目标',
   howToGoalText: '挑选商品凑出妈妈的预算，<b>千万不要超支哦！</b>',
   howToCoinsTitle: '💰 怎么赚零花钱？',
