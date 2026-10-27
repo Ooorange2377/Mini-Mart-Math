@@ -115,7 +115,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="ceremony-pig">' +
           (ZQ.ui.slots.renderPig(skinId)) +
         '</div>' +
-        '<div class="ceremony-total">零花钱总额：<b></b></div>' +
+        '<div class="ceremony-total">' + ZQ.I18N.ceremonyTotal + '<b></b></div>' +
         '<div class="ceremony-gacha-capsule" aria-hidden="true">' +
           '<div class="cap-top"></div><div class="cap-bottom"></div>' +
         '</div>' +
@@ -308,14 +308,14 @@ ZQ.screens = ZQ.screens || {};
           var roll = Math.random();
           var reward, text;
           if (roll < 0.40) {
-            reward = 'coin'; text = '零花钱 ×1';
+            reward = 'coin'; text = ZQ.I18N.ceremonyCoinReward.replace('{n}', 1);
             ZQ.store.addCoins(1);
             setRoller(totalEl, baseTotal + coins + 1);   // 奖励金币也计入总额滚动
           } else if (roll < 0.70) {
-            reward = 'card'; text = '延时卡 ×1';
+            reward = 'card'; text = ZQ.I18N.ceremonyCardReward.replace('{n}', 1);
             ZQ.store.addCards(1);
           } else {
-            reward = 'none'; text = '谢谢惠顾';
+            reward = 'none'; text = ZQ.I18N.ceremonyNone;
           }
 
           var capBox = capsule.getBoundingClientRect();
@@ -413,7 +413,7 @@ ZQ.screens = ZQ.screens || {};
       var crystal = document.createElement('div');
       crystal.className = 'ceremony-crystal';
       crystal.innerHTML = crystalHTML() +
-        '<div class="ceremony-crystal-hint">点击看看里面是什么？</div>';
+        '<div class="ceremony-crystal-hint">' + ZQ.I18N.ceremonyCrystalHint + '</div>';
       stage.appendChild(crystal);
 
       var opened = false;
@@ -436,7 +436,7 @@ ZQ.screens = ZQ.screens || {};
         var text;
         if (roll < 0.40) {
           var m = rint(1, 3);
-          text = '零花钱 ×' + m;
+          text = ZQ.I18N.ceremonyCoinReward.replace('{n}', m);
           ZQ.store.addCoins(m);
           setRoller(totalEl, baseTotal + n + m);   // 奖励金币计入总额滚动
           for (var i = 0; i < m; i++) {
@@ -452,11 +452,11 @@ ZQ.screens = ZQ.screens || {};
           ZQ.audio.rewardDing();
         } else if (roll < 0.75) {
           var k = rint(1, 2);
-          text = '延时卡 ×' + k;
+          text = ZQ.I18N.ceremonyCardReward.replace('{n}', k);
           ZQ.store.addCards(k);
           ZQ.audio.rewardDing();
         } else {
-          text = '这只是一块普通的石头...';
+          text = ZQ.I18N.ceremonyStoneNone;
           ZQ.audio.rewardAw();
         }
 

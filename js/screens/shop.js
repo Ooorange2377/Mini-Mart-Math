@@ -8,8 +8,9 @@ ZQ.screens = ZQ.screens || {};
 
   /** 单张套餐卡：折扣角标 + 卡片图标 + 张数 + 价格 + 兑换按钮 */
   function cardHtml(s) {
-    return '<div class="shop-card' + (s.tag ? ' has-tag' : '') + '" data-shop="' + s.id + '">' +
-      (s.tag ? '<span class="card-tag">' + s.tag + '</span>' : '') +
+    var tag = ZQ.isEn() ? (s.tagEn || '') : s.tag;
+    return '<div class="shop-card' + (tag ? ' has-tag' : '') + '" data-shop="' + s.id + '">' +
+      (tag ? '<span class="card-tag">' + tag + '</span>' : '') +
       '<div class="card-icon"><span class="ci-plus">+30s</span><span class="ci-clock">⏱</span></div>' +
       '<div class="card-count">× ' + s.count + '</div>' +
       '<div class="card-price"><i class="ic-img ic-img-coin"></i> <b>' + s.price + '</b></div>' +
@@ -48,7 +49,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="room"><div class="room-floor"></div></div>' +
 
         '<div class="page-top is-stacked">' +
-          '<button class="btn-back-start" type="button" aria-label="返回大厅">← ' + ZQ.I18N.shopBack + '</button>' +
+          '<button class="btn-back-start" type="button" aria-label="' + ZQ.I18N.backHallAria + '">← ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="page-title">' + ZQ.I18N.shopTitle + '</div>' +
           '<div class="page-balance">' +
             '<span class="stat"><i class="ic-img ic-img-coin"></i><b class="js-coins">' + (save.coins || 0) + '</b>' +

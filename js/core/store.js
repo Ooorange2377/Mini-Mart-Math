@@ -98,7 +98,7 @@ window.ZQ = window.ZQ || {};
       clearCounts: {},       // 每关成功通关次数（递减倍率用）
       fixedQuestions: {},    // 未满星关卡的固定题
       tutorialSeen: {},
-      settings: { sound: true, music: true },
+      settings: { sound: true, music: true, lang: 'zh' },
     };
   }
 
@@ -128,6 +128,7 @@ window.ZQ = window.ZQ || {};
     if (typeof save.coins !== 'number' || !isFinite(save.coins)) save.coins = 0;
     if (typeof save.delayCards !== 'number' || !isFinite(save.delayCards)) save.delayCards = 0;
     if (typeof save.settings !== 'object' || !save.settings) save.settings = base.settings;
+    if (save.settings.lang !== 'zh' && save.settings.lang !== 'en') save.settings.lang = 'zh';
     var fromVersion = typeof save.version === 'number' ? save.version : 1;
     if (fromVersion < 2) migrateLevelIds(save);
     if (fromVersion < 3) migrateMomBonuses(save);
@@ -395,6 +396,11 @@ window.ZQ = window.ZQ || {};
 
     setMusic: function (on) {
       data.settings.music = !!on;
+      save();
+    },
+
+    setLang: function (lang) {
+      data.settings.lang = lang === 'en' ? 'en' : 'zh';
       save();
     },
   };

@@ -212,7 +212,7 @@ ZQ.screens = ZQ.screens || {};
       el.className = 'stage screen-game';
 
       el.innerHTML =
-        '<button class="btn-back-game" type="button" aria-label="返回地图">' +
+        '<button class="btn-back-game" type="button" aria-label="' + ZQ.I18N.backMapAria + '">' +
           '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
             '<path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M15 5L8 12l7 7"/>' +
           '</svg>' +
@@ -227,7 +227,8 @@ ZQ.screens = ZQ.screens || {};
           '</div>' +
           '<div class="t-row"><span>' + ZQ.I18N.labelLevel + '</span><b>' + lv.levelId + '</b></div>' +
           '<div class="t-row t-budget"><span>' + ZQ.I18N.labelBudget + '</span><b>¥ ' + ZQ.money.fmtTrim(lv.budget) + '</b></div>' +
-          '<div class="t-row"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' + lv.n + ' 件</b></div>' +
+          '<div class="t-row"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' +
+            ZQ.I18N.itemCount.replace('{n}', lv.n).replace('{item}', ZQ.itemWord(lv.n)) + '</b></div>' +
           '<div class="t-rule' + ruleClass + '" title="' + fullConstraint + '">' +
             '<span class="t-rule-label">' + ZQ.I18N.labelConstraint + '</span>' +
             '<b class="t-rule-value">' + constraintHtml + '</b>' +
@@ -353,7 +354,7 @@ ZQ.screens = ZQ.screens || {};
       var own = ZQ.store.data.delayCards || 0;
       var left = Math.max(0, Math.min(own, ZQ.DELAY_CARD_MAX_PER_LEVEL - cardsUsed));
       var c = el.querySelector('.btn-delaycard .dc-count');
-      if (c) c.textContent = '剩 ' + left;
+      if (c) c.textContent = ZQ.I18N.cardsLeft.replace('{n}', left);
       var btn = el.querySelector('.btn-delaycard');
       if (btn && session.state === 'selecting') btn.classList.toggle('is-off', left <= 0);
     }
@@ -406,7 +407,7 @@ ZQ.screens = ZQ.screens || {};
           var left = Math.max(0, lv.n - evaluation.count);
           ZQ.ui.toast.show(
             left > 0
-              ? ZQ.I18N.toastNeedMore.replace('{n}', left)
+              ? ZQ.I18N.toastNeedMore.replace('{n}', left).replace('{item}', ZQ.itemWord(left))
               : ZQ.I18N.toastTooMany.replace('{n}', lv.n),
             { type: 'error' }
           );

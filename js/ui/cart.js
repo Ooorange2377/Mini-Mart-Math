@@ -76,7 +76,7 @@ ZQ.ui = ZQ.ui || {};
         html += '<div class="cart-item' + (prev[sel[i]] ? '' : ' is-new') + '" data-slot="' + sel[i] + '" ' +
           'style="--x:' + t.x.toFixed(1) + '%;--y:' + t.y.toFixed(1) + '%;--r:' + t.r.toFixed(1) +
           'deg;--s:' + t.s.toFixed(2) + ';z-index:' + (i + 1) + '">' +
-          '<img src="' + src + '" data-fallback="' + fallback + '" alt="' + item.name + '" ' +
+          '<img src="' + src + '" data-fallback="' + fallback + '" alt="' + ZQ.itemName(item) + '" ' +
             'decoding="async" draggable="false">' +
         '</div>';
       }

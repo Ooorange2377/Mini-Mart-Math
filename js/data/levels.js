@@ -24,12 +24,12 @@ ZQ.TAILS = {
 
 /* 章节表：range=关卡范围，maxStars=本章满星上限，unlockAt=进入本章所需累计星数（null=无需解锁） */
 ZQ.CHAPTERS = [
-  { id: 1, name: '小试牛刀',   range: [1, 7],   maxStars: 21, unlockAt: null, tailType: 'int' },
-  { id: 2, name: '精打细算',   range: [8, 14],  maxStars: 21, unlockAt: 12,   tailType: 'half' },
-  { id: 3, name: '分类高手',   range: [15, 21], maxStars: 21, unlockAt: 26,   tailType: 'half_nine' },
-  { id: 4, name: '全能精算师', range: [22, 28], maxStars: 21, unlockAt: 41,   tailType: 'mix99' },
-  { id: 5, name: '整角挑战',   range: [29, 35], maxStars: 21, unlockAt: 59,   tailType: 'quarter' },
-  { id: 6, name: '尾数大师',   range: [36, 42], maxStars: 21, unlockAt: 80,   tailType: 'mix25' },
+  { id: 1, name: '购物新手', nameEn: 'Rookie Shopper', range: [1, 7],   maxStars: 21, unlockAt: null, tailType: 'int' },
+  { id: 2, name: '预算小将', nameEn: 'Budget Cadet',   range: [8, 14],  maxStars: 21, unlockAt: 12,   tailType: 'half' },
+  { id: 3, name: '分类达人', nameEn: 'Category Whiz',  range: [15, 21], maxStars: 21, unlockAt: 26,   tailType: 'half_nine' },
+  { id: 4, name: '凑单高手', nameEn: 'Cart Filler',    range: [22, 28], maxStars: 21, unlockAt: 41,   tailType: 'mix99' },
+  { id: 5, name: '零钱专家', nameEn: 'Change Expert',  range: [29, 35], maxStars: 21, unlockAt: 59,   tailType: 'quarter' },
+  { id: 6, name: '精算大师', nameEn: 'Budget Master',  range: [36, 42], maxStars: 21, unlockAt: 80,   tailType: 'mix25' },
 ];
 
 ZQ.LEVELS_PER_CHAPTER = 7;
@@ -94,24 +94,34 @@ ZQ.LAYER_CATEGORIES = ['drink', 'snack', 'daily', 'seasoning', 'drink', 'snack',
 
 /* 零花钱兑换延时卡片套餐 */
 ZQ.SHOP_ITEMS = [
-  { id: 'card1',  count: 1,  price: 10, tag: '' },
-  { id: 'card5',  count: 5,  price: 40, tag: '8折' },
-  { id: 'card10', count: 10, price: 70, tag: '7折' },
+  { id: 'card1',  count: 1,  price: 10, tag: '',    tagEn: '' },
+  { id: 'card5',  count: 5,  price: 40, tag: '8折',  tagEn: '20% OFF' },
+  { id: 'card10', count: 10, price: 70, tag: '7折',  tagEn: '30% OFF' },
 ];
 ZQ.DELAY_CARD_MAX_PER_LEVEL = 3;   // 每关最多使用 3 张
 ZQ.DELAY_CARD_SECONDS = 30;        // 每张 +30 秒
 
 /* 皮肤表：按「三星奖牌数」解锁，不可用零花钱购买 */
 ZQ.SKINS = [
-  { id: 'silver',   type: 'cart', name: '普通银色',   need: 0 },
-  { id: 'starblue', type: 'cart', name: '星空蓝',     need: 3 },
-  { id: 'straw',    type: 'cart', name: '草莓粉',     need: 10 },
-  { id: 'mint',     type: 'cart', name: '薄荷绿',     need: 22 },
-  { id: 'gold',     type: 'cart', name: '金光闪闪',   need: 36 },
-  { id: 'glass',    type: 'pig',  name: '玻璃存钱罐', need: 0 },
-  { id: 'gacha',    type: 'pig',  name: '扭蛋机存钱罐', need: 10 },
-  { id: 'ufo',      type: 'pig',  name: 'UFO 存钱罐', need: 22 },
+  { id: 'silver',   type: 'cart', name: '普通银色',   nameEn: 'Classic Silver',  need: 0 },
+  { id: 'starblue', type: 'cart', name: '星空蓝',     nameEn: 'Starry Blue',     need: 3 },
+  { id: 'straw',    type: 'cart', name: '草莓粉',     nameEn: 'Strawberry Pink', need: 10 },
+  { id: 'mint',     type: 'cart', name: '薄荷绿',     nameEn: 'Mint Green',      need: 22 },
+  { id: 'gold',     type: 'cart', name: '金光闪闪',   nameEn: 'Golden Glow',     need: 36 },
+  { id: 'glass',    type: 'pig',  name: '玻璃存钱罐', nameEn: 'Glass Jar',       need: 0 },
+  { id: 'gacha',    type: 'pig',  name: '扭蛋机存钱罐', nameEn: 'Gacha Machine', need: 10 },
+  { id: 'ufo',      type: 'pig',  name: 'UFO 存钱罐', nameEn: 'UFO Bank',        need: 22 },
 ];
+
+/* 当前语言的章节名 / 皮肤名 */
+ZQ.chapterName = function (c) {
+  if (!c) return '';
+  return (ZQ.isEn() && c.nameEn) ? c.nameEn : c.name;
+};
+ZQ.skinName = function (s) {
+  if (!s) return '';
+  return (ZQ.isEn() && s.nameEn) ? s.nameEn : s.name;
+};
 
 /* 零花钱重复通关递减倍率：第 1~5 次 100/80/60/40/20%，第 6 次及以后 0% */
 ZQ.DECAY_MUL = [1, 0.8, 0.6, 0.4, 0.2, 0];

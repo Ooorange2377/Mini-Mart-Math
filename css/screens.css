@@ -401,6 +401,14 @@
 
 .ch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1cqw; }
 .ch-name { font-size: 2cqw; font-weight: 900; }
+/* 英文：章节号独占一行，章节名单起一行且不折行，避免英文名被拆开 */
+.lang-en .ch-name { line-height: 1.02; }
+.lang-en .ch-head { margin-bottom: .3cqw; }
+.lang-en .ch-name .ch-nm {
+  display: block;
+  font-size: 2.1cqw;
+  white-space: nowrap;
+}
 .ch-stars {
   display: inline-flex;
   align-items: center;

@@ -92,6 +92,8 @@
   white-space: nowrap;
 }
 .hud-target .t-rule-line + .t-rule-line { margin-top: .12cqw; }
+/* 英文品类词更长：整页统一缩小一档，仍保证每行两条不换行 */
+.lang-en .hud-target .t-rule-line { font-size: .94cqw; }
 
 /* ================= 顶部独立计时器 ================= */
 .hud-timer {
@@ -292,6 +294,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 英文商品名更长：明细行允许折成两行，超出两行再省略 */
+.lang-en .items-row .row-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  line-height: 1.12;
 }
 .items-row .row-price {
   flex: 0 0 auto;

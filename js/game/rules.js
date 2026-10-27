@@ -2,6 +2,13 @@
  * 全部无副作用，输入输出均基于「分」的整数金额。 */
 window.ZQ = window.ZQ || {};
 
+/* 单个品类约束文案：中文「零食*2」，英文「Snacks × 2」 */
+function catLabel(c) {
+  return ZQ.isEn()
+    ? ZQ.catName(c.category) + ' × ' + c.count
+    : ZQ.CATEGORY_NAMES_ZH[c.category] + '*' + c.count;
+}
+
 ZQ.rules = {
   /** 剩余比例 Q（0~1 之间的小数），入参单位：分 */
   Q: function (T, B) {
@@ -129,12 +136,10 @@ ZQ.rules = {
     };
   },
 
-  /** 品类约束的展示文案：如「日用品 × 1 · 零食 × 2」 */
+  /** 品类约束的展示文案：中文「日用品*1、零食*2」，英文「Household × 1, Snacks × 2」 */
   constraintLabel: function (constraint) {
     if (!constraint || !constraint.length) return '';
-    return constraint.map(function (c) {
-      return ZQ.CATEGORY_NAMES[c.category] + '*' + c.count;
-    }).join('、');
+    return constraint.map(catLabel).join(ZQ.isEn() ? ', ' : '、');
   },
 
   /** 品类约束分行：每行最多两条，保留完整品类名称 */
@@ -142,9 +147,7 @@ ZQ.rules = {
     if (!constraint || !constraint.length) return [];
     var lines = [];
     for (var i = 0; i < constraint.length; i += 2) {
-      lines.push(constraint.slice(i, i + 2).map(function (c) {
-        return ZQ.CATEGORY_NAMES[c.category] + '*' + c.count;
-      }).join('、'));
+      lines.push(constraint.slice(i, i + 2).map(catLabel).join(ZQ.isEn() ? ', ' : '、'));
     }
     return lines;
   },

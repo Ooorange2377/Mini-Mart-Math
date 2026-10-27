@@ -25,11 +25,12 @@ ZQ.screens = ZQ.screens || {};
       '<div class="howto-block">' +
         '<div class="howto-head"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.howToCoinsTitle + '</div>' +
         '<ul class="howto-list">' +
-          '<li><b class="howto-mode">' + ZQ.I18N.howToSavingMode + '</b>：' +
+          '<li><b class="howto-mode">' + ZQ.I18N.howToSavingMode + '</b>' + ZQ.I18N.colon +
             ZQ.I18N.howToSavingText + '</li>' +
-          '<li><b class="howto-mode">' + ZQ.I18N.howToPerfectMode + '</b>：' +
+          '<li><b class="howto-mode">' + ZQ.I18N.howToPerfectMode + '</b>' + ZQ.I18N.colon +
             ZQ.I18N.howToPerfectText.replace('{n}', ZQ.MOM_BONUS_COINS) +
-            '<span class="howto-first">（' + ZQ.I18N.howToFirstOnly + '）</span></li>' +
+            '<span class="howto-first">' + (ZQ.isEn() ? ' (' : '（') + ZQ.I18N.howToFirstOnly +
+              (ZQ.isEn() ? ')' : '）') + '</span></li>' +
         '</ul>' +
       '</div>';
   }
@@ -99,9 +100,10 @@ ZQ.screens = ZQ.screens || {};
           '<button class="btn-settings" type="button" aria-label="' + ZQ.I18N.btnSettings + '"><img src="图标素材/设置.PNG" alt=""></button>' +
         '</div>' +
 
-        // 中央标题图片（居中偏上）
+        // 中央标题图片（居中偏上，中英文使用同尺寸图，视觉大小一致）
         '<div class="hall-title">' +
-          '<img src="便利店购物大作战标题.PNG" alt="' + ZQ.I18N.title + '">' +
+          '<img src="' + (ZQ.isEn() ? '图标素材/便利店购物大作战标题-英文版.PNG' : '便利店购物大作战标题.PNG') +
+            '" alt="' + ZQ.I18N.title + '">' +
         '</div>' +
 
         // 中央双主按钮（纯文字，不带图标）
@@ -176,17 +178,28 @@ ZQ.screens = ZQ.screens || {};
         var st = (ZQ.store.data && ZQ.store.data.settings) || {};
         var sndOn = st.sound !== false;
         var musOn = ZQ.audio.isMusicEnabled();
+        var lang = st.lang === 'en' ? 'en' : 'zh';
         function row(id, label, on) {
+          var state = on ? ZQ.I18N.settingsOn : ZQ.I18N.settingsOff;
           return '<label style="display:flex;align-items:center;gap:.8cqw;cursor:pointer">' +
             '<input type="checkbox" id="' + id + '" ' + (on ? 'checked' : '') + ' style="width:1.6cqw;height:1.6cqw">' +
-            '<span>' + label + (on ? '（已开启）' : '（已关闭）') + '</span>' +
+            '<span>' + label + (ZQ.isEn() ? ' · ' + state : '（' + state + '）') + '</span>' +
           '</label>';
         }
         openModal({
           title: ZQ.I18N.btnSettings,
           html: '<div style="font-size:2.2cqw;line-height:1.8">' +
-            row('sound-toggle', '音效', sndOn) +
-            row('music-toggle', '音乐', musOn) +
+            '<div style="display:flex;flex-direction:column;gap:.2cqw">' +
+              row('sound-toggle', ZQ.I18N.settingsSound, sndOn) +
+              row('music-toggle', ZQ.I18N.settingsMusic, musOn) +
+              '<label style="display:flex;align-items:center;gap:.8cqw;cursor:pointer">' +
+                '<span>' + ZQ.I18N.language + '</span>' +
+                '<select id="lang-select" style="font:inherit;font-size:1.9cqw;padding:.1cqw .5cqw;border:2px solid var(--ink);border-radius:.5cqw;background:var(--paper);color:var(--ink)">' +
+                  '<option value="en"' + (lang === 'en' ? ' selected' : '') + '>English</option>' +
+                  '<option value="zh"' + (lang === 'zh' ? ' selected' : '') + '>中文</option>' +
+                '</select>' +
+              '</label>' +
+            '</div>' +
             '<div style="margin-top:.9cqw;font-size:1.5cqw;line-height:1.5;color:rgba(27,62,111,.55)">' +
               ZQ.I18N.musicCredit +
             '</div>' +
@@ -196,8 +209,17 @@ ZQ.screens = ZQ.screens || {};
           onOk: function () {
             var sCb = document.getElementById('sound-toggle');
             var mCb = document.getElementById('music-toggle');
+            var lSel = document.getElementById('lang-select');
             if (sCb) { ZQ.audio.setEnabled(sCb.checked); ZQ.store.setSound(sCb.checked); }
             if (mCb) { ZQ.audio.setMusicEnabled(mCb.checked); ZQ.store.setMusic(mCb.checked); }
+            if (lSel) {
+              var next = lSel.value === 'en' ? 'en' : 'zh';
+              if (next !== ZQ.lang) {
+                ZQ.store.setLang(next);
+                ZQ.setLang(next);
+                if (ZQ.app) ZQ.app.render();
+              }
+            }
           },
         });
       });

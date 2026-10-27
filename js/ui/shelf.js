@@ -23,11 +23,12 @@ ZQ.ui = ZQ.ui || {};
     if (!item) return '<div class="slot slot-empty"></div>';
     var it = lookup(item.itemId);
     var src = it ? encodeURI(it.path) : '';
+    var shownName = ZQ.itemName(item);
     return '<div class="slot" data-slot="' + item.slot + '" data-item="' + item.itemId + '">' +
       '<div class="slot-frame">' +
-        '<img class="slot-img" loading="lazy" src="' + src + '" alt="' + item.name + '">' +
+        '<img class="slot-img" loading="lazy" src="' + src + '" alt="' + shownName + '">' +
       '</div>' +
-      '<div class="slot-name">' + item.name + '</div>' +
+      '<div class="slot-name">' + shownName + '</div>' +
       '<div class="slot-price"><span class="price-tag"></span>' + ZQ.money.fmt2(item.price) + '</div>' +
       '</div>';
   }
@@ -93,9 +94,9 @@ ZQ.ui = ZQ.ui || {};
           dots += '<span class="pager-dot' + (d === 0 ? ' is-active' : '') + '" data-page="' + d + '"></span>';
         }
         html += '<div class="shelf-pager">' +
-          '<button class="pager-arrow pager-prev" aria-label="上一页">\u2039</button>' +
+          '<button class="pager-arrow pager-prev" aria-label="' + ZQ.I18N.prevPageAria + '">\u2039</button>' +
           dots +
-          '<button class="pager-arrow pager-next" aria-label="下一页">\u203a</button>' +
+          '<button class="pager-arrow pager-next" aria-label="' + ZQ.I18N.nextPageAria + '">\u203a</button>' +
           '</div>';
       }
 

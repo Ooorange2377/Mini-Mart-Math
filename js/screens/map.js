@@ -26,14 +26,15 @@ ZQ.screens = ZQ.screens || {};
       lines.push(ZQ.I18N.mapNeedPreviousChapter.replace('{chapter}', status.previousChapterId));
     }
     if (status.starsNeeded > 0) {
-      lines.push(ZQ.I18N.mapNeedStars.replace('{n}', status.starsNeeded));
+      lines.push(ZQ.I18N.mapNeedStars.replace('{n}', status.starsNeeded)
+        .replace('{star}', ZQ.starWord(status.starsNeeded)));
     }
     return lines;
   }
 
   function chapterLockText(status) {
     var lines = chapterRequirements(status);
-    return lines.length ? lines.join('；') : ZQ.I18N.toastChapterLocked;
+    return lines.length ? lines.join(ZQ.I18N.listSep) : ZQ.I18N.toastChapterLocked;
   }
 
   function levelLockText(lock) {
@@ -62,7 +63,8 @@ ZQ.screens = ZQ.screens || {};
       else if (star > 0) cls += ' is-cleared';
       if (lv === cur) cls += ' is-current';
       cells += '<button class="' + cls + '" type="button" data-level="' + lv + '"' +
-                 (open ? '' : ' title="' + lockHint + '" aria-label="第 ' + lv + ' 关，未解锁，' + lockHint + '"') +
+                 (open ? '' : ' title="' + lockHint + '" aria-label="' +
+                   ZQ.I18N.levelLockedAria.replace('{n}', lv).replace('{hint}', lockHint) + '"') +
                  ' data-lock-reason="' + (levelLock.reason || '') + '">' +
                  '<span class="lv-no">' + lv + '</span>' +
                  '<span class="lv-stars">' + (open ? miniStars(star) : '🔒') + '</span>' +
@@ -80,7 +82,12 @@ ZQ.screens = ZQ.screens || {};
     return '<section class="chapter' + (unlocked ? '' : ' is-locked is-locked-' + lock.reason) +
         '" data-chapter="' + ch.id + '">' +
       '<div class="ch-head">' +
-        '<span class="ch-name">第 ' + ch.id + ' 章 · ' + ch.name + '</span>' +
+        '<span class="ch-name">' +
+          ZQ.I18N.chapterPrefix.replace('{n}', ch.id) +
+          (ZQ.isEn()
+            ? '<span class="ch-nm">' + ZQ.chapterName(ch) + '</span>'
+            : ' ' + ZQ.chapterName(ch)) +
+        '</span>' +
         '<span class="ch-stars"><i class="ic-img ic-img-star"></i>' + chStars + ' / ' + ch.maxStars + '</span>' +
       '</div>' +
       '<div class="ch-grid">' + cells + '</div>' +
@@ -120,7 +127,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="room"><div class="room-floor"></div></div>' +
 
         '<div class="map-top">' +
-          '<button class="btn-back-start" type="button" aria-label="返回初始界面">← 返回</button>' +
+          '<button class="btn-back-start" type="button" aria-label="' + ZQ.I18N.backHomeAria + '">← ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="map-stats">' +
             '<span class="stat"><i class="ic-img ic-img-star"></i><b>' + ZQ.store.totalStars() + '</b>' +
               '<em>' + ZQ.I18N.mapTotalStars + '</em></span>' +

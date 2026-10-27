@@ -5,6 +5,7 @@ window.ZQ = window.ZQ || {};
   function boot() {
     ZQ.store.load();
     var d = ZQ.store.data;
+    ZQ.setLang((d.settings && d.settings.lang) || 'zh');
     ZQ.audio.setEnabled(!(d.settings && d.settings.sound === false));
     ZQ.audio.setMusicEnabled(!(d.settings && d.settings.music === false));
     /* 浏览器要求先有用户手势才能出声：首次任意点击即解锁并起播 BGM */

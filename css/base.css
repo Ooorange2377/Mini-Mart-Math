@@ -37,6 +37,11 @@
   --font: 'Yuanti SC', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Heiti SC', sans-serif;
 }
 
+/* 英文模式：圆润的 Latin 手写风字体栈，保持与中文版一致的可爱气质 */
+html.lang-en {
+  --font: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', 'Trebuchet MS', 'Verdana', sans-serif;
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {

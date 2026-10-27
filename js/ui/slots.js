@@ -7,23 +7,24 @@ ZQ.ui = ZQ.ui || {};
   var INK = '#1B3E6F';
 
   var CART_SKINS = {
-    silver:   { name: '普通银色', src: '购物篮/优化/普通铁皮.png' },
-    starblue: { name: '星空蓝',   src: '购物篮/优化/星空蓝.png' },
-    straw:    { name: '草莓粉',   src: '购物篮/优化/草莓粉.png' },
-    mint:     { name: '薄荷绿',   src: '购物篮/优化/薄荷绿.png' },
-    gold:     { name: '金光闪闪', src: '购物篮/优化/金光闪闪.png' },
+    silver:   { name: '普通银色', nameEn: 'Classic Silver',  src: '购物篮/优化/普通铁皮.png' },
+    starblue: { name: '星空蓝',   nameEn: 'Starry Blue',     src: '购物篮/优化/星空蓝.png' },
+    straw:    { name: '草莓粉',   nameEn: 'Strawberry Pink', src: '购物篮/优化/草莓粉.png' },
+    mint:     { name: '薄荷绿',   nameEn: 'Mint Green',      src: '购物篮/优化/薄荷绿.png' },
+    gold:     { name: '金光闪闪', nameEn: 'Golden Glow',     src: '购物篮/优化/金光闪闪.png' },
   };
 
   var PIG_THEMES = {
-    glass: { name: '玻璃存钱罐' },
-    gacha: { name: '扭蛋机存钱罐' },
-    ufo:   { name: 'UFO 存钱罐' },
+    glass: { name: '玻璃存钱罐',   nameEn: 'Glass Jar' },
+    gacha: { name: '扭蛋机存钱罐', nameEn: 'Gacha Machine' },
+    ufo:   { name: 'UFO 存钱罐',   nameEn: 'UFO Bank' },
   };
 
   /* 购物篮：顶视角铁丝篮位图（透明留白由 CSS 放大处理） */
   function cartImg(skinId) {
     var t = CART_SKINS[skinId] || CART_SKINS.silver;
-    return '<img class="cart-svg" src="' + encodeURI(t.src) + '" alt="' + t.name + '" draggable="false">';
+    return '<img class="cart-svg" src="' + encodeURI(t.src) + '" alt="' +
+      ((ZQ.isEn() && t.nameEn) ? t.nameEn : t.name) + '" draggable="false">';
   }
 
   /* 存钱罐：三款独立造型，Q 版粗描边 4px + 大圆角 */

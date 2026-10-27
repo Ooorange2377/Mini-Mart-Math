@@ -53,16 +53,16 @@ ZQ.screens = ZQ.screens || {};
               '<b>' + ZQ.money.yuan2(ctx.budget) + '</b>' +
             '</div>' +
             (ctx.momBonus > 0
-              ? '<div class="r-row r-coins r-mom-bonus"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.resultMomBonus + '：' +
+              ? '<div class="r-row r-coins r-mom-bonus"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.resultMomBonus + ZQ.I18N.colon +
                   '<b class="coins-num">+' + ctx.momBonus + '</b>' +
                 '</div>'
               : (ctx.coins > 0
-              ? '<div class="r-row r-coins"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.resultCoins + '：' +
+              ? '<div class="r-row r-coins"><i class="ic-img ic-img-coin"></i>' + ZQ.I18N.resultCoins + ZQ.I18N.colon +
                   '<b class="coins-num">+' + ctx.coins + '</b>' +
                 '</div>'
               : '')) +
             (ctx.firstThreeStar
-              ? '<div class="r-row r-medal"><i class="ic-img ic-img-medal"></i>' + ZQ.I18N.resultThreeStar + '：<b>+1</b></div>'
+              ? '<div class="r-row r-medal"><i class="ic-img ic-img-medal"></i>' + ZQ.I18N.resultThreeStar + ZQ.I18N.colon + '<b>+1</b></div>'
               : '') +
             '<div class="r-text">' + resultText + '</div>' +
             '<div class="r-actions">' +

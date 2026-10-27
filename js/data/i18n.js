@@ -1,7 +1,9 @@
-/* 文案集中管理：状态词、提示语、星级鼓励话术、页面文案 */
+/* 文案集中管理：中英双词典 + 语言状态与少量拼接辅助。
+ * 页面统一读 ZQ.I18N，ZQ.setLang() 切换后重新渲染即可生效。 */
 window.ZQ = window.ZQ || {};
 
-ZQ.I18N = {
+/* ---------- 中文 ---------- */
+ZQ.I18N_ZH = {
   title: '便利店 购物大作战',
   subtitle: '益智·收集·闯关',
 
@@ -23,7 +25,6 @@ ZQ.I18N = {
   // 轻提示
   toastOverspend: '超支啦！再看看别的吧',
   toastCartEmpty: '还没有选择商品哦！',
-  toastListHint: '清单仅供核对，不显示总价',
   toastDelayCardEmpty: '延时卡片不够啦，去商店兑换吧',
   toastDelayCardUsedUp: '本关延时卡片已用完（上限 3 张）',
   toastDelayCardAdded: '+30 秒',
@@ -100,6 +101,13 @@ ZQ.I18N = {
   howToFirstOnly: '仅首次通关获得',
   resetConfirm: '确定要清空所有进度吗？',
 
+  // 设置弹窗
+  settingsSound: '音效',
+  settingsMusic: '音乐',
+  settingsOn: '已开启',
+  settingsOff: '已关闭',
+  language: '语言',
+
   // 商店页
   shopTitle: '零花钱商店',
   shopOwn: '延时卡数量',
@@ -116,6 +124,7 @@ ZQ.I18N = {
   skinsEquip: '装备',
   skinsEquipped: '已装备',
   skinsDefault: '默认',
+  skinAlreadyEquipped: '已在装备中',
 
   // 存钱罐仪式弹窗
   pigShowTitle: '存进存钱罐啦！',
@@ -124,11 +133,196 @@ ZQ.I18N = {
   gachaRewardCoins: '零花钱 +1',
   gachaRewardCard: '延时卡 +1',
   gachaRewardNone: '谢谢惠顾，再接再厉~',
+  ceremonyTotal: '零花钱总额：',
+  ceremonyCoinReward: '零花钱 ×{n}',
+  ceremonyCardReward: '延时卡 ×{n}',
+  ceremonyNone: '谢谢惠顾',
+  ceremonyStoneNone: '这只是一块普通的石头...',
+  ceremonyCrystalHint: '点击看看里面是什么？',
 
   // 游戏内
   timerLabel: '倒计时',
   cartCount: '已选 {n} / {total} 件',
+  itemCount: '{n} 件',
+  cardsLeft: '剩 {n}',
   constraintAny: '任选 {n} 件',
   useCard: '用延时卡',
   hintOverspendShort: '超支',
+
+  // 拼装辅助
+  colon: '：',
+  listSep: '；',
+  chapterLabel: '第 {n} 章 · {name}',
+  chapterPrefix: '第 {n} 章 ·',
+  backMapAria: '返回地图',
+  backHallAria: '返回大厅',
+  backHomeAria: '返回初始界面',
+  prevPageAria: '上一页',
+  nextPageAria: '下一页',
+  levelLockedAria: '第 {n} 关，未解锁，{hint}',
 };
+
+/* ---------- English ---------- */
+ZQ.I18N_EN = {
+  title: 'Mini-Mart Math: Budget Shopping Puzzle',
+  subtitle: 'Puzzle · Collect · Progress',
+
+  stateSelecting: 'Choosing',
+  stateCheckout: 'Checking Out',
+
+  labelTarget: 'Shopping Task',
+  labelLevel: 'Level',
+  labelBudget: 'Budget',
+  labelNeedCount: 'Items',
+  labelConstraint: 'Required',
+  viewDetails: 'Details',
+  labelCheckout: 'Checkout',
+  budgetHint: 'Match this amount',
+  checkoutHint: 'Tap to check out',
+
+  toastOverspend: 'Over budget! Try something else.',
+  toastCartEmpty: 'No items yet!',
+  toastDelayCardEmpty: 'No Time Cards left. Get more in the Shop!',
+  toastDelayCardUsedUp: '3 Time Cards max per level',
+  toastDelayCardAdded: '+30 sec',
+  toastCoinsNotEnough: 'Not enough Allowance',
+  toastBought: 'Redeemed!',
+  toastSkinLocked: 'Skin locked',
+  toastSkinEquipped: 'Equipped',
+  toastLevelLocked: 'Clear Level {n} first',
+  toastChapterLocked: 'This chapter is still locked',
+  toastTooMany: 'This level needs exactly {n} items',
+  toastNeedMore: 'Add {n} more {item}',
+  toastConstraint: 'Required categories not met',
+  toastResetDone: 'Progress reset.',
+  pagerTipTitle: 'More items on the next shelf!',
+  pagerTipText: 'More than 12 items. Tap the arrows or dots below.',
+  pagerTipOk: 'Got it',
+
+  btnOk: 'OK',
+  btnCancel: 'Cancel',
+
+  resultTotal: 'Total',
+  resultBudget: 'Budget',
+  resultCoins: 'Allowance',
+  resultMomBonus: "Mom's Bonus",
+  resultThreeStar: '3-Star Medal',
+  resultBtnRetry: 'Try Again',
+  resultBtnNext: 'Next Level',
+  resultBtnMap: 'Back to Map',
+  resultInvalidCount: 'Wrong item count — level not cleared.',
+  resultInvalidConstraint: 'Wrong categories — level not cleared.',
+
+  resultText: {
+    0: 'So close! Try to match the budget more closely!',
+    1: 'Nice! Get closer to the budget for a better score!',
+    2: 'Great! Just a little off — try again for 3 stars!',
+    3: "Perfect match! You're today's Budget Master!",
+  },
+  resultStars: ['Oops', 'Good', 'Great', 'Perfect'],
+
+  mapTitle: 'Select Level',
+  mapTotalStars: 'Stars',
+  mapThreeStar: '3-Star Medals',
+  mapCoins: 'Allowance',
+  mapNeedStars: 'Need {n} more {star} to unlock',
+  mapChapterLocked: 'Chapter {chapter} is locked',
+  mapNeedPreviousChapter: 'Clear all levels in Chapter {chapter} first',
+  mapLevelNeedPrevious: 'Clear Level {n} first',
+
+  startBegin: 'Start Game',
+  startContinue: 'Continue',
+  startLevelSelect: 'Select Level',
+  momGreet: 'Ready to go shopping with Mom, sweetie?',
+  startHowTo: 'How to Play',
+  startReset: 'Reset Progress',
+  btnShop: 'Shop',
+  btnItem: 'Skins',
+  btnSettings: 'Settings',
+  musicCredit: 'Music: Purrple Cat – Let\'s Go Shopping (CC BY 4.0)',
+  topStars: 'Stars',
+  topThreeStar: 'Medals',
+  topCoins: 'Allowance',
+  howToGoalTitle: '🛒 Shopping Goal',
+  howToGoalText: "Pick items to match Mom's budget — <b>don't go over!</b>",
+  howToCoinsTitle: 'How to earn Allowance',
+  howToSavingMode: 'Saving Mode (1–2 stars)',
+  howToSavingText: 'Whatever you save Mom becomes your change reward!',
+  howToPerfectMode: 'Perfect Mode (3 stars)',
+  howToPerfectText: 'Spend the budget exactly and Mom gives you <b>{n} bonus coins</b>!',
+  howToFirstOnly: 'First clear only',
+  resetConfirm: 'Reset all progress?',
+
+  settingsSound: 'SFX',
+  settingsMusic: 'Music',
+  settingsOn: 'On',
+  settingsOff: 'Off',
+  language: 'Language',
+
+  shopTitle: 'Allowance Shop',
+  shopOwn: 'Time Cards',
+  shopPrice: 'Allowance',
+  shopBuy: 'Redeem',
+  shopBack: 'Back',
+  shopTip: 'Time Card: +30 sec before checkout. Max 3 per level.',
+
+  skinsTitle: 'My Skins',
+  skinsCart: 'Carts',
+  skinsPig: 'Piggy Banks',
+  skinsNeed: 'Earn {n} 3-Star Medals',
+  skinsEquip: 'Equip',
+  skinsEquipped: 'Equipped',
+  skinsDefault: 'Default',
+  skinAlreadyEquipped: 'Already equipped',
+
+  pigShowTitle: 'Into the piggy bank!',
+  pigShowOk: 'Yay!',
+  pigSkip: 'Skip',
+  gachaRewardCoins: 'Allowance +1',
+  gachaRewardCard: 'Time Card +1',
+  gachaRewardNone: 'Better luck next time!',
+  ceremonyTotal: 'Total Allowance: ',
+  ceremonyCoinReward: 'Allowance ×{n}',
+  ceremonyCardReward: 'Time Card ×{n}',
+  ceremonyNone: 'Better luck next time!',
+  ceremonyStoneNone: 'Just an ordinary rock...',
+  ceremonyCrystalHint: "Tap to see what's inside!",
+
+  timerLabel: 'Countdown',
+  cartCount: 'Selected {n} / {total}',
+  itemCount: '{n} {item}',
+  cardsLeft: '{n} left',
+  constraintAny: 'Any {n} items',
+  useCard: 'Time Card',
+  hintOverspendShort: 'Over budget',
+
+  colon: ': ',
+  listSep: ' · ',
+  chapterLabel: 'Chapter {n} · {name}',
+  chapterPrefix: 'Chapter {n} ·',
+  backMapAria: 'Back to Map',
+  backHallAria: 'Back to Hall',
+  backHomeAria: 'Back to Home',
+  prevPageAria: 'Previous page',
+  nextPageAria: 'Next page',
+  levelLockedAria: 'Level {n}, locked. {hint}',
+};
+
+/* 当前语言（默认中文；由 ZQ.setLang 切换并同步 <html lang>） */
+ZQ.lang = 'zh';
+ZQ.I18N = ZQ.I18N_ZH;
+
+ZQ.setLang = function (lang) {
+  ZQ.lang = lang === 'en' ? 'en' : 'zh';
+  ZQ.I18N = ZQ.lang === 'en' ? ZQ.I18N_EN : ZQ.I18N_ZH;
+  var root = document.documentElement;
+  root.lang = ZQ.lang === 'en' ? 'en' : 'zh-CN';
+  root.classList.toggle('lang-en', ZQ.lang === 'en');
+  document.title = ZQ.I18N.title;
+};
+
+ZQ.isEn = function () { return ZQ.lang === 'en'; };
+
+/* 英文按数量取单词；中文返回固定量词，供模板里的 {item} / {star} 使用 */
+ZQ.itemWord = function (n) { return ZQ.isEn() ? (n === 1 ? 'item' : 'items') : '件'; };
+ZQ.starWord = function (n) { return ZQ.isEn() ? (n === 1 ? 'Star' : 'Stars') : '颗星星'; };

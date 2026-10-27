@@ -41,13 +41,14 @@ ZQ.screens = ZQ.screens || {};
       var state = isEq ? 'equipped' : (!ok ? 'locked' : 'equip');
       var cls = 'skin-card' + (ok ? '' : ' is-locked') + (isEq ? ' is-equipped' : '');
       var preview = type === 'cart' ? cartSwatchHtml(s.id) : ZQ.ui.slots.renderPig(s.id);
-      var label = isEq ? (ZQ.I18N.skinsEquipped + ' ✓') : (ok ? ZQ.I18N.skinsEquip : '🔒 ' + (s.need || '默认'));
+      var label = isEq ? (ZQ.I18N.skinsEquipped + ' ✓')
+        : (ok ? ZQ.I18N.skinsEquip : '🔒 ' + (s.need || ZQ.I18N.skinsDefault));
       /* 解锁条件统一文案：默认皮肤显示「默认」，其余一律「需达到 N 个三星奖牌」 */
       var sub = s.need === 0 ? ZQ.I18N.skinsDefault : ZQ.I18N.skinsNeed.replace('{n}', s.need);
 
       cards += '<div class="' + cls + '" data-type="' + type + '" data-skin="' + s.id + '">' +
           '<div class="skin-preview">' + preview + '</div>' +
-          '<div class="skin-name">' + s.name + '</div>' +
+          '<div class="skin-name">' + ZQ.skinName(s) + '</div>' +
           '<div class="skin-sub">' + sub + '</div>' +
           '<button class="btn-menu btn-skin' +
             (isEq ? ' btn-skin-on' : '') +
@@ -73,7 +74,7 @@ ZQ.screens = ZQ.screens || {};
         '<div class="room"><div class="room-floor"></div></div>' +
 
         '<div class="page-top is-stacked">' +
-          '<button class="btn-back-start" type="button" aria-label="返回大厅">← ' + ZQ.I18N.shopBack + '</button>' +
+          '<button class="btn-back-start" type="button" aria-label="' + ZQ.I18N.backHallAria + '">← ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="page-title">' + ZQ.I18N.skinsTitle + '</div>' +
           '<div class="page-balance">' +
             '<span class="stat"><i class="ic-img ic-img-medal"></i><b>' + ZQ.store.threeStarCount() + '</b>' +
@@ -200,7 +201,7 @@ ZQ.screens = ZQ.screens || {};
 
         if (state === 'equipped') {
           ZQ.audio.click();
-          ZQ.ui.toast.show('已在装备中', { type: 'info' });
+          ZQ.ui.toast.show(ZQ.I18N.skinAlreadyEquipped, { type: 'info' });
           return;
         }
 

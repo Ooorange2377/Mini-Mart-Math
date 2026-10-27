@@ -22,7 +22,7 @@ ZQ.ui = ZQ.ui || {};
       for (var i = 0; i < sel.length; i++) {
         var item = lv.items[sel[i]];
         html += '<li class="items-row' + (prev[sel[i]] ? '' : ' is-new') + '" data-slot="' + sel[i] + '">' +
-          '<span class="row-box"></span><span class="row-name">' + item.name + '</span>' +
+          '<span class="row-box"></span><span class="row-name">' + ZQ.itemName(item) + '</span>' +
           '<span class="row-price">' + ZQ.money.fmt2(item.price) + '</span>' +
         '</li>';
       }
