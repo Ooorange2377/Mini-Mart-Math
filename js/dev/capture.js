@@ -447,6 +447,19 @@ async function main() {
         'if(ZQ.screens.game._stopTimer)ZQ.screens.game._stopTimer();'
       ), 15000, '断言前进入关卡');
       await sleep(150);
+      /* 明细清单的 .items-row 只有选了商品并展开后才存在：
+       * 先点两件商品、再展开清单，否则行内字号与溢出会被「元素不存在」跳过。 */
+      await withTimeout(cdp.evaluate(
+        'var slots=document.querySelectorAll(".slot");' +
+        'if(slots[0])slots[0].click();' +
+        'if(slots[1])slots[1].click();'
+      ), 15000, '断言前选品');
+      await sleep(900);
+      await withTimeout(cdp.evaluate(
+        'var head=document.querySelector(".hud-items .note-head");' +
+        'if(head&&!document.querySelector(".items-row"))head.click();'
+      ), 15000, '断言前展开明细');
+      await sleep(260);
       await withTimeout(cdp.evaluate(settleScript(), true), 25000, '断言前 settle');
       var raw = await withTimeout(cdp.evaluate(mobileAssertScript()), 15000, '移动端断言');
       var code = printAssertions(JSON.parse(raw));
