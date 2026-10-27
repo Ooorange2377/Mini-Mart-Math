@@ -1,0 +1,9 @@
+{
+ "url": "http://127.0.0.1:8137/index.html",
+ "width": 1920,
+ "height": 1080,
+ "dpr": 1,
+ "frozen": true,
+ "seed": "fixed-30x3",
+ "createdAt": "2026-10-27T11:58:20.282Z"
+}

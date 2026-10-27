@@ -1,0 +1,228 @@
+{
+ ".stage": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 0,
+  "y": 0,
+  "w": 1920,
+  "h": 1080
+ },
+ ".hall-bg": null,
+ ".hall-title": null,
+ ".hall-mom": null,
+ ".hud-target": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "22.08px 23.04px 24px",
+  "color": "rgb(36, 62, 101)",
+  "x": 57.59,
+  "y": 172.8,
+  "w": 355.19,
+  "h": 424.19
+ },
+ ".t-title": {
+  "fontSize": "38.4px",
+  "lineHeight": "38.4px",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 83.63,
+  "y": 197.88,
+  "w": 159.91,
+  "h": 38.41
+ },
+ ".t-rule-label": {
+  "fontSize": "21.12px",
+  "lineHeight": "27.456px",
+  "padding": "0px",
+  "color": "rgba(27, 62, 111, 0.58)",
+  "x": 192.94,
+  "y": 469.72,
+  "w": 84.48,
+  "h": 27.45
+ },
+ ".t-rule-line": {
+  "fontSize": "19.584px",
+  "lineHeight": "25.4592px",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 98.09,
+  "y": 502.92,
+  "w": 274.19,
+  "h": 25.44
+ },
+ ".hud-timer": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "11.136px 24px 15.744px",
+  "color": "rgb(36, 62, 101)",
+  "x": 676.8,
+  "y": 12.95,
+  "w": 566.39,
+  "h": 176.23
+ },
+ ".hud-timer .t-label": {
+  "fontSize": "24px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgba(27, 62, 111, 0.62)",
+  "x": 972.45,
+  "y": 27.08,
+  "w": 78,
+  "h": 33
+ },
+ ".hud-timer .t-time": {
+  "fontSize": "83.52px",
+  "lineHeight": "83.52px",
+  "padding": "0px",
+  "color": "rgb(239, 137, 47)",
+  "x": 703.8,
+  "y": 61.03,
+  "w": 512.39,
+  "h": 83.52
+ },
+ ".shelf": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 480,
+  "y": 203.03,
+  "w": 940.8,
+  "h": 855.36
+ },
+ ".shelf-viewport": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 483,
+  "y": 320.28,
+  "w": 934.8,
+  "h": 735.11
+ },
+ ".slot": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "5.376px 5.76px 6.144px",
+  "color": "rgb(36, 62, 101)",
+  "x": 519.47,
+  "y": 338.52,
+  "w": 203.94,
+  "h": 185.22
+ },
+ ".slot-name": {
+  "fontSize": "18.24px",
+  "lineHeight": "18.24px",
+  "padding": "0.768px 6.912px 1.344px",
+  "color": "rgb(36, 62, 101)",
+  "x": 530.5,
+  "y": 453.46,
+  "w": 108.04,
+  "h": 27.91
+ },
+ ".slot-price": {
+  "fontSize": "32.64px",
+  "lineHeight": "32.64px",
+  "padding": "0px 9.984px",
+  "color": "rgb(239, 137, 47)",
+  "x": 563.5,
+  "y": 480.13,
+  "w": 115.88,
+  "h": 36.47
+ },
+ ".shelf-pager": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 890.67,
+  "y": 998.89,
+  "w": 119.44,
+  "h": 40.31
+ },
+ ".pager-arrow": {
+  "fontSize": "40.32px",
+  "lineHeight": "40.32px",
+  "padding": "0px 3.84px",
+  "color": "rgb(91, 145, 196)",
+  "x": 890.67,
+  "y": 998.89,
+  "w": 21.33,
+  "h": 40.31
+ },
+ ".pager-dot": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 925.44,
+  "y": 1009.92,
+  "w": 18.23,
+  "h": 18.23
+ },
+ ".panel-basket": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 1478.41,
+  "y": 203.03,
+  "w": 384,
+  "h": 709.58
+ },
+ ".hud-items": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 1478.41,
+  "y": 203.03,
+  "w": 384,
+  "h": 76.02
+ },
+ ".hud-tools": {
+  "fontSize": "16px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 1478.41,
+  "y": 20.15,
+  "w": 384,
+  "h": 120.33
+ },
+ ".dt-btn": null,
+ ".btn-back-game": {
+  "fontSize": "13.3333px",
+  "lineHeight": "normal",
+  "padding": "0px",
+  "color": "rgb(36, 62, 101)",
+  "x": 38.39,
+  "y": 39.83,
+  "w": 65.27,
+  "h": 65.27
+ },
+ ".items-row .row-name": null,
+ ".items-row .row-price": null,
+ ".cart-item": null,
+ ".btn-checkout": {
+  "fontSize": "55.68px",
+  "lineHeight": "normal",
+  "padding": "13.44px 0px 16.32px",
+  "color": "rgb(255, 253, 247)",
+  "x": 1478.41,
+  "y": 928.45,
+  "w": 384,
+  "h": 113.75
+ },
+ ".map-title": null,
+ ".page-title": null,
+ ".map-body": null,
+ ".lv": null,
+ ".shop-grid": null,
+ ".card-name": null,
+ ".card-owned": null,
+ ".skins-body": null,
+ ".skin-card": null
+}
