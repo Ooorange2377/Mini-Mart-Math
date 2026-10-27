@@ -97,22 +97,22 @@ ZQ.SHOP_ITEMS = [
   {
     id: 'delay', icon: '⏱', unit: '+30s',
     tiers: [
-      { id: 'delay1', count: 1, price: 10, tag: '',    tagEn: '' },
-      { id: 'delay5', count: 5, price: 40, tag: '8折',  tagEn: '20% OFF' },
+      { id: 'delay1', count: 1, price: 10, tag: '',     tagEn: '' },
+      { id: 'delay3', count: 3, price: 24, tag: '省6',   tagEn: 'SAVE 6' },
     ],
   },
   {
     id: 'hint', icon: '💡', unit: 'HINT',
     tiers: [
-      { id: 'hint1', count: 1, price: 15, tag: '',    tagEn: '' },
-      { id: 'hint3', count: 3, price: 39, tag: '省6',  tagEn: 'SAVE 6' },
+      { id: 'hint1', count: 1, price: 15, tag: '',     tagEn: '' },
+      { id: 'hint3', count: 3, price: 36, tag: '省9',  tagEn: 'SAVE 9' },
     ],
   },
   {
     id: 'reroll', icon: '🔄', unit: 'REROLL',
     tiers: [
       { id: 'reroll1', count: 1, price: 20, tag: '',     tagEn: '' },
-      { id: 'reroll5', count: 5, price: 85, tag: '省15',  tagEn: 'SAVE 15' },
+      { id: 'reroll3', count: 3, price: 48, tag: '省12', tagEn: 'SAVE 12' },
     ],
   },
 ];

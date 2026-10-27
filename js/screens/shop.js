@@ -29,8 +29,8 @@ ZQ.screens = ZQ.screens || {};
   function tierHtml(t) {
     var tag = ZQ.isEn() ? (t.tagEn || '') : t.tag;
     return '<div class="tier-row' + (tag ? ' has-tag' : '') + '" data-tier="' + t.id + '">' +
-      (tag ? '<span class="tier-tag">' + tag + '</span>' : '') +
       '<span class="tier-count">× ' + t.count + '</span>' +
+      (tag ? '<span class="tier-tag">' + tag + '</span>' : '') +
       '<span class="tier-price"><i class="ic-img ic-img-coin"></i><b>' + t.price + '</b></span>' +
       '<button class="btn-menu btn-buy" type="button">' + ZQ.I18N.shopBuy + '</button>' +
     '</div>';

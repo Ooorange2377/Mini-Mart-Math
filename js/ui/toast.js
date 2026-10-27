@@ -3,7 +3,7 @@ window.ZQ = window.ZQ || {};
 ZQ.ui = ZQ.ui || {};
 
 (function () {
-  var DEFAULT_DUR = 1600;
+  var DEFAULT_DUR = 2000;
   var EXIT_MS = 320;
 
   ZQ.ui.toast = {

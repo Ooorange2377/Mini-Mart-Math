@@ -715,17 +715,16 @@
   padding: .22cqw .8cqw .32cqw;
   border-radius: 8px;
 }
+/* 优惠标签：内联跟在件数后面，不再绝对定位压在上一档价签上 */
 .tier-tag {
-  position: absolute;
-  left: -.5cqw; top: -.95cqw;
-  padding: .05cqw .5cqw .12cqw;
+  flex: none;
+  padding: .04cqw .45cqw .1cqw;
   background: var(--awning);
   color: var(--paper);
   border: 2px solid var(--ink);
   border-radius: 999px;
-  font-size: 1.15cqw;
+  font-size: 1.1cqw;
   font-weight: 900;
-  transform: rotate(-9deg);
   white-space: nowrap;
 }
 .card-owned { margin-top: auto; padding-top: .9cqw; font-size: 1.4cqw; font-weight: 800; color: rgba(27, 62, 111, .55); }

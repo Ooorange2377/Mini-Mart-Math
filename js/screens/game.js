@@ -450,8 +450,10 @@ ZQ.screens = ZQ.screens || {};
     }
 
     /**
-     * 使用一张提示卡：高亮一件「仍缺的品类」里、加上去也不超预算的商品。
-     * 先校验本关上限与存量，再找目标；找不到时不扣卡。
+     * 使用一张提示卡：以出题时的唯一解为基准给提示。
+     * - 已选商品都在唯一解里 → 高亮解中「下一件」（唯一正确的下一步）
+     * - 已选里有解外商品 → 精确解已不可达，标红这些错件让玩家换掉，并扣卡
+     * 购物车已经是唯一解时不扣卡。
      */
     function useHint() {
       if (session.state !== 'selecting') return;
@@ -465,68 +467,99 @@ ZQ.screens = ZQ.screens || {};
         ZQ.ui.toast.show(ZQ.I18N.toastHintCardEmpty, { type: 'error' });
         return;
       }
-      var idx = pickHintIndex();
-      if (idx < 0) {
+      var plan = hintPlan();
+      if (!plan) {
         ZQ.audio.error();
         ZQ.ui.toast.show(ZQ.I18N.toastHintNothing, { type: 'error' });
+        return;
+      }
+      if (plan.state === 'perfect') {
+        ZQ.ui.toast.show(ZQ.I18N.toastHintPerfect, { type: 'good' });
         return;
       }
       ZQ.store.useCard('hint');
       used.hint += 1;
       updateTools();
 
-      // 高亮：若目标不在当前货架页，先翻到它所在页
-      var pageNo = Math.floor(idx / ZQ.SLOTS_PER_PAGE);
-      if (pageNo !== page) page = ZQ.ui.shelf.goto(shelfEl, pageNo);
-      var slot = el.querySelector('.slot[data-slot="' + idx + '"]');
-      if (slot) {
-        slot.classList.remove('is-hint');
-        void slot.offsetWidth;
-        slot.classList.add('is-hint');
-        setTimeout(function () { slot.classList.remove('is-hint'); }, 3000);
+      if (plan.state === 'wrong') {
+        markWrong(plan.wrong);
+        ZQ.ui.toast.show(ZQ.I18N.toastHintWrong, { type: 'error' });
+      } else {
+        highlightSlot(plan.next);
+        ZQ.ui.toast.show(ZQ.I18N.toastHintDone, { type: 'good' });
       }
-      ZQ.ui.toast.show(ZQ.I18N.toastHintDone, { type: 'good' });
       ZQ.audio.coin();
     }
 
-    /** 找一个可高亮的候选：优先补齐缺口最多的品类，价格不导致超支 */
-    function pickHintIndex() {
-      var constraints = lv.constraint || [];
-      var picked = {};
-      for (var i = 0; i < session.selected.length; i++) {
-        var sel = lv.items[session.selected[i]];
-        picked[sel.category] = (picked[sel.category] || 0) + 1;
+    /** 唯一解的商品下标列表（出题时写入的 solutionKey，字符串 "i,j,k"） */
+    function solutionIndices() {
+      var key = lv.solutionKey || '';
+      if (!key) return [];
+      var parts = key.split(',');
+      var out = [];
+      for (var i = 0; i < parts.length; i++) {
+        var idx = parseInt(parts[i], 10);
+        if (!isNaN(idx)) out.push(idx);
       }
-      var need = {};
-      var bestCat = null;
-      var bestGap = 0;
-      for (var c = 0; c < constraints.length; c++) {
-        var n = constraints[c].count - (picked[constraints[c].category] || 0);
-        need[constraints[c].category] = n;
-        if (n > bestGap) { bestGap = n; bestCat = constraints[c].category; }
-      }
-      if (bestGap <= 0) return -1;
+      return out;
+    }
 
-      var cap = lv.budget - session.total;
-      var candidates = [];
-      for (var j = 0; j < lv.items.length; j++) {
-        if (session.isSelected(j)) continue;
-        var it = lv.items[j];
-        if (it.category !== bestCat) continue;
-        if (it.price > cap) continue;
-        candidates.push(j);
+    /**
+     * 提示计划：返回 null（无唯一解，不可提示）、
+     * { state: 'perfect' }（购物车已是唯一解）、
+     * { state: 'wrong', wrong: [下标...] } 或 { state: 'next', next: 下标 }
+     */
+    function hintPlan() {
+      var sol = solutionIndices();
+      if (!sol.length) return null;
+
+      var inSol = {};
+      for (var s = 0; s < sol.length; s++) inSol[sol[s]] = true;
+
+      var chosen = {};
+      var wrong = [];
+      for (var i = 0; i < session.selected.length; i++) {
+        var idx = session.selected[i];
+        chosen[idx] = true;
+        if (!inSol[idx]) wrong.push(idx);
       }
-      // 该品类都放不下时，退而求其次：任一未满足品类中放得下的商品
-      if (!candidates.length) {
-        for (var k = 0; k < lv.items.length; k++) {
-          var it2 = lv.items[k];
-          if (session.isSelected(k)) continue;
-          if ((need[it2.category] || 0) <= 0) continue;
-          if (it2.price > cap) continue;
-          candidates.push(k);
+      if (wrong.length) return { state: 'wrong', wrong: wrong };
+
+      for (var j = 0; j < sol.length; j++) {
+        if (!chosen[sol[j]]) return { state: 'next', next: sol[j] };
+      }
+      return { state: 'perfect' };
+    }
+
+    /** 高亮货架上的目标商品：先翻到它所在页，再给 3 秒呼吸框 */
+    function highlightSlot(idx) {
+      var pageNo = Math.floor(idx / ZQ.SLOTS_PER_PAGE);
+      if (pageNo !== page) page = ZQ.ui.shelf.goto(shelfEl, pageNo);
+      var slot = el.querySelector('.slot[data-slot="' + idx + '"]');
+      if (!slot) return;
+      slot.classList.remove('is-hint');
+      void slot.offsetWidth;
+      slot.classList.add('is-hint');
+      setTimeout(function () { slot.classList.remove('is-hint'); }, 3000);
+    }
+
+    /** 标红「不在唯一解里」的已选商品（购物车缩略图 + 右侧清单行），3 秒后自动卸掉 */
+    function markWrong(indices) {
+      for (var i = 0; i < indices.length; i++) {
+        var nodes = [
+          el.querySelector('.cart-item[data-slot="' + indices[i] + '"]'),
+          el.querySelector('.items-row[data-slot="' + indices[i] + '"]'),
+        ];
+        for (var k = 0; k < nodes.length; k++) {
+          (function (node) {
+            if (!node) return;
+            node.classList.remove('is-wrong');
+            void node.offsetWidth;
+            node.classList.add('is-wrong');
+            setTimeout(function () { node.classList.remove('is-wrong'); }, 3000);
+          })(nodes[k]);
         }
       }
-      return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : -1;
     }
 
     /**

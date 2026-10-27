@@ -738,8 +738,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding-top: 17vh;
+  justify-content: center;
+  padding-bottom: 12vh;   /* 整体上移，让提示语落在画面中心稍靠上 */
   gap: .8vh;
 }
 .toast {
