@@ -22,11 +22,13 @@ ZQ.ui = ZQ.ui || {};
   function slotHtml(item) {
     if (!item) return '<div class="slot slot-empty"></div>';
     var it = lookup(item.itemId);
-    var src = it ? encodeURI(it.path) : '';
+    var src = it ? encodeURI(ZQ.itemRuntimePath(it)) : '';
+    var fallback = it ? encodeURI(it.path) : '';
     var shownName = ZQ.itemName(item);
     return '<div class="slot" data-slot="' + item.slot + '" data-item="' + item.itemId + '">' +
       '<div class="slot-frame">' +
-        '<img class="slot-img" loading="lazy" src="' + src + '" alt="' + shownName + '">' +
+        '<img class="slot-img" loading="lazy" decoding="async" src="' + src + '" data-fallback="' + fallback +
+          '" alt="' + shownName + '">' +
       '</div>' +
       '<div class="slot-name">' + shownName + '</div>' +
       '<div class="slot-price"><span class="price-tag"></span>' + ZQ.money.fmt2(item.price) + '</div>' +
@@ -101,6 +103,14 @@ ZQ.ui = ZQ.ui || {};
       }
 
       el.innerHTML = html;
+      var imgs = el.querySelectorAll('img[data-fallback]');
+      for (var j = 0; j < imgs.length; j++) {
+        imgs[j].addEventListener('error', function () {
+          var fallback = this.getAttribute('data-fallback');
+          if (!fallback || this.getAttribute('src') === fallback) return;
+          this.setAttribute('src', fallback);
+        });
+      }
       return el;
     },
 

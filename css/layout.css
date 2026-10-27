@@ -97,15 +97,27 @@
   width: 100%;
 }
 
-/* 延时卡按钮：右上角、查看明细正上方；用 translateY 下移到与倒计时面板垂直中心对齐 */
-.btn-delaycard {
+/* 右上角横排三块道具方块（延时 / 提示 / 换题）：与查看明细同列右对齐，位于其上方 */
+.hud-tools {
   position: absolute;
   right: 3%;
-  top: 1.2%;
+  top: .8%;
   width: 20%;
   z-index: 9;
-  white-space: nowrap;
-  transform: translateY(1.4cqw);
+  display: flex;
+  gap: .6cqw;
+  transform: translateY(.6cqw);
+}
+.hud-tools .btn-tool { flex: 1 1 0; aspect-ratio: 1; }
+/* 提示卡高亮：呼吸光环 + 上浮，不覆盖选中态描边 */
+.slot.is-hint .slot-frame {
+  animation: zq-hint 1s ease-in-out 3;
+  outline: 3px dashed var(--orange);
+  outline-offset: 2px;
+}
+@keyframes zq-hint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-.7cqw); filter: drop-shadow(0 0 1cqw var(--orange)); }
 }
 
 /* 游戏界面左上角纯图标返回按钮，与倒计时面板垂直中心对齐 */

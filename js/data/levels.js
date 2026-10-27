@@ -92,14 +92,34 @@ ZQ.SLOTS_PER_PAGE = 12;
 ZQ.ITEMS_PER_LAYER = 4;
 ZQ.LAYER_CATEGORIES = ['drink', 'snack', 'daily', 'seasoning', 'drink', 'snack', 'daily', 'seasoning'];
 
-/* 零花钱兑换延时卡片套餐 */
+/* 零花钱商店：3 类消耗品，每类 2~3 档（多买打折）。tiers 内的 id 是兑换按钮的唯一标识 */
 ZQ.SHOP_ITEMS = [
-  { id: 'card1',  count: 1,  price: 10, tag: '',    tagEn: '' },
-  { id: 'card5',  count: 5,  price: 40, tag: '8折',  tagEn: '20% OFF' },
-  { id: 'card10', count: 10, price: 70, tag: '7折',  tagEn: '30% OFF' },
+  {
+    id: 'delay', icon: '⏱', unit: '+30s',
+    tiers: [
+      { id: 'delay1', count: 1, price: 10, tag: '',    tagEn: '' },
+      { id: 'delay5', count: 5, price: 40, tag: '8折',  tagEn: '20% OFF' },
+    ],
+  },
+  {
+    id: 'hint', icon: '💡', unit: 'HINT',
+    tiers: [
+      { id: 'hint1', count: 1, price: 15, tag: '',    tagEn: '' },
+      { id: 'hint3', count: 3, price: 39, tag: '省6',  tagEn: 'SAVE 6' },
+    ],
+  },
+  {
+    id: 'reroll', icon: '🔄', unit: 'REROLL',
+    tiers: [
+      { id: 'reroll1', count: 1, price: 20, tag: '',     tagEn: '' },
+      { id: 'reroll5', count: 5, price: 85, tag: '省15',  tagEn: 'SAVE 15' },
+    ],
+  },
 ];
 ZQ.DELAY_CARD_MAX_PER_LEVEL = 3;   // 每关最多使用 3 张
 ZQ.DELAY_CARD_SECONDS = 30;        // 每张 +30 秒
+ZQ.HINT_CARD_MAX_PER_LEVEL = 2;    // 每关最多使用 2 张
+ZQ.REROLL_CARD_MAX_PER_LEVEL = 1;  // 每关最多使用 1 张
 
 /* 皮肤表：按「三星奖牌数」解锁，不可用零花钱购买 */
 ZQ.SKINS = [

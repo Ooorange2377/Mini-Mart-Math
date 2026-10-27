@@ -127,6 +127,8 @@ window.ZQ = window.ZQ || {};
     if (save.equipped.cart === 'mecha') save.equipped.cart = 'silver';
     if (typeof save.coins !== 'number' || !isFinite(save.coins)) save.coins = 0;
     if (typeof save.delayCards !== 'number' || !isFinite(save.delayCards)) save.delayCards = 0;
+    if (typeof save.hintCards !== 'number' || !isFinite(save.hintCards)) save.hintCards = 0;
+    if (typeof save.rerollCards !== 'number' || !isFinite(save.rerollCards)) save.rerollCards = 0;
     if (typeof save.settings !== 'object' || !save.settings) save.settings = base.settings;
     if (save.settings.lang !== 'zh' && save.settings.lang !== 'en') save.settings.lang = 'zh';
     var fromVersion = typeof save.version === 'number' ? save.version : 1;
@@ -358,16 +360,19 @@ window.ZQ = window.ZQ || {};
       return true;
     },
 
-    addCards: function (n) {
-      data.delayCards = Math.max(0, (data.delayCards || 0) + (n | 0));
+    /** 道具入账；kind ∈ 'delay' | 'hint' | 'reroll'，返回该道具最新存量 */
+    addCards: function (n, kind) {
+      var key = kind === 'hint' ? 'hintCards' : (kind === 'reroll' ? 'rerollCards' : 'delayCards');
+      data[key] = Math.max(0, (data[key] || 0) + (n | 0));
       save();
-      return data.delayCards;
+      return data[key];
     },
 
-    /** 消耗 1 张延时卡，成功返回 true */
-    useCard: function () {
-      if ((data.delayCards || 0) <= 0) return false;
-      data.delayCards -= 1;
+    /** 消耗 1 张道具，成功返回 true */
+    useCard: function (kind) {
+      var key = kind === 'hint' ? 'hintCards' : (kind === 'reroll' ? 'rerollCards' : 'delayCards');
+      if ((data[key] || 0) <= 0) return false;
+      data[key] -= 1;
       save();
       return true;
     },

@@ -1,4 +1,4 @@
-/* 零花钱商店：ZQ.SHOP_ITEMS 三种套餐（1/5/10 张延时卡），零花钱兑换。
+/* 零花钱商店：3 类消耗品（延时卡 / 提示卡 / 换题卡），每类 2~3 档套餐。
  * 余额与持有数就地更新，不整页重渲染，保留兑换动画。 */
 window.ZQ = window.ZQ || {};
 ZQ.screens = ZQ.screens || {};
@@ -6,21 +6,59 @@ ZQ.screens = ZQ.screens || {};
 (function () {
   var DEFAULT_CART = 'silver';
 
-  /** 单张套餐卡：折扣角标 + 卡片图标 + 张数 + 价格 + 兑换按钮 */
-  function cardHtml(s) {
-    var tag = ZQ.isEn() ? (s.tagEn || '') : s.tag;
-    return '<div class="shop-card' + (tag ? ' has-tag' : '') + '" data-shop="' + s.id + '">' +
-      (tag ? '<span class="card-tag">' + tag + '</span>' : '') +
-      '<div class="card-icon"><span class="ci-plus">+30s</span><span class="ci-clock">⏱</span></div>' +
-      '<div class="card-count">× ' + s.count + '</div>' +
-      '<div class="card-price"><i class="ic-img ic-img-coin"></i> <b>' + s.price + '</b></div>' +
+  var META = {
+    delay: 'shopDelay',
+    hint: 'shopHint',
+    reroll: 'shopReroll',
+  };
+
+  var OWN_KEY = {
+    delay: 'delayCards',
+    hint: 'hintCards',
+    reroll: 'rerollCards',
+  };
+
+  /* 各卡片底部的使用说明 */
+  var DESC = {
+    delay: 'shopDescDelay',
+    hint: 'shopDescHint',
+    reroll: 'shopDescReroll',
+  };
+
+  /** 单档价签：张数 + 价格 + 兑换按钮，折扣档带角标 */
+  function tierHtml(t) {
+    var tag = ZQ.isEn() ? (t.tagEn || '') : t.tag;
+    return '<div class="tier-row' + (tag ? ' has-tag' : '') + '" data-tier="' + t.id + '">' +
+      (tag ? '<span class="tier-tag">' + tag + '</span>' : '') +
+      '<span class="tier-count">× ' + t.count + '</span>' +
+      '<span class="tier-price"><i class="ic-img ic-img-coin"></i><b>' + t.price + '</b></span>' +
       '<button class="btn-menu btn-buy" type="button">' + ZQ.I18N.shopBuy + '</button>' +
     '</div>';
   }
 
-  function findItem(id) {
+  /** 一类消耗品一张卡：图标 + 名称 + 多档价签 + 当前持有量 */
+  function cardHtml(item) {
+    var tiers = '';
+    for (var i = 0; i < item.tiers.length; i++) tiers += tierHtml(item.tiers[i]);
+    return '<div class="shop-card shop-card-' + item.id + '" data-shop="' + item.id + '">' +
+      '<div class="card-icon card-icon-' + item.id + '">' +
+        '<span class="ci-main">' + item.icon + '</span>' +
+        '<span class="ci-unit">' + item.unit + '</span>' +
+      '</div>' +
+      '<div class="card-name">' + ZQ.I18N[META[item.id]] + '</div>' +
+      '<div class="tier-list">' + tiers + '</div>' +
+      '<div class="card-owned js-own" data-kind="' + item.id + '"></div>' +
+      '<div class="card-desc">' + ZQ.I18N[DESC[item.id]] + '</div>' +
+    '</div>';
+  }
+
+  /** 按套餐 id 找到所属类别与档位 */
+  function findTier(id) {
     for (var i = 0; i < ZQ.SHOP_ITEMS.length; i++) {
-      if (ZQ.SHOP_ITEMS[i].id === id) return ZQ.SHOP_ITEMS[i];
+      var item = ZQ.SHOP_ITEMS[i];
+      for (var j = 0; j < item.tiers.length; j++) {
+        if (item.tiers[j].id === id) return { kind: item.id, tier: item.tiers[j] };
+      }
     }
     return null;
   }
@@ -54,13 +92,20 @@ ZQ.screens = ZQ.screens || {};
           '<div class="page-balance">' +
             '<span class="stat"><i class="ic-img ic-img-coin"></i><b class="js-coins">' + (save.coins || 0) + '</b>' +
               '<em>' + ZQ.I18N.mapCoins + '</em></span>' +
-            '<span class="stat"><i class="ic">⏱</i><b class="js-own">' + (save.delayCards || 0) + '</b>' +
-              '<em>' + ZQ.I18N.shopOwn + '</em></span>' +
           '</div>' +
         '</div>' +
 
-        '<div class="shop-grid">' + cards + '</div>' +
-        '<div class="shop-tip">' + ZQ.I18N.shopTip + '</div>';
+        '<div class="shop-grid">' + cards + '</div>';
+
+      function refreshOwn() {
+        var slots = el.querySelectorAll('.js-own');
+        for (var k = 0; k < slots.length; k++) {
+          var kind = slots[k].getAttribute('data-kind');
+          var n = ZQ.store.data[OWN_KEY[kind]] || 0;
+          slots[k].textContent = ZQ.I18N.shopOwnShort.replace('{n}', n);
+        }
+      }
+      refreshOwn();
 
       el.addEventListener('click', function (e) {
         var t = e.target;
@@ -74,28 +119,31 @@ ZQ.screens = ZQ.screens || {};
 
         var buy = t.closest('.btn-buy');
         if (!buy) return;
+        var row = buy.closest('.tier-row');
+        var found = findTier(row.getAttribute('data-tier'));
+        if (!found) return;
         var card = buy.closest('.shop-card');
-        var shop = findItem(card.getAttribute('data-shop'));
-        if (!shop) return;
 
-        if ((ZQ.store.data.coins || 0) < shop.price) {
+        if ((ZQ.store.data.coins || 0) < found.tier.price) {
           ZQ.audio.error();
           shake(card);
           ZQ.ui.toast.show(ZQ.I18N.toastCoinsNotEnough, { type: 'error' });
           return;
         }
 
-        // 先扣零花销、再入账延时卡（两处均落存档）
-        ZQ.store.spendCoins(shop.price);
-        ZQ.store.addCards(shop.count);
+        // 先扣零花钱、再入账对应道具（两处均落存档）
+        ZQ.store.spendCoins(found.tier.price);
+        ZQ.store.addCards(found.tier.count, found.kind);
         ZQ.audio.coin();
 
         el.querySelector('.js-coins').textContent = ZQ.store.data.coins;
-        var own = el.querySelector('.js-own');
-        own.textContent = ZQ.store.data.delayCards;
-        own.classList.remove('is-pop');
-        void own.offsetWidth;
-        own.classList.add('is-pop');
+        refreshOwn();
+        var own = el.querySelector('.js-own[data-kind="' + found.kind + '"]');
+        if (own) {
+          own.classList.remove('is-pop');
+          void own.offsetWidth;
+          own.classList.add('is-pop');
+        }
         var icon = card.querySelector('.card-icon');
         if (icon) {
           icon.classList.remove('is-pop');

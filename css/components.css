@@ -650,6 +650,7 @@
   line-height: 1.55;
   color: rgba(27, 62, 111, .82);
 }
+.pager-tip-card.is-below { transform: translate(-50%, 0); }
 .pager-tip-card .btn-result { width: 100%; margin-top: .8em; font-size: 1em; }
 
 /* ================= 购物篮 ================= */
@@ -761,25 +762,64 @@
 .toast-error { background: #FFE2DE; border-color: var(--red); color: var(--red); }
 .toast-good { background: var(--green-lt); }
 
-/* ================= 延时卡片按钮 ================= */
-.btn-delaycard {
+/* ================= 关卡内道具方块（延时 / 提示 / 换题） ================= */
+.btn-tool {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .25cqw;
+  padding: .2cqw;
+  font-weight: 900;
+  color: var(--ink);
+  /* 半透明白底：能透出后面的货架/墙面，又保持图标清晰 */
+  background: rgba(255, 253, 247, .58);
+  border: 2.5px solid var(--ink);
+  border-radius: 1.3cqw;
+  box-shadow: 2px 2px 0 var(--ink-soft);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  transition: transform .08s ease, box-shadow .08s ease, filter .16s ease, opacity .16s ease;
+}
+.btn-tool .dt-icon { font-size: 2.5cqw; line-height: 1; }
+.btn-tool .dt-name {
+  font-size: 1.15cqw;
+  font-weight: 900;
+  letter-spacing: .5px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+/* 右上角剩余次数角标：珊瑚红圆底 + 白字 */
+.btn-tool .dt-badge {
+  position: absolute;
+  top: -.6cqw;
+  right: -.55cqw;
+  min-width: 2.1cqw;
+  height: 2.1cqw;
+  padding: 0 .3cqw;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: .55cqw;
-  font-size: 1.75cqw;
+  font-size: 1.25cqw;
   font-weight: 900;
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--paper), var(--yellow-lt));
-  border: 3px solid var(--ink);
+  line-height: 1;
+  color: #fff;
+  background: #E8695F;
+  border: 2px solid var(--ink);
   border-radius: 999px;
-  box-shadow: var(--shadow);
-  padding: .48cqw .9cqw .58cqw;
-  transition: transform .08s ease, box-shadow .08s ease;
+  box-shadow: 1px 1px 0 var(--ink-soft);
 }
-.btn-delaycard:active { transform: translate(2px, calc(1.4cqw + 2px)); box-shadow: 2px 2px 0 var(--ink-soft); }
-.btn-delaycard .dc-count { color: var(--blue); }
-.btn-delaycard.is-off { opacity: .5; }
+.btn-tool:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink-soft); }
+/* 剩余 0：图标与文字置灰变淡，角标转为灰底白字仍显示 0 */
+.btn-tool.is-off {
+  background: rgba(255, 253, 247, .3);
+  filter: saturate(.3);
+}
+.btn-tool.is-off .dt-icon,
+.btn-tool.is-off .dt-name { opacity: .42; }
+.btn-tool.is-off .dt-badge { background: #7F8A96; }
+.btn-tool[disabled] { pointer-events: none; }
 
 /* 游戏界面左上角纯图标返回按钮 */
 .btn-back-game {

@@ -7,11 +7,47 @@ ZQ.screens = ZQ.screens || {};
   /* 飞行中的商品下标 → 飞行记录（用于取消已被移除商品的动画） */
   var flying = {};
 
+  /* 换题卡重渲染时，用于把已用道具次数与剩余时间带到新一局 */
+  var rerollCarry = null;
+
+  /* 道具元数据：存档字段 / 每关上限 / 提示 */
+  var TOOLS = {
+    delay: {
+      own: 'delayCards', limit: ZQ.DELAY_CARD_MAX_PER_LEVEL || 3,
+      name: 'toolDelay', label: '+30s', icon: '⏱',
+      empty: 'toastDelayCardEmpty', usedUp: 'toastDelayCardUsedUp',
+    },
+    hint: {
+      own: 'hintCards', limit: ZQ.HINT_CARD_MAX_PER_LEVEL || 2,
+      name: 'toolHint', label: 'HINT', icon: '💡',
+      empty: 'toastHintCardEmpty', usedUp: 'toastHintCardUsedUp',
+    },
+    reroll: {
+      own: 'rerollCards', limit: ZQ.REROLL_CARD_MAX_PER_LEVEL || 1,
+      name: 'toolReroll', label: 'REROLL', icon: '🔄',
+      empty: 'toastRerollCardEmpty', usedUp: 'toastRerollCardUsedUp',
+    },
+  };
+
   function fmtTime(sec) {
     var s = Math.max(0, sec | 0);
     var m = Math.floor(s / 60);
     var r = s % 60;
     return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  /** 三块道具方块（数量由 updateTools() 刷新） */
+  function toolsHtml() {
+    var out = '';
+    for (var k in TOOLS) {
+      var t = TOOLS[k];
+      out += '<button class="btn-tool btn-tool-' + k + '" type="button" data-tool="' + k + '">' +
+        '<span class="dt-icon">' + t.icon + '</span>' +
+        '<span class="dt-name">' + t.label + '</span>' +
+        '<span class="dt-badge" data-left="' + k + '">0</span>' +
+      '</button>';
+    }
+    return out;
   }
 
   /** 超支抖动：重新触发同一关键帧需先移除类并强制回流 */
@@ -98,10 +134,15 @@ ZQ.screens = ZQ.screens || {};
     if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
   }
 
-  /** 首次遇到多页货架时，框选翻页器并暂停计时，关闭提示后再开始本关 */
-  function showPagerHint(pager, onClose) {
+  /**
+   * 首次遇到新机制时，框选对应控件并暂停计时，关闭提示后再开始本关。
+   * @param {HTMLElement} target 需要框选的目标元素
+   * @param {object} tip 文案与记录键：{ key, title, text, ok }
+   * @param {Function} onClose
+   */
+  function showSpotlightTip(target, tip, onClose) {
     var layer = document.getElementById('modal-layer');
-    if (!layer) { onClose(); return; }
+    if (!layer || !target) { onClose(); return; }
 
     layer.innerHTML = '';
     var mask = document.createElement('div');
@@ -109,10 +150,10 @@ ZQ.screens = ZQ.screens || {};
     mask.innerHTML =
       '<div class="pager-tip-spot" aria-hidden="true"></div>' +
       '<div class="pager-tip-card" role="dialog" aria-modal="true">' +
-        '<div class="pager-tip-title">' + ZQ.I18N.pagerTipTitle + '</div>' +
-        '<div class="pager-tip-text">' + ZQ.I18N.pagerTipText + '</div>' +
+        '<div class="pager-tip-title">' + tip.title + '</div>' +
+        '<div class="pager-tip-text">' + tip.text + '</div>' +
         '<button class="btn-result btn-primary pager-tip-ok" type="button">' +
-          ZQ.I18N.pagerTipOk +
+          (tip.ok || ZQ.I18N.pagerTipOk) +
         '</button>' +
       '</div>';
     layer.appendChild(mask);
@@ -123,14 +164,20 @@ ZQ.screens = ZQ.screens || {};
     var closed = false;
 
     function position() {
-      var rect = pager.getBoundingClientRect();
+      var rect = target.getBoundingClientRect();
       var pad = 9;
       spot.style.left = (rect.left - pad) + 'px';
       spot.style.top = (rect.top - pad) + 'px';
       spot.style.width = (rect.width + pad * 2) + 'px';
       spot.style.height = (rect.height + pad * 2) + 'px';
-      card.style.left = (rect.left + rect.width / 2) + 'px';
-      card.style.top = (rect.top - 18) + 'px';
+
+      // 目标在上半屏时卡片放到下方，避免提示跑出屏幕
+      var below = rect.top < window.innerHeight * 0.55;
+      var cw = card.offsetWidth || 320;
+      var cx = Math.min(Math.max(rect.left + rect.width / 2, cw / 2 + 10), window.innerWidth - cw / 2 - 10);
+      card.style.left = cx + 'px';
+      card.style.top = (below ? rect.bottom + 16 : rect.top - 18) + 'px';
+      card.classList.toggle('is-below', below);
     }
 
     function close() {
@@ -138,7 +185,7 @@ ZQ.screens = ZQ.screens || {};
       closed = true;
       window.removeEventListener('resize', position);
       document.removeEventListener('keydown', onKey);
-      ZQ.store.markTutorial('shelfPager');
+      ZQ.store.markTutorial(tip.key);
       layer.innerHTML = '';
       onClose();
     }
@@ -190,6 +237,11 @@ ZQ.screens = ZQ.screens || {};
       this.session = ZQ.session.create(lv);
       var session = this.session;
 
+      // 换题卡重开：把已用道具次数与剩余时间带进新一局（关卡不同则丢弃）
+      var carry = rerollCarry;
+      rerollCarry = null;
+      if (carry && carry.levelId !== lv.levelId) carry = null;
+
       var saved = ZQ.store.data || {};
       var equipped = (saved.equipped && saved.equipped.cart) || 'silver';
       var constraints = lv.constraint || [];
@@ -227,7 +279,7 @@ ZQ.screens = ZQ.screens || {};
           '</div>' +
           '<div class="t-row"><span>' + ZQ.I18N.labelLevel + '</span><b>' + lv.levelId + '</b></div>' +
           '<div class="t-row t-budget"><span>' + ZQ.I18N.labelBudget + '</span><b>¥ ' + ZQ.money.fmtTrim(lv.budget) + '</b></div>' +
-          '<div class="t-row"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' +
+          '<div class="t-row t-count"><span>' + ZQ.I18N.labelNeedCount + '</span><b>' +
             ZQ.I18N.itemCount.replace('{n}', lv.n).replace('{item}', ZQ.itemWord(lv.n)) + '</b></div>' +
           '<div class="t-rule' + ruleClass + '" title="' + fullConstraint + '">' +
             '<span class="t-rule-label">' + ZQ.I18N.labelConstraint + '</span>' +
@@ -245,11 +297,8 @@ ZQ.screens = ZQ.screens || {};
           '<div class="timer-track"><span class="timer-fill"></span></div>' +
         '</div>' +
 
-        // 延时卡片按钮：CSS 绝对定位到右上角、查看明细正上方
-        '<button class="btn-delaycard" type="button">' +
-          '<span class="dc-label">' + ZQ.I18N.useCard + '</span>' +
-          '<span class="dc-count"></span>' +
-        '</button>' +
+        // 右上角纵排道具按钮：延时卡 / 提示卡 / 换题卡
+        '<div class="hud-tools">' + toolsHtml() + '</div>' +
 
         // 右侧纵向功能区：详情下拉 + 购物篮（hud-items 保持在 panel-basket 内，不动）
         '<aside class="panel-basket">' +
@@ -284,7 +333,7 @@ ZQ.screens = ZQ.screens || {};
       this.stage = el;
 
       ZQ.ui.list.reset();   // 新关卡：清空清单行缓存，避免沿用上一关的新增判定
-      bind(el, lv, session);
+      bind(el, lv, session, carry);
       return el;
     },
 
@@ -292,7 +341,7 @@ ZQ.screens = ZQ.screens || {};
   };
 
   /** 事件绑定：所有交互走 .stage 上的事件委托 */
-  function bind(el, lv, session) {
+  function bind(el, lv, session, carry) {
     var cartPanel = el.querySelector('.panel-cart');
     var cartBox = el.querySelector('.cart');
     var shelfEl = el.querySelector('.shelf');
@@ -300,10 +349,10 @@ ZQ.screens = ZQ.screens || {};
     var page = 0;
 
     /* ---------- 计时器 ---------- */
-    var remaining = lv.timeSec;      // 剩余秒数
+    var remaining = carry ? carry.remaining : lv.timeSec;   // 剩余秒数
     var deadline = Date.now() + remaining * 1000;
     var timerId = null;
-    var cardsUsed = 0;               // 本关已用延时卡张数
+    var used = carry ? carry.used : { delay: 0, hint: 0, reroll: 0 };  // 本关各类道具已用次数
 
     /** 剩余时间与告急态（仅 SELECTING 阶段显示告急） */
     function updateTimerHud() {
@@ -349,14 +398,20 @@ ZQ.screens = ZQ.screens || {};
     }
     ZQ.screens.game._stopTimer = stopTimer;
 
-    /** 延时卡片剩余可用张数：实际持有量与本关上限制约后的较小值 */
-    function updateCardBtn() {
-      var own = ZQ.store.data.delayCards || 0;
-      var left = Math.max(0, Math.min(own, ZQ.DELAY_CARD_MAX_PER_LEVEL - cardsUsed));
-      var c = el.querySelector('.btn-delaycard .dc-count');
-      if (c) c.textContent = ZQ.I18N.cardsLeft.replace('{n}', left);
-      var btn = el.querySelector('.btn-delaycard');
-      if (btn && session.state === 'selecting') btn.classList.toggle('is-off', left <= 0);
+    /** 三类道具按钮的可用次数：实际持有量与本关上限制约后的较小值 */
+    function updateTools() {
+      for (var k in TOOLS) {
+        var t = TOOLS[k];
+        var own = ZQ.store.data[t.own] || 0;
+        var left = Math.max(0, Math.min(own, t.limit - used[k]));
+        var badge = el.querySelector('.dt-badge[data-left="' + k + '"]');
+        if (badge) badge.textContent = left;
+        var btn = el.querySelector('.btn-tool-' + k);
+        if (btn) {
+          btn.classList.toggle('is-off', left <= 0);
+          btn.setAttribute('aria-label', ZQ.I18N[t.name] + ' ' + left);
+        }
+      }
     }
 
     /** 「+30s」飘字：绝对定位于舞台顶部（状态胶囊下方） */
@@ -375,23 +430,144 @@ ZQ.screens = ZQ.screens || {};
     /** 使用一张延时卡：本关上限校验 → 扣存档 → 加时 → 飘字 */
     function useCard() {
       if (session.state !== 'selecting') return;
-      if (cardsUsed >= ZQ.DELAY_CARD_MAX_PER_LEVEL) {
+      if (used.delay >= TOOLS.delay.limit) {
         ZQ.audio.error();
         ZQ.ui.toast.show(ZQ.I18N.toastDelayCardUsedUp, { type: 'error' });
         return;
       }
-      if (!ZQ.store.useCard()) {
+      if (!ZQ.store.useCard('delay')) {
         ZQ.audio.error();
         ZQ.ui.toast.show(ZQ.I18N.toastDelayCardEmpty, { type: 'error' });
         return;
       }
-      cardsUsed += 1;
+      used.delay += 1;
       remaining += ZQ.DELAY_CARD_SECONDS;
       deadline += ZQ.DELAY_CARD_SECONDS * 1000;
       updateTimerHud();
-      updateCardBtn();
+      updateTools();
       floatText(ZQ.I18N.toastDelayCardAdded);
       ZQ.audio.coin();
+    }
+
+    /**
+     * 使用一张提示卡：高亮一件「仍缺的品类」里、加上去也不超预算的商品。
+     * 先校验本关上限与存量，再找目标；找不到时不扣卡。
+     */
+    function useHint() {
+      if (session.state !== 'selecting') return;
+      if (used.hint >= TOOLS.hint.limit) {
+        ZQ.audio.error();
+        ZQ.ui.toast.show(ZQ.I18N.toastHintCardUsedUp, { type: 'error' });
+        return;
+      }
+      if ((ZQ.store.data.hintCards || 0) <= 0) {
+        ZQ.audio.error();
+        ZQ.ui.toast.show(ZQ.I18N.toastHintCardEmpty, { type: 'error' });
+        return;
+      }
+      var idx = pickHintIndex();
+      if (idx < 0) {
+        ZQ.audio.error();
+        ZQ.ui.toast.show(ZQ.I18N.toastHintNothing, { type: 'error' });
+        return;
+      }
+      ZQ.store.useCard('hint');
+      used.hint += 1;
+      updateTools();
+
+      // 高亮：若目标不在当前货架页，先翻到它所在页
+      var pageNo = Math.floor(idx / ZQ.SLOTS_PER_PAGE);
+      if (pageNo !== page) page = ZQ.ui.shelf.goto(shelfEl, pageNo);
+      var slot = el.querySelector('.slot[data-slot="' + idx + '"]');
+      if (slot) {
+        slot.classList.remove('is-hint');
+        void slot.offsetWidth;
+        slot.classList.add('is-hint');
+        setTimeout(function () { slot.classList.remove('is-hint'); }, 3000);
+      }
+      ZQ.ui.toast.show(ZQ.I18N.toastHintDone, { type: 'good' });
+      ZQ.audio.coin();
+    }
+
+    /** 找一个可高亮的候选：优先补齐缺口最多的品类，价格不导致超支 */
+    function pickHintIndex() {
+      var constraints = lv.constraint || [];
+      var picked = {};
+      for (var i = 0; i < session.selected.length; i++) {
+        var sel = lv.items[session.selected[i]];
+        picked[sel.category] = (picked[sel.category] || 0) + 1;
+      }
+      var need = {};
+      var bestCat = null;
+      var bestGap = 0;
+      for (var c = 0; c < constraints.length; c++) {
+        var n = constraints[c].count - (picked[constraints[c].category] || 0);
+        need[constraints[c].category] = n;
+        if (n > bestGap) { bestGap = n; bestCat = constraints[c].category; }
+      }
+      if (bestGap <= 0) return -1;
+
+      var cap = lv.budget - session.total;
+      var candidates = [];
+      for (var j = 0; j < lv.items.length; j++) {
+        if (session.isSelected(j)) continue;
+        var it = lv.items[j];
+        if (it.category !== bestCat) continue;
+        if (it.price > cap) continue;
+        candidates.push(j);
+      }
+      // 该品类都放不下时，退而求其次：任一未满足品类中放得下的商品
+      if (!candidates.length) {
+        for (var k = 0; k < lv.items.length; k++) {
+          var it2 = lv.items[k];
+          if (session.isSelected(k)) continue;
+          if ((need[it2.category] || 0) <= 0) continue;
+          if (it2.price > cap) continue;
+          candidates.push(k);
+        }
+      }
+      return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : -1;
+    }
+
+    /**
+     * 使用一张换题卡：同关卡、换 seed 重出题目。
+     * 已用次数与剩余时间带到新一局，每关本身上限 1 次。
+     */
+    function useReroll() {
+      if (session.state !== 'selecting') return;
+      if (used.reroll >= TOOLS.reroll.limit) {
+        ZQ.audio.error();
+        ZQ.ui.toast.show(ZQ.I18N.toastRerollCardUsedUp, { type: 'error' });
+        return;
+      }
+      if ((ZQ.store.data.rerollCards || 0) <= 0) {
+        ZQ.audio.error();
+        ZQ.ui.toast.show(ZQ.I18N.toastRerollCardEmpty, { type: 'error' });
+        return;
+      }
+      ZQ.store.useCard('reroll');
+      used.reroll += 1;
+      stopTimer();
+
+      // 新题同时写回固定题，避免下次重进又回到原来那套凑不出的组合
+      var seed = newSeed();
+      var nextLv = ZQ.generator.generate(lv.levelId, seed);
+      if (!ZQ.store.isLevelMaxed(lv.levelId)) ZQ.store.setFixedQuestion(lv.levelId, nextLv);
+
+      rerollCarry = {
+        levelId: lv.levelId,
+        remaining: Math.max(1, remaining),
+        used: { delay: used.delay, hint: used.hint, reroll: used.reroll },
+      };
+      ZQ.ui.toast.show(ZQ.I18N.toastRerollDone, { type: 'good' });
+      ZQ.app.go('game', { levelId: lv.levelId, seed: seed });
+    }
+
+    /** 换题随机种子：避免与当前种子相同 */
+    function newSeed() {
+      var s = (Date.now() % 2147483647) ^ Math.floor(Math.random() * 999999);
+      if (s === lv.seed) s += 1;
+      return s;
     }
 
     /**
@@ -420,8 +596,11 @@ ZQ.screens = ZQ.screens || {};
       session.setState('checkout');
       updateHudState();
 
-      var btn = el.querySelector('.btn-delaycard');
-      if (btn) { btn.disabled = true; btn.classList.add('is-off'); }
+      var tools = el.querySelectorAll('.btn-tool');
+      for (var bi = 0; bi < tools.length; bi++) {
+        tools[bi].disabled = true;
+        tools[bi].classList.add('is-off');
+      }
       var hint = el.querySelector('.checkout-hint');
       if (hint) hint.parentNode.removeChild(hint);
       ZQ.store.markTutorial('checkoutHint');
@@ -570,8 +749,16 @@ ZQ.screens = ZQ.screens || {};
         return;
       }
 
-      // 延时卡片
-      if (t.closest('.btn-delaycard')) { ZQ.audio.unlock(); useCard(); return; }
+      // 道具：延时卡 / 提示卡 / 换题卡
+      var tool = t.closest('.btn-tool');
+      if (tool) {
+        ZQ.audio.unlock();
+        var kind = tool.getAttribute('data-tool');
+        if (kind === 'delay') useCard();
+        else if (kind === 'hint') useHint();
+        else if (kind === 'reroll') useReroll();
+        return;
+      }
 
       // 翻页
       var arrow = t.closest('.pager-arrow');
@@ -611,12 +798,59 @@ ZQ.screens = ZQ.screens || {};
     });
 
     refresh();
-    updateCardBtn();
+    updateTools();
+    updateTimerHud();
+    // 换题卡重开不重复演示新手提示，直接接着上一次的剩余时间
+    if (carry) startTimer();
+    else startWithTips(el, lv, startTimer);
+  }
+
+  /** 首次进入需要新机制的关卡时，依次弹出提示，全部关闭后才启动计时 */
+  function startWithTips(el, lv, onAllClosed) {
+    var queue = [];
+    if (lv.constraint && lv.constraint.length && !ZQ.store.tutorialSeen('constraint')) {
+      queue.push({
+        target: el.querySelector('.hud-target .t-rule'),
+        key: 'constraint',
+        title: ZQ.I18N.tipConstraintTitle,
+        text: ZQ.I18N.tipConstraintText,
+        ok: ZQ.I18N.tipGotIt,
+      });
+    }
+    if (lv.n >= 4 && !ZQ.store.tutorialSeen('fourItems')) {
+      queue.push({
+        target: el.querySelector('.hud-target .t-count'),
+        key: 'fourItems',
+        title: ZQ.I18N.tipFourTitle,
+        text: ZQ.I18N.tipFourText,
+        ok: ZQ.I18N.tipGotIt,
+      });
+    }
     var pager = el.querySelector('.shelf-pager');
     if (lv.pages > 1 && pager && !ZQ.store.tutorialSeen('shelfPager')) {
-      requestAnimationFrame(function () { showPagerHint(pager, startTimer); });
-    } else {
-      startTimer();
+      queue.push({
+        target: pager,
+        key: 'shelfPager',
+        title: ZQ.I18N.pagerTipTitle,
+        text: ZQ.I18N.pagerTipText,
+        ok: ZQ.I18N.pagerTipOk,
+      });
+    }
+
+    next(0);
+
+    function next(i) {
+      if (i >= queue.length) { onAllClosed(); return; }
+      var tip = queue[i];
+      var done = false;
+      function run() {
+        if (done) return;
+        done = true;
+        showSpotlightTip(tip.target, tip, function () { next(i + 1); });
+      }
+      // 等一帧让布局稳定；后台标签页里 rAF 可能被冻结，用定时器兜底
+      requestAnimationFrame(run);
+      setTimeout(run, 60);
     }
   }
 })();

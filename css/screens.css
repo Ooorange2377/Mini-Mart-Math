@@ -603,40 +603,29 @@
 /* ================= 零花钱商店 ================= */
 .shop-grid {
   position: absolute;
-  left: 8%; right: 8%; top: 33%;
+  left: 5%; right: 5%; top: 31%;
   display: flex;
   justify-content: center;
+  align-items: stretch;
   gap: 3cqw;
   z-index: 3;
 }
 .shop-card {
   position: relative;
-  width: 22cqw;
+  width: 27cqw;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.6cqw 1.4cqw 1.5cqw;
+  padding: 1.5cqw 1.2cqw 1.2cqw;
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 16px;
   box-shadow: var(--shadow);
 }
-.card-tag {
-  position: absolute;
-  left: -.7cqw; top: -1.1cqw;
-  padding: .15cqw .8cqw .25cqw;
-  background: var(--awning);
-  color: var(--paper);
-  border: 3px solid var(--ink);
-  border-radius: 999px;
-  font-size: 1.5cqw;
-  font-weight: 900;
-  transform: rotate(-10deg);
-}
 .card-icon {
   position: relative;
-  width: 12cqw;
-  height: 8.4cqw;
+  width: 9cqw;
+  height: 7cqw;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -645,28 +634,71 @@
   border-radius: 10px;
   box-shadow: 2px 2px 0 var(--ink-soft);
 }
-.card-icon .ci-plus {
+.card-icon-hint { background: linear-gradient(180deg, #FFF3C4, #FFD76A); }
+.card-icon-reroll { background: linear-gradient(180deg, #DDF1FF, #9CD4F5); }
+.card-icon .ci-main { font-size: 3.4cqw; line-height: 1; }
+.card-icon .ci-unit {
   position: absolute;
-  left: .6cqw; top: .3cqw;
-  font-size: 1.35cqw;
+  left: 50%; bottom: .15cqw;
+  transform: translateX(-50%);
+  font-size: 1.15cqw;
   font-weight: 900;
-  color: var(--orange);
+  color: var(--ink);
+  opacity: .72;
+  white-space: nowrap;
 }
-.card-icon .ci-clock { font-size: 3.6cqw; line-height: 1; }
-.card-count { margin-top: 1cqw; font-size: 2.6cqw; font-weight: 900; color: var(--blue); }
-.card-price { margin-top: .3cqw; font-size: 1.9cqw; font-weight: 900; color: var(--ink); }
-.card-price b { color: var(--orange); }
-.shop-card .btn-buy { width: 100%; margin-top: 1.2cqw; font-size: 2.2cqw; padding: .55cqw 0 .7cqw; }
-.shop-card.is-denied { animation: zq-shake .42s ease; }
-.shop-card.is-denied .card-price { color: var(--red); }
-.shop-tip {
+.card-name { margin-top: .9cqw; font-size: 2.1cqw; font-weight: 900; color: var(--blue); }
+
+.tier-list { width: 100%; margin-top: .9cqw; display: flex; flex-direction: column; gap: .8cqw; }
+.tier-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5cqw;
+  padding: .35cqw .5cqw .45cqw .8cqw;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+}
+.tier-count { font-size: 1.7cqw; font-weight: 900; color: var(--blue); white-space: nowrap; }
+.tier-price { margin-left: auto; display: flex; align-items: center; gap: .2cqw; font-size: 1.7cqw; font-weight: 900; }
+.tier-price b { color: var(--orange); }
+.tier-price .ic-img { width: 1.7cqw; height: 1.7cqw; }
+.tier-row .btn-buy {
+  flex: none;
+  font-size: 1.45cqw;
+  font-weight: 900;
+  padding: .22cqw .8cqw .32cqw;
+  border-radius: 8px;
+}
+.tier-tag {
   position: absolute;
-  left: 8%; right: 8%; bottom: 6%;
+  left: -.5cqw; top: -.95cqw;
+  padding: .05cqw .5cqw .12cqw;
+  background: var(--awning);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 1.15cqw;
+  font-weight: 900;
+  transform: rotate(-9deg);
+  white-space: nowrap;
+}
+.card-owned { margin-top: auto; padding-top: .9cqw; font-size: 1.4cqw; font-weight: 800; color: rgba(27, 62, 111, .55); }
+.card-owned.is-pop { animation: zq-pop .4s ease; }
+.shop-card.is-denied { animation: zq-shake .42s ease; }
+.shop-card.is-denied .tier-price { color: var(--red); }
+/* 卡片底部使用说明：与「持有」一起贴底，虚线分隔价签区 */
+.card-desc {
+  width: 100%;
+  margin-top: .5cqw;
+  padding-top: .7cqw;
+  border-top: 2px dashed rgba(27, 62, 111, .2);
   text-align: center;
-  font-size: 1.7cqw;
-  font-weight: 800;
+  font-size: 1.1cqw;
+  line-height: 1.4;
+  font-weight: 700;
   color: rgba(27, 62, 111, .6);
-  z-index: 3;
 }
 
 /* ================= 皮肤（分类切换 + 单类横滑） ================= */
