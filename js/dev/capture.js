@@ -35,6 +35,7 @@ var HEIGHT = parseInt(arg('height', '1080'), 10);
 var DPR = parseFloat(arg('dpr', '1'));
 var MOBILE = arg('mobile', '') === '1';
 var ASSERT_MOBILE = arg('assert-mobile', '') === '1';
+var VERIFY_BEHAVIOR = arg('verify-behavior', '') === '1';
 
 /* 需要快照计算样式的选择器：覆盖 4 个页面 + 游戏内关键控件 */
 var STYLE_TARGETS = [
@@ -228,21 +229,25 @@ var SCREENS = [
 
 /* ---------- 移动端验收断言（在页面内执行，返回 {name, pass, detail} 数组） ---------- */
 function mobileAssertScript() {
+  var portrait = HEIGHT > WIDTH;
   return '(function(){' +
     'var out=[];' +
+    'var portrait=' + portrait + ';' +
     'function add(name,pass,detail){out.push({name:name,pass:!!pass,detail:detail});}' +
     'var coarse=window.matchMedia("(pointer: coarse)").matches;' +
     'add("pointer: coarse 生效",coarse,"pointer coarse=" + coarse);' +
-    '/* 竖屏：只有提示层，不进行可玩性断言（竖屏不提供游玩布局） */' +
+    '/* 竖屏：只验提示层，不进行可玩性断言（竖屏不提供游玩布局） */' +
     'var tip0=document.querySelector(".rotate-tip");' +
-    'var tipShown=tip0&&getComputedStyle(tip0).display!=="none";' +
-    'if(tipShown){' +
-    'add("竖屏提示显示",true,"display="+getComputedStyle(tip0).display);' +
+    'var tipShown=!!tip0&&getComputedStyle(tip0).display!=="none";' +
+    'var tipDisp=tip0?getComputedStyle(tip0).display:"(无节点)";' +
+    'if(portrait){' +
+    'add("竖屏提示显示",portrait===tipShown,"display="+tipDisp+"（竖屏应为 flex）");' +
     'var card=tip0.querySelector(".rotate-tip-card");var cr=card.getBoundingClientRect();' +
     'add("竖屏提示在视口内",cr.left>=0&&cr.top>=0&&cr.right<=window.innerWidth+1' +
     '&&cr.bottom<=window.innerHeight+1,"卡片 "+Math.round(cr.left)+","+Math.round(cr.top)+" "+Math.round(cr.width)+"×"+Math.round(cr.height));' +
     'add("竖屏提示可关闭",getComputedStyle(tip0.querySelector(".rotate-tip-btn")).display!=="none","按钮可见");' +
     'return JSON.stringify(out);}' +
+    'add("横屏不显示提示",!tipShown,"display="+tipDisp);' +
     'var docW=document.documentElement.scrollWidth, winW=window.innerWidth;' +
     'add("无横向溢出",docW<=winW+1,docW+" <= "+winW);' +
     '/* 1. 字号下限（逐项，不抽样） */' +
@@ -270,8 +275,8 @@ function mobileAssertScript() {
     'var af=getComputedStyle(el,"::after");' +
     'var aw=parseFloat(af.width)||0, ah=parseFloat(af.height)||0;' +
     'var hw=Math.max(r.width,aw), hh=Math.max(r.height,ah);' +
-    'add("热区尺寸 "+sel,Math.round(hw)+"×"+Math.round(hh)+" ≥"+min,Math.min(hw,hh)>=min,' +
-    '"元素 "+Math.round(r.width)+"×"+Math.round(r.height)+"，含伪元素 "+Math.round(aw)+"×"+Math.round(ah));' +
+    'add("热区尺寸 "+sel,Math.min(hw,hh)>=min,' +
+    '"元素 "+Math.round(r.width)+"×"+Math.round(r.height)+"，含伪元素 "+Math.round(aw)+"×"+Math.round(ah)+"，有效热区 "+Math.round(hw)+"×"+Math.round(hh));' +
     '/* 伪元素锚定在左上，因此热区矩形以元素左上角为原点 */' +
     'var x0=r.left, y0=r.top;' +
     '/* 圆角控件不能取真角点（border-radius 会参与命中测试），取 20%/80% 内圈 */' +
@@ -281,20 +286,17 @@ function mobileAssertScript() {
     'return !t||!(t===el||el.contains(t)||t.parentNode===el);}).length;' +
     'add("热区命中 "+sel,miss===0,miss+" 个采样点未命中（共 5 点）");}' +
     'hit(".pager-arrow",44);hit(".btn-tool",44);hit(".btn-back-game",44);' +
-    '/* 4. 竖屏提示（仅竖屏跑） */' +
-    'var tip=document.querySelector(".rotate-tip");' +
-    'if(tip){var disp=getComputedStyle(tip).display;' +
-    'add("竖屏提示显示态",true,"display="+disp+"（竖屏应为 flex，横屏应为 none）");}' +
     'return JSON.stringify(out);})()';
 }
 
-function printAssertions(list) {
+function printAssertions(list, label) {
   var failed = 0;
   list.forEach(function (a) {
     if (!a.pass) failed++;
     console.log((a.pass ? '  PASS ' : '  FAIL ') + a.name + ' — ' + a.detail);
   });
-  console.log(failed ? '\n移动端断言 FAIL：' + failed + '/' + list.length : '\n移动端断言 PASS：' + list.length + ' 项');
+  label = label || '移动端断言';
+  console.log(failed ? '\n' + label + ' FAIL：' + failed + '/' + list.length : '\n' + label + ' PASS：' + list.length + ' 项');
   return failed;
 }
 
@@ -302,6 +304,68 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, new Promise(function (_, reject) {
     setTimeout(function () { reject(new Error('超时 ' + ms + 'ms：' + label)); }, ms);
   })]);
+}
+
+/* ---------- 运行时行为验证（切后台冻结 / 恢复、浏览器返回键） ---------- */
+function behaviorScript() {
+  return '(async function(){' +
+    'var out=[];' +
+    'function add(n,p,d){out.push({name:n,pass:!!p,detail:d});}' +
+    'function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}' +
+    'function setHidden(v){try{Object.defineProperty(document,"hidden",{configurable:true,get:function(){return v;}});' +
+    'Object.defineProperty(document,"visibilityState",{configurable:true,get:function(){return v?"hidden":"visible";}});}catch(e){}' +
+    'document.dispatchEvent(new Event("visibilitychange"));}' +
+    'function tsec(){var t=document.querySelector(".hud-timer .t-time");if(!t)return -1;' +
+    'var m=/^(\\d+):(\\d+)$/.exec(t.textContent.trim());return m?(+m[1])*60+(+m[2]):-1;}' +
+
+    /* 1. 倒计时：切后台冻结 */
+    'await wait(1300);' +
+    'var t0=tsec();' +
+    'setHidden(true);' +
+    'var t1=tsec();' +
+    'await wait(1600);' +
+    'var t2=tsec();' +
+    'add("切后台倒计时冻结",t2===t1,"后台前 "+t0+"s，冻结时 "+t1+"s，后台 1.6s 后 "+t2+"s");' +
+    'add("切后台标记 is-paused",document.body.classList.contains("is-paused"),' +
+    '"body.class="+document.body.className);' +
+    'var sample=document.querySelector(".timer-fill")||document.querySelector(".hud-timer");' +
+    'add("切后台动画暂停",getComputedStyle(sample).animationPlayState==="paused",' +
+    '"animation-play-state="+getComputedStyle(sample).animationPlayState);' +
+
+    /* 2. 回到前台：继续走 */
+    'setHidden(false);' +
+    'await wait(1800);' +
+    'var t3=tsec();' +
+    'add("回前台倒计时继续",t3<t2&&!document.body.classList.contains("is-paused"),' +
+    '"恢复时 "+t2+"s，1.8s 后 "+t3+"s");' +
+
+    /* 2.5 结算/存钱罐动画用的 ZQ.timer 同样在后台暂停、回来继续
+     *     按真实时序：先在可见时起一个 400ms 的定时器，切后台后它不应到期。 */
+    'var fired=0;' +
+    'ZQ.timer.after(function(){fired++;},400);' +
+    'await wait(100);' +
+    'setHidden(true);' +
+    'await wait(800);' +
+    'add("后台期间结算定时器不跑",fired===0,"fired="+fired+"（应 0）");' +
+    'setHidden(false);' +
+    'await wait(800);' +
+    'add("回前台后结算定时器补跑",fired===1,"fired="+fired+"（应 1）");' +
+
+    /* 3. 返回键：地图 → 开始页（同文档内 popstate） */
+    'ZQ.app.go("start"); await wait(80);' +
+    'ZQ.app.go("map"); await wait(80);' +
+    'history.back(); await wait(300);' +
+    'add("返回键 地图→开始",ZQ.state.screen==="start"&&location.hash==="#start",' +
+    '"screen="+ZQ.state.screen+" hash="+location.hash);' +
+
+    /* 4. 返回键：已在开始页时不应退出（补一条历史，画面保持） */
+    'ZQ.app.go("map"); await wait(80);' +
+    'ZQ.app.go("start"); await wait(80);' +
+    'history.back(); await wait(300);' +
+    'add("开始页返回键不退出",ZQ.state.screen==="start"&&location.hash==="#start"&&document.body.childElementCount>0,' +
+    '"screen="+ZQ.state.screen+" hash="+location.hash);' +
+
+    'return JSON.stringify(out);})()';
 }
 
 async function main() {
@@ -386,6 +450,14 @@ async function main() {
       var raw = await withTimeout(cdp.evaluate(mobileAssertScript()), 15000, '移动端断言');
       var code = printAssertions(JSON.parse(raw));
       if (code) process.exitCode = 1;
+    }
+
+    if (VERIFY_BEHAVIOR) {
+      await withTimeout(cdp.evaluate('ZQ.app.go("game",{levelId:25,seed:12345});'), 15000, '行为验证进入关卡');
+      await sleep(200);
+      var rawB = await withTimeout(cdp.evaluate(behaviorScript(), true), 40000, '行为验证');
+      var codeB = printAssertions(JSON.parse(rawB), '行为验证');
+      if (codeB) process.exitCode = 1;
     }
 
     /* 页面级 JS 报错一律算失败：静默的 TypeError 会让截图看起来正常但功能已坏。

@@ -59,8 +59,10 @@ window.ZQ = window.ZQ || {};
         return;
       }
       if (ZQ.state.screen === 'game') { ZQ.app.go('map', { noHistory: true }); return; }
-      if (ZQ.state.screen !== 'start') { ZQ.app.go('start', { noHistory: true }); }
-      // start：浏览器已回到进入游戏前的页面，正常退出即可
+      if (ZQ.state.screen !== 'start') { ZQ.app.go('start', { noHistory: true }); return; }
+      /* 已在开始页：浏览器已把最后一条历史pop掉，再按一次就会离开页面变成空白页。
+       * 这里补一条回去，让返回键在开始页只做「无操作」。 */
+      history.pushState({ zq: 1, screen: 'start' }, '', '#start');
     });
   }
 
@@ -120,6 +122,10 @@ window.ZQ = window.ZQ || {};
       ZQ.state.seed = opts.seed;
       if (!opts.noHistory) {
         history.pushState({ zq: 1, screen: screen }, '', '#' + screen);
+      } else {
+        /* 返回键驱动的跳转：不新增历史条目，否则会形成「返回→再进」的死循环；
+         * 用 replaceState 让地址栏与当前画面保持一致。 */
+        history.replaceState({ zq: 1, screen: screen }, '', '#' + screen);
       }
       render();
     },
