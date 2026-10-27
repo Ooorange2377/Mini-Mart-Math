@@ -86,6 +86,18 @@ window.ZQ = window.ZQ || {};
     if (!unlocked[save.equipped.pig]) save.equipped.pig = 'glass';
   }
 
+  /** 固定题缓存的是整份题目快照：关卡配置里的倒计时时长调整后，按当前配置覆盖旧值，
+   *  否则未满星关卡会一直沿用进关时缓存的老时长。 */
+  function refreshFixedQuestionTime(save) {
+    for (var key in save.fixedQuestions) {
+      if (!Object.prototype.hasOwnProperty.call(save.fixedQuestions, key)) continue;
+      var q = save.fixedQuestions[key];
+      if (!q || typeof q !== 'object') continue;
+      var cfg = ZQ.levelConfig ? ZQ.levelConfig(parseInt(key, 10)) : null;
+      if (cfg) q.timeSec = cfg.timeSec;
+    }
+  }
+
   function defaultSave() {
     return {
       version: VERSION,
@@ -135,6 +147,7 @@ window.ZQ = window.ZQ || {};
     if (fromVersion < 2) migrateLevelIds(save);
     if (fromVersion < 3) migrateMomBonuses(save);
     if (fromVersion < 4) migratePigSkins(save);
+    refreshFixedQuestionTime(save);
     sanitizeEquippedSkins(save);
     save.version = VERSION;
     return save;
