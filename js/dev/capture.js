@@ -276,7 +276,8 @@ function mobileAssertScript() {
     'var aw=parseFloat(af.width)||0, ah=parseFloat(af.height)||0;' +
     'var hw=Math.max(r.width,aw), hh=Math.max(r.height,ah);' +
     'add("热区尺寸 "+sel,Math.min(hw,hh)>=min,' +
-    '"元素 "+Math.round(r.width)+"×"+Math.round(r.height)+"，含伪元素 "+Math.round(aw)+"×"+Math.round(ah)+"，有效热区 "+Math.round(hw)+"×"+Math.round(hh));' +
+    '"元素 "+Math.round(r.width)+"×"+Math.round(r.height)+" @("+Math.round(r.left)+","+Math.round(r.top)+")"' +
+    '+" 含伪元素 "+Math.round(aw)+"×"+Math.round(ah)+"，有效热区 "+Math.round(hw)+"×"+Math.round(hh));' +
     '/* 伪元素锚定在左上，因此热区矩形以元素左上角为原点 */' +
     'var x0=r.left, y0=r.top;' +
     '/* 圆角控件不能取真角点（border-radius 会参与命中测试），取 20%/80% 内圈 */' +
