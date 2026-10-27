@@ -450,7 +450,16 @@
 }
 .lv:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
 .lv .lv-no { font-size: 2cqw; font-weight: 900; color: var(--blue); line-height: 1; }
-.lv .lv-stars { font-size: 1.05cqw; line-height: 1; letter-spacing: .3px; }
+.lv .lv-stars {
+  font-size: 1.05cqw;
+  line-height: 1;
+  letter-spacing: .3px;
+  /* 固定行高：锁定格的锁图标字号更大，不固定会让已解锁/未解锁按钮高度不一致 */
+  height: 1.05cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .lv .lv-stars .ms { font-style: normal; color: #D8D2C6; }
 .lv .lv-stars .ms.on { color: #FFC33C; -webkit-text-stroke: .8px var(--ink); paint-order: stroke fill; }
 
@@ -458,7 +467,7 @@
 .lv.is-three { background: linear-gradient(180deg, var(--yellow-lt), #E8D59A); }
 .lv.is-locked { background: #E7E3D9; border-color: rgba(27, 62, 111, .45); box-shadow: none; }
 .lv.is-locked .lv-no { color: rgba(27, 62, 111, .35); }
-.lv.is-locked .lv-stars { font-size: 1.9cqw; color: rgba(27, 62, 111, .42); }
+.lv.is-locked .lv-stars { font-size: 1.4cqw; color: rgba(27, 62, 111, .42); }
 .lv.is-gate-locked { border-style: dashed; background: #EFEBE2; }
 .lv.is-gate-locked .lv-stars { opacity: .7; }
 .lv.is-current { animation: zq-lv-pulse 1.7s ease-in-out infinite; }
