@@ -762,39 +762,89 @@
 .toast-error { background: #FFE2DE; border-color: var(--red); color: var(--red); }
 .toast-good { background: var(--green-lt); }
 
-/* ================= 关卡内道具方块（延时 / 提示 / 换题） ================= */
+/* ================= 关卡内道具方块（延时 / 提示 / 换题）：描边玻璃 ================= */
 .btn-tool {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: .25cqw;
+  gap: .22cqw;
   padding: .2cqw;
   font-weight: 900;
   color: var(--ink);
-  /* 半透明白底：能透出后面的货架/墙面，又保持图标清晰 */
-  background: rgba(255, 253, 247, .58);
-  border: 2.5px solid var(--ink);
-  border-radius: 1.3cqw;
-  box-shadow: 2px 2px 0 var(--ink-soft);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
+  /* 磨砂玻璃底：顶亮底暗的斜向渐变 + 背景模糊，能透出货架颜色 */
+  background: linear-gradient(152deg,
+    rgba(255, 255, 255, .78) 0%,
+    rgba(255, 255, 255, .34) 40%,
+    rgba(255, 250, 240, .46) 100%);
+  border: 2.5px solid rgba(36, 62, 101, .4);
+  border-radius: 2.8cqw;
+  /* 内高光 + 内底暗边做玻璃厚度，外投影只留一道轻描边硬影 */
+  box-shadow:
+    inset 0 .22cqw 0 rgba(255, 255, 255, .95),
+    inset 0 0 0 1.5px rgba(255, 255, 255, .5),
+    inset 0 -.24cqw .5cqw rgba(36, 62, 101, .1),
+    1.5px 1.5px 0 var(--ink-soft);
+  -webkit-backdrop-filter: blur(7px) saturate(1.4);
+  backdrop-filter: blur(7px) saturate(1.4);
   transition: transform .08s ease, box-shadow .08s ease, filter .16s ease, opacity .16s ease;
 }
-.btn-tool .dt-icon { font-size: 2.5cqw; line-height: 1; }
+/* 彩色透光：每类道具一点低饱和色晕，避免三块灰白雷同 */
+.btn-tool::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+.btn-tool-delay::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(255, 199, 92, .34), rgba(255, 199, 92, 0) 66%);
+}
+.btn-tool-hint::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(255, 226, 118, .36), rgba(255, 226, 118, 0) 66%);
+}
+.btn-tool-reroll::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(126, 200, 240, .38), rgba(126, 200, 240, 0) 66%);
+}
+/* 玻璃斜向高光：一道压在左上角的柔光，提升通透感 */
+.btn-tool::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(148deg,
+    rgba(255, 255, 255, .9) 0%,
+    rgba(255, 255, 255, .18) 26%,
+    rgba(255, 255, 255, 0) 44%);
+  opacity: .5;
+}
+.btn-tool .dt-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 2.75cqw;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .7));
+}
 .btn-tool .dt-name {
+  position: relative;
+  z-index: 1;
   font-size: 1.15cqw;
   font-weight: 900;
-  letter-spacing: .5px;
+  letter-spacing: .6px;
   white-space: nowrap;
   color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .65);
 }
-/* 右上角剩余次数角标：珊瑚红圆底 + 白字 */
+/* 右上角剩余次数角标：珊瑚红圆底 + 白字 + 一点玻璃高光 */
 .btn-tool .dt-badge {
   position: absolute;
-  top: -.6cqw;
-  right: -.55cqw;
+  top: -.62cqw;
+  right: -.58cqw;
+  z-index: 2;
   min-width: 2.1cqw;
   height: 2.1cqw;
   padding: 0 .3cqw;
@@ -805,19 +855,29 @@
   font-weight: 900;
   line-height: 1;
   color: #fff;
-  background: #E8695F;
-  border: 2px solid var(--ink);
+  background: linear-gradient(180deg, #F08178, #E8695F 62%, #D8544A);
+  border: 2px solid rgba(36, 62, 101, .5);
   border-radius: 999px;
-  box-shadow: 1px 1px 0 var(--ink-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    1px 1px 0 var(--ink-soft);
 }
-.btn-tool:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink-soft); }
-/* 剩余 0：图标与文字置灰变淡，角标转为灰底白字仍显示 0 */
+.btn-tool:active {
+  transform: translate(1px, 1px);
+  box-shadow:
+    inset 0 .12cqw 0 rgba(255, 255, 255, .8),
+    1px 1px 0 var(--ink-soft);
+}
+/* 剩余 0：玻璃变浑、彩色透光撤掉，文字与图标变淡，角标转灰仍显示 0 */
 .btn-tool.is-off {
-  background: rgba(255, 253, 247, .3);
-  filter: saturate(.3);
+  background: linear-gradient(152deg, rgba(255, 255, 255, .34), rgba(246, 246, 244, .2));
+  border-color: rgba(36, 62, 101, .2);
+  filter: saturate(.2);
 }
+.btn-tool.is-off::before { background: none; }
+.btn-tool.is-off::after { opacity: .2; }
 .btn-tool.is-off .dt-icon,
-.btn-tool.is-off .dt-name { opacity: .42; }
+.btn-tool.is-off .dt-name { opacity: .4; }
 .btn-tool.is-off .dt-badge { background: #7F8A96; }
 .btn-tool[disabled] { pointer-events: none; }
 

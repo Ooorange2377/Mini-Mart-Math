@@ -622,31 +622,75 @@
   border-radius: 16px;
   box-shadow: var(--shadow);
 }
+/* 卡片图标：沿用关卡右上角道具方块的「描边玻璃」样式（商店内不带红色余量角标） */
 .card-icon {
   position: relative;
   width: 9cqw;
   height: 7cqw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, var(--yellow-lt), var(--yellow));
-  border: 3px solid var(--ink);
-  border-radius: 10px;
-  box-shadow: 2px 2px 0 var(--ink-soft);
+  gap: .18cqw;
+  color: var(--ink);
+  background: linear-gradient(152deg,
+    rgba(255, 255, 255, .78) 0%,
+    rgba(255, 255, 255, .34) 40%,
+    rgba(255, 250, 240, .46) 100%);
+  border: 2.5px solid rgba(36, 62, 101, .4);
+  border-radius: 2.8cqw;
+  box-shadow:
+    inset 0 .22cqw 0 rgba(255, 255, 255, .95),
+    inset 0 0 0 1.5px rgba(255, 255, 255, .5),
+    inset 0 -.24cqw .5cqw rgba(36, 62, 101, .1),
+    1.5px 1.5px 0 var(--ink-soft);
+  -webkit-backdrop-filter: blur(7px) saturate(1.4);
+  backdrop-filter: blur(7px) saturate(1.4);
 }
-.card-icon-hint { background: linear-gradient(180deg, #FFF3C4, #FFD76A); }
-.card-icon-reroll { background: linear-gradient(180deg, #DDF1FF, #9CD4F5); }
-.card-icon .ci-main { font-size: 3.4cqw; line-height: 1; }
-.card-icon .ci-unit {
+/* 彩色透光 + 斜向反光：与 HUD 方块同一组值 */
+.card-icon::before,
+.card-icon::after {
+  content: '';
   position: absolute;
-  left: 50%; bottom: .15cqw;
-  transform: translateX(-50%);
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+.card-icon::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(255, 199, 92, .34), rgba(255, 199, 92, 0) 66%);
+}
+.card-icon-hint::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(255, 226, 118, .36), rgba(255, 226, 118, 0) 66%);
+}
+.card-icon-reroll::before {
+  background: radial-gradient(120% 105% at 18% 0%, rgba(126, 200, 240, .38), rgba(126, 200, 240, 0) 66%);
+}
+.card-icon::after {
+  background: linear-gradient(148deg,
+    rgba(255, 255, 255, .9) 0%,
+    rgba(255, 255, 255, .18) 26%,
+    rgba(255, 255, 255, 0) 44%);
+  opacity: .5;
+}
+.card-icon .ci-main {
+  position: relative;
+  z-index: 1;
+  font-size: 3.2cqw;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .7));
+}
+.card-icon .ci-unit {
+  position: relative;
+  z-index: 1;
   font-size: 1.15cqw;
   font-weight: 900;
+  letter-spacing: .6px;
   color: var(--ink);
-  opacity: .72;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .65);
   white-space: nowrap;
 }
+.card-icon.is-pop { animation: zq-pop .4s ease; }
 .card-name { margin-top: .9cqw; font-size: 2.1cqw; font-weight: 900; color: var(--blue); }
 
 .tier-list { width: 100%; margin-top: .9cqw; display: flex; flex-direction: column; gap: .8cqw; }
