@@ -24,12 +24,12 @@ ZQ.TAILS = {
 
 /* 章节表：range=关卡范围，maxStars=本章满星上限，unlockAt=进入本章所需累计星数（null=无需解锁） */
 ZQ.CHAPTERS = [
-  { id: 1, name: '小试牛刀',   range: [1, 7],   maxStars: 21, unlockAt: null, tailType: 'int',       desc: '整数加法，建立基础操作习惯' },
-  { id: 2, name: '精打细算',   range: [8, 14],  maxStars: 21, unlockAt: 12,   tailType: 'half',      desc: '.5 尾数，小数进位训练' },
-  { id: 3, name: '分类高手',   range: [15, 21], maxStars: 21, unlockAt: 26,   tailType: 'half_nine', desc: '强制品类约束 + .9 尾数陷阱' },
-  { id: 4, name: '全能精算师', range: [22, 28], maxStars: 21, unlockAt: 41,   tailType: 'mix99',     desc: '全要素融合（多品类 + 多商品 + 复杂尾数）' },
-  { id: 5, name: '整角挑战',   range: [29, 35], maxStars: 21, unlockAt: 59,   tailType: 'quarter',   desc: '整角尾数 + 高预算四品类规划' },
-  { id: 6, name: '尾数大师',   range: [36, 42], maxStars: 21, unlockAt: 80,   tailType: 'mix25',     desc: '综合尾数 + 高压倒计时精算' },
+  { id: 1, name: '小试牛刀',   range: [1, 7],   maxStars: 21, unlockAt: null, tailType: 'int' },
+  { id: 2, name: '精打细算',   range: [8, 14],  maxStars: 21, unlockAt: 12,   tailType: 'half' },
+  { id: 3, name: '分类高手',   range: [15, 21], maxStars: 21, unlockAt: 26,   tailType: 'half_nine' },
+  { id: 4, name: '全能精算师', range: [22, 28], maxStars: 21, unlockAt: 41,   tailType: 'mix99' },
+  { id: 5, name: '整角挑战',   range: [29, 35], maxStars: 21, unlockAt: 59,   tailType: 'quarter' },
+  { id: 6, name: '尾数大师',   range: [36, 42], maxStars: 21, unlockAt: 80,   tailType: 'mix25' },
 ];
 
 ZQ.LEVELS_PER_CHAPTER = 7;

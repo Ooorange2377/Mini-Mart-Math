@@ -83,7 +83,6 @@ ZQ.screens = ZQ.screens || {};
         '<span class="ch-name">第 ' + ch.id + ' 章 · ' + ch.name + '</span>' +
         '<span class="ch-stars"><i class="ic-img ic-img-star"></i>' + chStars + ' / ' + ch.maxStars + '</span>' +
       '</div>' +
-      '<div class="ch-desc">' + ch.desc + '</div>' +
       '<div class="ch-grid">' + cells + '</div>' +
       (unlocked
         ? ''
@@ -122,7 +121,6 @@ ZQ.screens = ZQ.screens || {};
 
         '<div class="map-top">' +
           '<button class="btn-back-start" type="button" aria-label="返回初始界面">← 返回</button>' +
-          '<div class="map-title">' + ZQ.I18N.mapTitle + '</div>' +
           '<div class="map-stats">' +
             '<span class="stat"><i class="ic-img ic-img-star"></i><b>' + ZQ.store.totalStars() + '</b>' +
               '<em>' + ZQ.I18N.mapTotalStars + '</em></span>' +
@@ -132,6 +130,8 @@ ZQ.screens = ZQ.screens || {};
               '<em>' + ZQ.I18N.mapCoins + '</em></span>' +
           '</div>' +
         '</div>' +
+
+        '<div class="map-title">' + ZQ.I18N.mapTitle + '</div>' +
 
         '<div class="map-body" style="--chapter-rows:' + Math.ceil(ZQ.CHAPTERS.length / 2) +
           ';--chapter-cols:' + chapterColumns() + '">' +

@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <title>零钱大作战 · 便利店精算师</title>
-<link rel="stylesheet" href="css/base.css?v=20261021-96">
-<link rel="stylesheet" href="css/layout.css?v=20261021-96">
-<link rel="stylesheet" href="css/components.css?v=20261021-96">
-<link rel="stylesheet" href="css/screens.css?v=20261021-96">
-<link rel="stylesheet" href="css/animations.css?v=20261021-96">
+<link rel="stylesheet" href="css/base.css?v=20261021-109">
+<link rel="stylesheet" href="css/layout.css?v=20261021-109">
+<link rel="stylesheet" href="css/components.css?v=20261021-109">
+<link rel="stylesheet" href="css/screens.css?v=20261021-109">
+<link rel="stylesheet" href="css/animations.css?v=20261021-109">
 </head>
 <body>
 
@@ -25,39 +25,39 @@
 </noscript>
 
 <!-- 依赖顺序：data → core → game → ui → screens → main -->
-<script src="js/data/items.js?v=20261021-96"></script>
-<script src="js/data/levels.js?v=20261021-96"></script>
-<script src="js/data/i18n.js?v=20261021-96"></script>
-<script src="js/core/rng.js?v=20261021-96"></script>
-<script src="js/core/money.js?v=20261021-96"></script>
-<script src="js/core/audio.js?v=20261021-96"></script>
-<script src="js/core/store.js?v=20261021-96"></script>
-<script src="js/game/rules.js?v=20261021-96"></script>
-<script src="js/game/generator.js?v=20261021-96"></script>
-<script src="js/game/session.js?v=20261021-96"></script>
-<script src="js/ui/slots.js?v=20261021-96"></script>
-<script src="js/ui/shelf.js?v=20261021-96"></script>
-<script src="js/ui/toast.js?v=20261021-96"></script>
-<script src="js/ui/cart.js?v=20261021-96"></script>
-<script src="js/ui/list.js?v=20261021-96"></script>
-<script src="js/screens/result.js?v=20261021-96"></script>
-<script src="js/screens/pigshow.js?v=20261021-96"></script>
-<script src="js/screens/start.js?v=20261021-96"></script>
-<script src="js/screens/map.js?v=20261021-96"></script>
-<script src="js/screens/shop.js?v=20261021-96"></script>
-<script src="js/screens/skins.js?v=20261021-96"></script>
-<script src="js/screens/game.js?v=20261021-96"></script>
-<script src="js/main.js?v=20261021-96"></script>
+<script src="js/data/items.js?v=20261021-109"></script>
+<script src="js/data/levels.js?v=20261021-109"></script>
+<script src="js/data/i18n.js?v=20261021-109"></script>
+<script src="js/core/rng.js?v=20261021-109"></script>
+<script src="js/core/money.js?v=20261021-109"></script>
+<script src="js/core/audio.js?v=20261021-109"></script>
+<script src="js/core/store.js?v=20261021-109"></script>
+<script src="js/game/rules.js?v=20261021-109"></script>
+<script src="js/game/generator.js?v=20261021-109"></script>
+<script src="js/game/session.js?v=20261021-109"></script>
+<script src="js/ui/slots.js?v=20261021-109"></script>
+<script src="js/ui/shelf.js?v=20261021-109"></script>
+<script src="js/ui/toast.js?v=20261021-109"></script>
+<script src="js/ui/cart.js?v=20261021-109"></script>
+<script src="js/ui/list.js?v=20261021-109"></script>
+<script src="js/screens/result.js?v=20261021-109"></script>
+<script src="js/screens/pigshow.js?v=20261021-109"></script>
+<script src="js/screens/start.js?v=20261021-109"></script>
+<script src="js/screens/map.js?v=20261021-109"></script>
+<script src="js/screens/shop.js?v=20261021-109"></script>
+<script src="js/screens/skins.js?v=20261021-109"></script>
+<script src="js/screens/game.js?v=20261021-109"></script>
+<script src="js/main.js?v=20261021-109"></script>
 <script>
 // 仅在 ?debug=1 时加载出题自检脚本，避免正常运行时的额外开销
 (function () {
   if (/[?&]debug=1\b/.test(location.search)) {
     var regression = document.createElement('script');
-    regression.src = 'js/dev/regression.js?v=20261021-96';
+    regression.src = 'js/dev/regression.js?v=20261021-109';
     regression.onload = function () {
       ZQ.regression.report();
       var selfcheck = document.createElement('script');
-      selfcheck.src = 'js/dev/selfcheck.js?v=20261021-96';
+      selfcheck.src = 'js/dev/selfcheck.js?v=20261021-109';
       selfcheck.onload = function () { ZQ.selfcheck.report(30); };
       document.body.appendChild(selfcheck);
     };

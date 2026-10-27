@@ -322,7 +322,9 @@
 }
 .btn-back-start:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
 .map-title {
-  flex: 1;
+  position: absolute;
+  left: 0; right: 0;
+  top: 12%;
   text-align: center;
   font-size: 3.9cqw;
   font-weight: 900;
@@ -331,6 +333,8 @@
   -webkit-text-stroke: .42cqw #fff;
   paint-order: stroke fill;
   text-shadow: 0 .32cqw 0 rgba(27, 62, 111, .22);
+  z-index: 4;
+  pointer-events: none;
 }
 .map-stats { display: flex; gap: 1.6cqw; flex: none; }
 
@@ -368,7 +372,7 @@
 
 .map-body {
   position: absolute;
-  left: 4%; right: 4%; top: 15%; bottom: 5%;
+  left: 12%; right: 12%; top: 25.5%; bottom: 5%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(var(--chapter-rows, 2), minmax(12cqw, 1fr));
@@ -392,7 +396,7 @@
   box-shadow: var(--shadow);
 }
 .chapter.is-locked { background: #F0EDE4; }
-.chapter.is-locked .ch-head, .chapter.is-locked .ch-desc { opacity: .45; }
+.chapter.is-locked .ch-head { opacity: .45; }
 .chapter.is-locked .ch-grid { opacity: .4; }
 
 .ch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1cqw; }
@@ -407,15 +411,6 @@
   white-space: nowrap;
 }
 .ch-stars .ic-img { width: 1.75cqw; height: 1.75cqw; }
-.ch-desc {
-  margin-top: .35cqw;
-  font-size: 1.25cqw;
-  font-weight: 700;
-  color: rgba(27, 62, 111, .6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .ch-grid {
   flex: 1;
@@ -563,7 +558,6 @@
   gap: 2cqw;
   z-index: 3;
 }
-.page-top .btn-back { flex: 0 0 auto; font-size: 2.1cqw; padding: .5cqw 1.6cqw .65cqw; }
 .page-title {
   flex: 1;
   text-align: center;
@@ -580,10 +574,19 @@
 .page-balance .stat .ic { font-size: 2cqw; }
 .page-balance .stat em { font-size: 1.3cqw; }
 
+/* 标题下移一行并居中（商店页用）：标题脱离 flex 流，返回键与右侧统计分列两端 */
+.page-top.is-stacked { justify-content: space-between; }
+.page-top.is-stacked .page-title {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + .9cqw);
+  pointer-events: none;
+}
+
 /* ================= 零花钱商店 ================= */
 .shop-grid {
   position: absolute;
-  left: 8%; right: 8%; top: 28%;
+  left: 8%; right: 8%; top: 33%;
   display: flex;
   justify-content: center;
   gap: 3cqw;
@@ -649,45 +652,76 @@
   z-index: 3;
 }
 
-/* ================= 皮肤图鉴 ================= */
-.skins-body {
+/* ================= 皮肤（分类切换 + 单类横滑） ================= */
+/* tab 与卡片整体作为一个竖排区块：覆盖「标题下方 → 舞台底部」整段空白，
+ * 靠 justify-content:center 在该区间内垂直居中，既与标题拉开距离又不会贴底 */
+.skins-wrap {
   position: absolute;
-  left: 5%; right: 5%; top: 13%; bottom: 2%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  z-index: 3;
-}
-.skin-group-title {
-  margin-bottom: .4cqw;
-  text-align: center;
-  font-size: 2cqw;
-  line-height: 1.2;
-  font-weight: 900;
-  color: var(--ink);
-}
-.skin-grid { display: flex; justify-content: center; gap: 2.2cqw; }
-.skin-card {
-  width: 18.6cqw;
+  left: 0; right: 0; top: 13%; bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: .9cqw 1cqw 1cqw;
+  justify-content: center;
+  gap: 2.2cqw;
+  z-index: 3;
+}
+.skin-tabs {
+  display: flex;
+  gap: 1cqw;
+}
+.skin-tab {
+  padding: .35cqw 2.2cqw .45cqw;
+  font-size: 2.1cqw;
+  font-weight: 900;
+  color: rgba(27, 62, 111, .5);
   background: var(--paper);
   border: 3px solid var(--ink);
-  border-radius: 14px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .08s ease, background .16s ease, color .16s ease;
+}
+.skin-tab.is-on { color: var(--paper); background: var(--blue); }
+.skin-tab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
+
+.skins-body {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.skins-body.is-drag { cursor: grabbing; }
+.skin-track {
+  display: flex;
+  align-items: stretch;
+  gap: 3cqw;
+  padding: 0 6cqw;
+  transition: transform .32s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+}
+.skin-card {
+  flex: none;
+  width: 26cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.4cqw 1.4cqw 1.5cqw;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
   box-shadow: var(--shadow);
 }
 .skin-card.is-equipped {
   background: linear-gradient(180deg, var(--green-lt), #C8DCCF);
-  animation: zq-pop .32s ease-out;
 }
 .skin-card.is-locked { background: #F0EDE4; }
 .skin-card.is-locked .skin-preview { opacity: 1; filter: none; }
 .skin-card.is-locked .skin-preview .pig-svg,
 .skin-card.is-locked .skin-swatch { opacity: .35; filter: grayscale(.85); }
 .skin-preview {
-  height: 8cqw;
+  height: 10.5cqw;
   width: 100%;
   display: flex;
   align-items: center;
@@ -695,7 +729,7 @@
 }
 .skin-preview .pig-svg { width: 100%; height: 100%; }
 .skin-swatch {
-  width: 8.2cqw;
+  width: 10.8cqw;
   aspect-ratio: 324 / 140;
   display: block;
   color: var(--swatch-color);
@@ -720,28 +754,35 @@
   --swatch-color: #4FA991;
 }
 .skin-swatch-gold { --swatch-color: #D9A240; }
-.skin-name { margin-top: .5cqw; font-size: 1.7cqw; line-height: 1.15; font-weight: 900; }
+.skin-name { margin-top: .7cqw; font-size: 2.1cqw; line-height: 1.15; font-weight: 900; }
 .skin-sub {
-  margin-top: .15cqw;
-  min-height: 1.9cqw;
+  margin-top: .2cqw;
+  min-height: 2.2cqw;
   text-align: center;
-  font-size: 1.15cqw;
+  font-size: 1.35cqw;
   font-weight: 700;
   line-height: 1.2;
   color: rgba(27, 62, 111, .6);
 }
 .skin-card .btn-skin {
   width: 100%;
-  margin-top: .5cqw;
-  font-size: 1.7cqw;
+  margin-top: .7cqw;
+  font-size: 2cqw;
   line-height: 1.1;
   padding: .35cqw 0 .5cqw;
 }
-.skin-card .btn-skin[disabled] { opacity: .55; box-shadow: 2px 2px 0 var(--ink-soft); }
-.skin-card.is-equipped .btn-skin {
-  opacity: 1;
+/* 已装备按钮：浅绿渐变 + 深色描边（不再用 disabled 来控制视觉） */
+.btn-skin.btn-skin-on {
   color: var(--paper);
   -webkit-text-stroke: 1px var(--ink);
   paint-order: stroke fill;
   background: linear-gradient(180deg, var(--green-lt), var(--green));
+  box-shadow: 4px 4px 0 var(--ink-soft);
+}
+/* 锁定按钮：灰色调，不可操作的视觉暗示，但仍可点击弹 toast */
+.btn-skin.btn-skin-lock {
+  background: #EFEBE2;
+  color: rgba(27, 62, 111, .55);
+  box-shadow: 2px 2px 0 var(--ink-soft);
+  font-size: 1.8cqw;
 }

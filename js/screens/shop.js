@@ -47,8 +47,8 @@ ZQ.screens = ZQ.screens || {};
       el.innerHTML =
         '<div class="room"><div class="room-floor"></div></div>' +
 
-        '<div class="page-top">' +
-          '<button class="btn-menu btn-back" type="button">\u2039 ' + ZQ.I18N.shopBack + '</button>' +
+        '<div class="page-top is-stacked">' +
+          '<button class="btn-back-start" type="button" aria-label="返回大厅">← ' + ZQ.I18N.shopBack + '</button>' +
           '<div class="page-title">' + ZQ.I18N.shopTitle + '</div>' +
           '<div class="page-balance">' +
             '<span class="stat"><i class="ic-img ic-img-coin"></i><b class="js-coins">' + (save.coins || 0) + '</b>' +
@@ -65,7 +65,7 @@ ZQ.screens = ZQ.screens || {};
         var t = e.target;
         if (!t || !t.closest) return;
 
-        if (t.closest('.btn-back')) {
+        if (t.closest('.btn-back-start')) {
           ZQ.audio.back();
           ZQ.app.go('start');
           return;
