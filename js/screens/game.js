@@ -220,6 +220,8 @@ ZQ.screens = ZQ.screens || {};
     stage: null,
     /** 上一份绑定的计时器停止函数（重渲染时先停掉，避免旧关卡的计时回调误触发结算） */
     _stopTimer: null,
+    /** 上一份绑定的「切后台冻结计时」监听（重绑定时移除，避免重复挂载） */
+    _visHandler: null,
 
     /**
      * 渲染游戏主界面。
@@ -397,6 +399,26 @@ ZQ.screens = ZQ.screens || {};
       timerId = null;
     }
     ZQ.screens.game._stopTimer = stopTimer;
+
+    /* ---------- 切后台冻结倒计时 ----------
+     * deadline 基于 Date.now()，锁屏/切后台期间时间照走，回来会直接判 0 星。
+     * 这里在 hidden 时停表并记下时刻，回来把 deadline 顺延同样时长。 */
+    if (ZQ.screens.game._visHandler) {
+      document.removeEventListener('visibilitychange', ZQ.screens.game._visHandler);
+    }
+    var frozenAt = 0;
+    var visHandler = function () {
+      if (!el.parentNode) return;      // 已离开关卡：不再处理
+      if (document.hidden) {
+        if (timerId !== null) { stopTimer(); frozenAt = Date.now(); }
+      } else if (frozenAt) {
+        frozenAt = 0;
+        /* startTimer 会用冻结时的 remaining 重排 deadline，等于把后台时间整段补回来 */
+        if (session.state === 'selecting') startTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', visHandler);
+    ZQ.screens.game._visHandler = visHandler;
 
     /** 三类道具按钮的可用次数：实际持有量与本关上限制约后的较小值 */
     function updateTools() {

@@ -84,7 +84,7 @@ ZQ.screens = ZQ.screens || {};
       for (var r = 0; r < rem && r < outs.length; r++) {
         (function (node) {
           node.classList.add('t-out');
-          window.setTimeout(function () {
+          ZQ.timer.after(function () {
             if (node.parentNode) node.parentNode.removeChild(node);
           }, 360);
         })(outs[r]);
@@ -199,7 +199,7 @@ ZQ.screens = ZQ.screens || {};
       done++;
       if (totalEl) setRoller(totalEl, baseTotal + done);
       if (done >= num) {
-        window.setTimeout(finishLater, 2100);   // 最后一枚落底后多停 1s 回味
+        ZQ.timer.after(finishLater, 2100);   // 最后一枚落底后多停 1s 回味
       }
     }
 
@@ -220,7 +220,7 @@ ZQ.screens = ZQ.screens || {};
       coin.style.setProperty('--fall-dur', (0.62 + Math.random() * 0.12).toFixed(2) + 's');
       coinsBox.appendChild(coin);
       (function (el, delay) {
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           el.classList.add('is-fall');
           el.addEventListener('animationend', onHit, { once: true });
         }, delay);
@@ -260,13 +260,13 @@ ZQ.screens = ZQ.screens || {};
         coin.style.setProperty('--end-y', (slotY - startY) + 'px');
         coin.style.setProperty('--fall-dur', '.72s');
         coinsBox.appendChild(coin);
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           coin.classList.add('is-slot-fall');
           coin.addEventListener('animationend', function () {
             ZQ.audio.coin();
             landed++;
             setRoller(totalEl, baseTotal + landed);
-            if (landed >= coins) window.setTimeout(phase2, 350);
+            if (landed >= coins) ZQ.timer.after(phase2, 350);
           }, { once: true });
         }, i * 200);
       };
@@ -274,23 +274,23 @@ ZQ.screens = ZQ.screens || {};
 
       // —— Phase 2: 仅 coins===3 → 震动 → 摇杆 + 翻滚 → 出蛋 → 开蛋 ——
       function phase2() {
-        if (!fullShow) { window.setTimeout(finishLater, 2100); return; }
+        if (!fullShow) { ZQ.timer.after(finishLater, 2100); return; }
 
         // 机身接住最后一枚币震一下（Squash & Stretch）
         gacha.classList.add('is-shake');
 
         // 摇杆卡顿旋转 + 扭蛋群疯狂翻滚
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           if (crank) {
             crank.classList.add('is-crank');
-            var crankTicker = window.setInterval(function () { ZQ.audio.crank(); }, 130);
-            window.setTimeout(function () { window.clearInterval(crankTicker); }, 1700);
+            var crankTicker = ZQ.timer.every(function () { ZQ.audio.crank(); }, 130);
+            ZQ.timer.after(function () { ZQ.timer.clear(crankTicker); }, 1700);
           }
           if (balls) balls.classList.add('is-tumble');
         }, 300);
 
         // 摇杆/翻滚结束 → 扭蛋从出蛋口（SVG 110,150）滑出并弹跳两下
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           if (balls) balls.classList.remove('is-tumble');
           ZQ.audio.gachaDrop();
           var exitX = pigBox.left + pigBox.width * (110 / 220);
@@ -301,7 +301,7 @@ ZQ.screens = ZQ.screens || {};
         }, 2050);
 
         // 蚌壳开蛋 + 随机奖励纸条
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           ZQ.audio.gachaPop();
           capsule.classList.add('is-pop');
 
@@ -325,7 +325,7 @@ ZQ.screens = ZQ.screens || {};
           rewardEl.classList.add('is-in');
           if (reward === 'none') ZQ.audio.rewardAw(); else ZQ.audio.rewardDing();
 
-          window.setTimeout(finishLater, 2100);
+          ZQ.timer.after(finishLater, 2100);
         }, 3300);
       }
     });
@@ -378,14 +378,14 @@ ZQ.screens = ZQ.screens || {};
       }
 
       // —— t≈1.0s 到位：绿光闪两下 + 光束张开 + 嗡鸣，逐枚把金币吸上去 ——
-      window.setTimeout(function () {
+      ZQ.timer.after(function () {
         stage.classList.add('is-ufo-beam');
         ZQ.audio.ufoHum();
         sit.forEach(function (el, i) {
           el.style.setProperty('--target-x', cx + 'px');
           el.style.setProperty('--target-y', hoodY + 'px');
-          window.setTimeout(function () { el.classList.add('is-beam-up'); }, 1450 + i * 260);
-          window.setTimeout(function () {           // 金币到达 UFO → 入账 + 总额滚动
+          ZQ.timer.after(function () { el.classList.add('is-beam-up'); }, 1450 + i * 260);
+          ZQ.timer.after(function () {           // 金币到达 UFO → 入账 + 总额滚动
             ZQ.audio.coin();
             absorbed++;
             setRoller(totalEl, baseTotal + absorbed);
@@ -395,18 +395,18 @@ ZQ.screens = ZQ.screens || {};
 
       // —— 全部吸完：居中故障闪烁 + 快速缩小消失；残留金币随 UFO 一起清掉 ——
       var lastArrive = 1450 + (n - 1) * 260 + 950;
-      window.setTimeout(function () {
+      ZQ.timer.after(function () {
         stage.classList.remove('is-ufo-beam');
         stage.classList.add('is-zap');
         pig.classList.add('is-vanish');
         ZQ.audio.ufoZap();
         coinsBox.classList.add('is-clear');   // 吸走的金币已停在光束罩位置，随消失一起缩小淡出
-        window.setTimeout(function () { coinsBox.innerHTML = ''; }, 420);
+        ZQ.timer.after(function () { coinsBox.innerHTML = ''; }, 420);
       }, lastArrive + 350);
 
       // —— 仅零花钱=3：消失处留下黑色晶石；否则故障消失后稍作停顿直接返回结算 ——
-      if (fullShow) window.setTimeout(showCrystal, lastArrive + 970);
-      else window.setTimeout(finishLater, lastArrive + 2100);
+      if (fullShow) ZQ.timer.after(showCrystal, lastArrive + 970);
+      else ZQ.timer.after(finishLater, lastArrive + 2100);
     });
 
     function showCrystal() {
@@ -417,7 +417,7 @@ ZQ.screens = ZQ.screens || {};
       stage.appendChild(crystal);
 
       var opened = false;
-      var fallback = window.setTimeout(openCrystal, 8000);   // 兜底：8s 未点击自动裂开
+      var fallback = ZQ.timer.after(openCrystal, 8000);   // 兜底：8s 未点击自动裂开
       crystal.addEventListener('click', function () {
         window.clearTimeout(fallback);
         openCrystal();
@@ -465,7 +465,7 @@ ZQ.screens = ZQ.screens || {};
         rewardEl.textContent = text;
         rewardEl.classList.add('is-in');
 
-        window.setTimeout(finishLater, 2300);
+        ZQ.timer.after(finishLater, 2300);
       }
     }
   }
@@ -497,7 +497,7 @@ ZQ.screens = ZQ.screens || {};
         if (done) return;
         done = true;
         wrap.classList.add('is-out');
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
         }, 320);
       }

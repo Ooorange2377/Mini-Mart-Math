@@ -81,7 +81,7 @@ ZQ.screens = ZQ.screens || {};
 
       // 音效：星星逐颗响起；整体胜/负音在星星入场后兜底
       for (var i = 1; i <= ctx.star; i++) ZQ.audio.star(i);
-      setTimeout(function () {
+      ZQ.timer.after(function () {
         if (ctx.star > 0) ZQ.audio.win(); else ZQ.audio.lose();
       }, fail ? 160 : 560);
 
@@ -100,7 +100,7 @@ ZQ.screens = ZQ.screens || {};
 
       // 自动存钱罐仪式：有零花钱才弹（失败星/没奖励不弹），叠在结算弹窗之上
       if (!fail && ctx.coins > 0) {
-        window.setTimeout(function () {
+        ZQ.timer.after(function () {
           ZQ.screens.pigshow.show({ skin: pigSkin, coins: ctx.coins });
         }, 800);
       }

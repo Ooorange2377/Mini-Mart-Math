@@ -895,7 +895,10 @@
   cursor: pointer;
   transition: transform .08s ease, box-shadow .08s ease;
 }
-.btn-back-game:hover { color: var(--blue); }
+/* hover 只在「有 hover 能力的精细指针」上生效，避免触摸后状态粘住 */
+@media (hover: hover) and (pointer: fine) {
+  .btn-back-game:hover { color: var(--blue); }
+}
 .btn-back-game:active { transform: translate(2px, calc(1.4cqw + 2px)); box-shadow: 2px 2px 0 var(--ink-soft); }
 .btn-back-game svg { display: block; }
 

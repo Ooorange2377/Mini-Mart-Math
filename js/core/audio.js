@@ -99,14 +99,49 @@ window.ZQ = window.ZQ || {};
     var el = new Audio();
     el.src = MUSIC_SRC;
     el.loop = true;        // 兜底：极端情况下（时长未知）仍能循环，不至于断掉
-    el.preload = 'auto';
+    /* preload=none：首屏不抢 4.4MB 带宽，首次手势解锁后才真正加载 */
+    el.preload = 'none';
     el.volume = 0;
     return el;
   }
 
-  /** 单路音量渐变；每个元素各挂一个定时器，两路可以同时互不干扰 */
+  /** 把音乐元素接入 WebAudio 增益链：iOS 会忽略 HTMLAudioElement.volume，
+   *  只能用 ctx.createGain() 控制音量与交叉淡化。每个元素只能建一次 source。 */
+  function wire(el) {
+    if (el._wired) return el;
+    var c = ensureCtx();
+    if (!c) return el;
+    try {
+      el._src = c.createMediaElementSource(el);
+      el._gain = c.createGain();
+      el._gain.gain.value = el.volume;
+      el._src.connect(el._gain);
+      el._gain.connect(c.destination);
+      el._wired = true;
+      el.volume = 1;      // 音量全部交给增益节点，避免两处相乘
+    } catch (e) { el._wired = false; }
+    return el;
+  }
+
+  /** 单路音量渐变；WebAudio 走增益自动化，其余浏览器退回 el.volume 轮询 */
   function ramp(el, target, ms, done) {
     if (el._fade) { clearInterval(el._fade); el._fade = null; }
+    if (el._wired && el._gain) {
+      var g = el._gain.gain;
+      var t = ctx.currentTime;
+      try {
+        if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t);
+        else { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); }
+        g.linearRampToValueAtTime(Math.min(1, Math.max(0, target)), t + ms / 1000);
+      } catch (e) {
+        g.value = target;
+      }
+      el._fade = setTimeout(function () {
+        el._fade = null;
+        if (done) done();
+      }, ms);
+      return;
+    }
     var from = el.volume;
     var steps = Math.max(1, Math.round(ms / 40));
     var i = 0;
@@ -133,12 +168,12 @@ window.ZQ = window.ZQ || {};
   /** 结尾交叉淡化：备用路从头起播，两路一进一出，衔接处听不出断点 */
   function crossfade() {
     var out = musicEl;
-    var inc = musicEl2 || (musicEl2 = makeEl());
+    var inc = wire(musicEl2 || (musicEl2 = makeEl()));
     /* 淡出的一路关掉 loop，避免它在这 2.4 秒内先播到结尾又回卷重播，出现一声突兀的重来 */
     out.loop = false;
     inc.loop = true;
     try { inc.currentTime = 0; } catch (e) {}
-    inc.volume = 0;
+    if (inc._wired && inc._gain) inc._gain.gain.value = 0; else inc.volume = 0;
     var p = inc.play();
     if (p && p.catch) p.catch(function () {});
     var ms = MUSIC_XFADE * 1000;
@@ -164,14 +199,14 @@ window.ZQ = window.ZQ || {};
   function startMusic() {
     if (!musicOn || !wantMusic || !gestured) return;
     clearAudioTimers();
-    var el = musicEl || (musicEl = makeEl());
+    var el = wire(musicEl || (musicEl = makeEl()));
     /* 只在真正暂停时才 play，重复调用不会再起一层播放 */
     if (el.paused) {
       var d = el.duration;
       /* 暂停点已贴近结尾时跳回开头，避免刚恢复就立刻淡化 */
       if (d && isFinite(d) && d - el.currentTime <= MUSIC_XFADE) el.currentTime = 0;
       el.loop = true;
-      el.volume = 0;
+      if (el._wired && el._gain) el._gain.gain.value = 0; else el.volume = 0;
       var p = el.play();
       if (p && p.catch) p.catch(function () {});
     }
@@ -195,11 +230,21 @@ window.ZQ = window.ZQ || {};
   ZQ.audio = {
     setEnabled: function (v) { enabled = !!v; },
     isEnabled: function () { return enabled; },
-    /** 首次用户手势时调用，解锁音频上下文 */
+    /** 首次用户手势时调用，解锁音频上下文。
+     *  iOS/Chrome 都要求手势内 resume()；音乐元素用 preload=none，
+     *  这里只触发 play()，真正的网络加载是异步的，不能等它加载完才解锁。 */
     unlock: function () {
       gestured = true;
-      ensureCtx();
-      startMusic();
+      ensureCtx();      // 内部已调用 ctx.resume()，不 await，避免阻塞解锁
+      startMusic();     // play() 内部异步 load()，不阻塞
+    },
+
+    /** 手势补漏：从后台回来、或系统中断后上下文被挂起时，用任意一次点击恢复播放 */
+    kick: function () {
+      if (!gestured) return;
+      var c = ensureCtx();
+      if (c && c.state === 'suspended' && c.resume) c.resume();
+      if (musicOn && wantMusic) startMusic();
     },
 
     /* ---- 背景音乐控制 ---- */

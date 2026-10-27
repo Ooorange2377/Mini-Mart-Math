@@ -56,6 +56,11 @@ ZQ.I18N_ZH = {
   tipFourText: '这一关要选满 4 件商品。件数或品类不符，都不算通关。',
   tipGotIt: '我明白啦',
 
+  // 竖屏提示（仅竖屏 + 触摸设备）
+  rotateTitle: '把手机横过来玩吧',
+  rotateText: '这一关的画面是横版的：横屏才能看清货架上的商品与价格。',
+  rotateContinue: '仍要继续',
+
   // 通用按钮
   btnOk: '确定',
   btnCancel: '取消',
@@ -234,6 +239,11 @@ ZQ.I18N_EN = {
   tipFourTitle: 'New Challenge: 4 Items',
   tipFourText: 'Pick exactly 4 items this level. Wrong count or categories will not count.',
   tipGotIt: 'Got it!',
+
+  // Portrait hint (portrait + touch devices only)
+  rotateTitle: 'Turn your phone sideways',
+  rotateText: 'The game stage is landscape: rotating gives you a readable shelf and price tags.',
+  rotateContinue: 'Continue anyway',
 
   btnOk: 'OK',
   btnCancel: 'Cancel',

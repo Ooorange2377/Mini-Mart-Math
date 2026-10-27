@@ -231,9 +231,12 @@
   /* 挤出塑料：底部实色厚边当侧壁 + 落地软投影 */
   box-shadow: 0 .6cqw 0 var(--btn-wall), 0 .8cqw .7cqw rgba(27, 62, 111, .3);
 }
-.btn-hall:hover {
-  box-shadow: 0 .4cqw 0 var(--btn-wall), 0 .55cqw .55cqw rgba(27, 62, 111, .3);
-  transform: translateY(.2cqw);
+/* hover 只在「有 hover 能力的精细指针」上生效，避免触摸后状态粘住 */
+@media (hover: hover) and (pointer: fine) {
+  .btn-hall:hover {
+    box-shadow: 0 .4cqw 0 var(--btn-wall), 0 .55cqw .55cqw rgba(27, 62, 111, .3);
+    transform: translateY(.2cqw);
+  }
 }
 .btn-hall:active {
   box-shadow: 0 0 0 var(--btn-wall), 0 .1cqw .2cqw rgba(27, 62, 111, .3);
@@ -248,7 +251,9 @@
   animation: zq-extrude-breathe 2.1s ease-in-out infinite;
 }
 /* 悬停/按下时停掉呼吸动画，让侧壁厚度的变化能被看到 */
-.btn-hall-primary:hover,
+@media (hover: hover) and (pointer: fine) {
+  .btn-hall-primary:hover { animation: none; }
+}
 .btn-hall-primary:active { animation: none; }
 
 .btn-hall-secondary {

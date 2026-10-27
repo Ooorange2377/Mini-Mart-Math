@@ -5,11 +5,15 @@
   position: relative;
   width: min(100vw, 177.78vh);   /* 16:9 等比铺满 */
   height: min(56.25vw, 100vh);
+  height: min(56.25vw, 100dvh);  /* 移动端地址栏伸缩时以此为准，旧浏览器保留上一行 */
   container-type: inline-size;
   overflow: hidden;
   background: var(--wall);
   box-shadow: 0 0 0 4px rgba(27, 62, 111, .12);
 }
+
+/* 竖屏提示默认隐藏；只在 css/mobile.css 的竖屏 + 触摸媒体查询里显示 */
+.rotate-tip { display: none; }
 
 /* 房间背景层 */
 .room { position: absolute; inset: 0; z-index: 0; }

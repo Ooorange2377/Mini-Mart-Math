@@ -583,3 +583,10 @@
 }
 .t-strip span { display: block; width: 100%; height: 1.2em; line-height: 1.2em; text-align: center; }
 
+
+/* ================= 切后台统一暂停动画 =================
+ * timers.js 在 visibilitychange 时切 body.is-paused：
+ * 关卡倒计时由 game.js 冻结，结算/存钱罐动画在此暂停，回到前台从原处继续。 */
+body.is-paused *,
+body.is-paused *::before,
+body.is-paused *::after { animation-play-state: paused !important; }
