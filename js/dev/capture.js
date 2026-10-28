@@ -333,6 +333,55 @@ function mobileAssertScript() {
     'arrows.forEach(function(a){a.style.minWidth="";a.style.minHeight="";});' +
     'add("44px 热区不压缩货架",w1===w2&&g1===g2,' +
     '"有 44px 时货架 "+w1+"px / 网格 "+g1+"px，去掉后 "+w2+"px / "+g2+"px");' +
+
+    /* 3.3 关键尺寸：货架总高 / 商品卡高 / 页内商品数，以及留白可下调余量（A/B 还原为 2.6cqw） */
+    'var shelfRoot=document.querySelector(".shelf");' +
+    'var pageEl=document.querySelector(".shelf-page");' +
+    'var slotEl=document.querySelector(".slot");' +
+    'var imgEl=pageEl?pageEl.querySelector(".slot-frame img"):null;' +
+    'var slotN=pageEl?pageEl.querySelectorAll(".slot").length:0;' +
+    'var layers=pageEl?pageEl.querySelectorAll(".layer").length:0;' +
+    'var visN=0;' +
+    'var vp=document.querySelector(".shelf-viewport");' +
+    'if(vp){var vr=vp.getBoundingClientRect();' +
+    'pageEl.querySelectorAll(".slot").forEach(function(s){var sr=s.getBoundingClientRect();' +
+    'if(sr.top>=vr.top-0.5&&sr.bottom<=vr.bottom+0.5&&sr.left>=vr.left-0.5&&sr.right<=vr.right+0.5)visN++;});}' +
+    'var padNow=getComputedStyle(pageEl).paddingBottom;' +
+    'var hNow=slotEl.getBoundingClientRect().height;' +
+    'var ihNow=imgEl?imgEl.getBoundingClientRect().height:0;' +
+    'pageEl.style.paddingBottom="2.6cqw";void pageEl.offsetWidth;' +
+    'var hOld=slotEl.getBoundingClientRect().height;' +
+    'var ihOld=imgEl?imgEl.getBoundingClientRect().height:0;' +
+    'var visOld=0;' +
+    'if(vr)pageEl.querySelectorAll(".slot").forEach(function(s){var sr=s.getBoundingClientRect();' +
+    'if(sr.top>=vr.top-0.5&&sr.bottom<=vr.bottom+0.5&&sr.left>=vr.left-0.5&&sr.right<=vr.right+0.5)visOld++;});' +
+    'pageEl.style.paddingBottom="";' +
+    'var gapMin=1e9;' +
+    'arrows.forEach(function(a){var ar=a.getBoundingClientRect();' +
+    '[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){var sr=s.getBoundingClientRect();' +
+    'var ox=Math.min(ar.right,sr.right)-Math.max(ar.left,sr.left);' +
+    'if(ox>0){var dy=ar.top-sr.bottom;if(dy<gapMin)gapMin=dy;}});});' +
+    'var shH=shelfRoot?Math.round(shelfRoot.getBoundingClientRect().height):0;' +
+    'var vpH=vr?Math.round(vr.height):0;' +
+    'var per=Math.round(slotN/Math.max(layers,1));' +
+    'var msg="货架 "+shH+"px / 视口 "+vpH+"px；"+layers+" 层 × "+per+" 件 = "+slotN+' +
+    '" 件/页（完整可见 "+visN+" 件，原 "+visOld+" 件）；商品卡 "+hNow.toFixed(1)+"px（原 "+hOld.toFixed(1)+' +
+    '"px，缩 "+(hOld-hNow).toFixed(1)+"px）；商品图 "+ihNow.toFixed(1)+"px（原 "+ihOld.toFixed(1)+' +
+    '"px）；底部留白 "+padNow;' +
+    'add("关键尺寸",true,msg);' +
+    'add("留白可下调余量",gapMin>=0,"箭头与价格行最小间隙 "+gapMin.toFixed(1)+' +
+    '"px（≥0 即不相交；可下调约 "+Math.max(0,Math.round(gapMin-2))+"px）");' +
+    '/* 3.4 圆角控件：四角需向内多少才能命中（判断是自身圆角还是被裁剪） */' +
+    'function corner(sel){var el=document.querySelector(sel);if(!el)return;' +
+    'var r=el.getBoundingClientRect();' +
+    'var rad=parseFloat(getComputedStyle(el).borderTopLeftRadius)||0;' +
+    'var cs=[[r.left,r.top,1,1],[r.right-1,r.top,-1,1],[r.left,r.bottom-1,1,-1],[r.right-1,r.bottom-1,-1,-1]];' +
+    'var need=cs.map(function(c){' +
+    'for(var d=0;d<=24;d++){var t=document.elementFromPoint(c[0]+c[2]*d,c[1]+c[3]*d);' +
+    'if(t&&(t===el||el.contains(t)))return d;}return -1;});' +
+    'add("四角命中内缩 "+sel,true,"圆角 "+Math.round(rad)+"px；自角点向内需 " +' +
+    'need.join("/")+"px（-1=24px 内仍点不到）；理论值 "+Math.round(rad*(1-Math.SQRT1_2))+"px");}' +
+    'corner(".btn-tool");corner(".btn-back-game");corner(".pager-arrow");' +
     'return JSON.stringify(out);})()';
 }
 
