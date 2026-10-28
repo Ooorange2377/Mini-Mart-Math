@@ -94,7 +94,6 @@ ZQ.screens = ZQ.screens || {};
       var track = el.querySelector('.skin-track');
       var tabs = el.querySelectorAll('.skin-tab');
       var offset = 0;        /* 当前横向位移（px，<= 0） */
-      var drag = null;       /* { x0, base } */
       var suppressClick = false;
 
       function gapPx() {
@@ -127,43 +126,31 @@ ZQ.screens = ZQ.screens || {};
       }
 
       /* 手指 / 鼠标拖拽滑动，松手吸附到最近一张。
-       * 注意：不能在 pointerdown 就 setPointerCapture —— 捕获后 pointerup 会被重定向到
-       * .skins-body，浏览器据此把 click 的 target 也改成 .skins-body，导致卡片上的
-       * 「装备」按钮 click 永远到不了委托监听。改为位移超过阈值后才捕获。 */
-      body.addEventListener('pointerdown', function (e) {
-        if (e.button !== undefined && e.button !== 0) return;
-        drag = { x0: e.clientX, base: offset, moved: 0, captured: false };
-      });
-      body.addEventListener('pointermove', function (e) {
-        if (!drag) return;
-        var dx = e.clientX - drag.x0;
-        drag.moved = Math.max(drag.moved, Math.abs(dx));
-        if (!drag.captured) {
-          if (drag.moved <= 6) return;     // 还只是点击抖动，不动轨道、不抢事件
-          drag.captured = true;
-          try { body.setPointerCapture(e.pointerId); } catch (err) {}
+       * 手势状态机在 ZQ.ui.gesture：pointerdown 不捕获，位移严格超过 6px 才 setPointerCapture
+       * （提前捕获会让浏览器把 click 的 target 改成 .skins-body，「装备」按钮就点不到了）。
+       * 轨道平移、边界钳制、吸附与 suppressClick 时序仍全部留在这里。 */
+      var dragBase = 0;
+      ZQ.ui.gesture.drag(body, {
+        axis: 'x',
+        threshold: 6,
+        onStart: function () {
+          /* ≤6px 阶段不移动轨道，故此处取的基准与 pointerdown 时的 offset 等价 */
+          dragBase = offset;
           body.classList.add('is-drag');
+        },
+        onMove: function (dx) {
+          offset = dragBase + dx;
+          apply(false);
+        },
+        onEnd: function (info) {
+          body.classList.remove('is-drag');
+          if (info.moved > 6) {
+            snapTo(Math.round(-offset / stepPx()), true);
+            suppressClick = true;
+            setTimeout(function () { suppressClick = false; }, 0);
+          }
         }
-        offset = drag.base + dx;
-        apply(false);
       });
-      function endDrag(e) {
-        if (!drag) return;
-        var moved = drag.moved;
-        var captured = drag.captured;
-        drag = null;
-        body.classList.remove('is-drag');
-        if (captured && e && e.pointerId !== undefined && body.hasPointerCapture(e.pointerId)) {
-          body.releasePointerCapture(e.pointerId);
-        }
-        if (moved > 6) {
-          snapTo(Math.round(-offset / stepPx()), true);
-          suppressClick = true;
-          setTimeout(function () { suppressClick = false; }, 0);
-        }
-      }
-      body.addEventListener('pointerup', endDrag);
-      body.addEventListener('pointercancel', endDrag);
 
       el.addEventListener('click', function (e) {
         var t = e.target;

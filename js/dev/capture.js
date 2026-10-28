@@ -36,6 +36,7 @@ var DPR = parseFloat(arg('dpr', '1'));
 var MOBILE = arg('mobile', '') === '1';
 var ASSERT_MOBILE = arg('assert-mobile', '') === '1';
 var VERIFY_BEHAVIOR = arg('verify-behavior', '') === '1';
+var VERIFY_GESTURE = arg('verify-gesture', '') === '1';
 /* 注入底部安全区高度（px）：headless 无法模拟 env(safe-area-inset-*)，
  * 用 --safe-b 变量代偿；生产环境走 env()，传 0 等价于无安全区。 */
 var SAFE_B = parseFloat(arg('safe-b', '0'));
@@ -480,6 +481,139 @@ function pad(s, n) {
   return s;
 }
 
+/* ---------- 手势验证（--verify-gesture 1） ----------
+ * 皮肤页拖拽已迁到 ZQ.ui.gesture，本脚本证明迁移后行为 1:1：
+ *   A1 位移 ≤6px 不拖动轨道、不加 is-drag（阈值严格 >6）
+ *   A2 拖拽过程中跟手位移正确（未松手）
+ *   A3 松手吸附到相邻卡位、is-drag 清除
+ *   A4 拖拽结束那一次 click 被吞（suppressClick + setTimeout 0 时序）
+ *   A5 纯点击「装备」按钮生效（P0 死按钮回归点：不能在 pointerdown 就捕获）
+ *   A6 两指先后按下仍按「后按下的指针重置基准」处理，无重复位移/跳变
+ *   A7 destroy() 后不再响应
+ *   A8 touch-action 仍为 pan-y（P0 兼容）
+ * 建议配 --width 844 --height 390 --mobile 1 运行，保证卡片步长足够容纳断言位移。 */
+function gestureScript() {
+  return '(async function(){' +
+    'var out=[];function add(n,p,d){out.push({name:n,pass:!!p,detail:d});}' +
+    'function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}' +
+    'function tx(){var tr=document.querySelector(".skin-track");if(!tr)return NaN;' +
+      'var m=/translateX\\((-?[\\d.]+)px\\)/.exec(tr.style.transform||"");return m?parseFloat(m[1]):0;}' +
+    'function fire(el,type,x,y,id){var ev=new PointerEvent(type,{bubbles:true,cancelable:true,' +
+      'clientX:x,clientY:y,button:0,buttons:type==="pointerup"?0:1,pointerId:id||1,' +
+      'pointerType:"touch",isPrimary:(id||1)===1});el.dispatchEvent(ev);return ev;}' +
+
+    'add("gesture 模块已加载",!!(ZQ.ui&&ZQ.ui.gesture&&ZQ.ui.gesture.drag),' +
+      '"ZQ.ui.gesture.drag="+typeof(ZQ.ui&&ZQ.ui.gesture&&ZQ.ui.gesture.drag));' +
+    'ZQ.app.go("skins");await wait(120);' +
+    'var body=document.querySelector(".skins-body"),track=document.querySelector(".skin-track");' +
+    'add("skins 页存在拖拽容器",!!body&&!!track,"body="+!!body+" track="+!!track);' +
+    'var card=track.querySelector(".skin-card");' +
+    'var step=card.getBoundingClientRect().width+(parseFloat(getComputedStyle(track).columnGap)||0);' +
+    'add("A8 touch-action 仍为 pan-y",getComputedStyle(body).touchAction==="pan-y",' +
+      '"touch-action="+getComputedStyle(body).touchAction);' +
+
+    'var x0=200,y0=200;var before=tx();' +
+    'fire(body,"pointerdown",x0,y0,1);fire(body,"pointermove",x0+3,y0,1);fire(body,"pointerup",x0+3,y0,1);' +
+    'add("A1 位移 3px 不拖动轨道",tx()===before,"起点 "+before+"px，3px 位移后 "+tx()+"px");' +
+    'add("A1 位移 3px 不加 is-drag",!body.classList.contains("is-drag"),"class="+body.className);' +
+
+    'await wait(60);var base=tx();var d=Math.round(step*0.8);' +
+    'fire(body,"pointerdown",x0,y0,1);fire(body,"pointermove",x0-d,y0,1);' +
+    'add("A2 拖拽过程中跟手位移",Math.abs((base-d)-tx())<0.6,' +
+      '"期望 "+(base-d)+"px，实际 "+tx()+"px（向左位移 "+d+"px）");' +
+    'add("A2 拖拽中加 is-drag",body.classList.contains("is-drag"),"class="+body.className);' +
+
+    'fire(body,"pointerup",x0-d,y0,1);' +
+    'add("A3 松手吸附到相邻卡位",Math.abs((base-step)-tx())<0.6,' +
+      '"期望 "+(base-step)+"px，实际 "+tx()+"px（步长 "+step.toFixed(2)+"px）");' +
+    'add("A3 松手移除 is-drag",!body.classList.contains("is-drag"),"class="+body.className);' +
+
+    'var eq0=JSON.stringify(ZQ.store.data.equipped);var btn4=document.querySelector(".btn-skin[data-state=\\"equip\\"]");' +
+    'if(btn4)btn4.click();' +
+    'add("A4 拖拽后那次 click 被吞",JSON.stringify(ZQ.store.data.equipped)===eq0,' +
+      '"装备 "+eq0+" → "+JSON.stringify(ZQ.store.data.equipped));' +
+    'await wait(80);' +
+
+    'var eq1=JSON.stringify(ZQ.store.data.equipped);var btns=document.querySelectorAll(".btn-skin");var btn5=null;' +
+    'for(var i=0;i<btns.length;i++){if(btns[i].getAttribute("data-state")==="equip"){btn5=btns[i];break;}}' +
+    'if(btn5){fire(btn5,"pointerdown",300,300,1);fire(btn5,"pointerup",300,300,1);btn5.click();}' +
+    'add("A5 纯点击装备按钮生效",!!btn5&&JSON.stringify(ZQ.store.data.equipped)!==eq1,' +
+      '"装备 "+eq1+" → "+JSON.stringify(ZQ.store.data.equipped));' +
+    'await wait(80);' +
+
+    'var tab=document.querySelector(".skin-tab[data-type=\\"cart\\"]");if(tab)tab.click();await wait(80);' +
+    'var t0=tx();fire(body,"pointerdown",x0,y0,1);fire(body,"pointerdown",x0+100,y0,2);' +
+    'fire(body,"pointermove",x0+60,y0,2);' +
+    'add("A6 两指按下按后按指针重置基准",Math.abs((t0-40)-tx())<0.6,' +
+      '"期望 "+(t0-40)+"px，实际 "+tx()+"px（起点 "+t0+"px）");' +
+    'fire(body,"pointerup",x0+60,y0,2);' +
+
+    'var probe=document.createElement("div");' +
+    'probe.style.cssText="position:fixed;left:0;top:0;width:10px;height:10px";document.body.appendChild(probe);' +
+    'var hits=0;var g=ZQ.ui.gesture.drag(probe,{axis:"x",threshold:6,' +
+      'onStart:function(){hits++;},onMove:function(){hits++;}});' +
+    'g.destroy();fire(probe,"pointerdown",10,10,3);fire(probe,"pointermove",60,10,3);fire(probe,"pointerup",60,10,3);' +
+    'add("A7 destroy 后不再响应",hits===0,"回调命中 "+hits+" 次（应 0）");' +
+    'if(probe.parentNode)probe.parentNode.removeChild(probe);' +
+
+    /* A9：pointercancel 与 pointerup 共用同一收尾（旧实现 endDrag 同时挂在两者上） */
+    'await wait(80);var tab2=document.querySelector(".skin-tab[data-type=\\"cart\\"]");if(tab2)tab2.click();await wait(80);' +
+    'var c0=tx();var dc=Math.round(step*0.8);' +
+    'fire(body,"pointerdown",x0,y0,1);fire(body,"pointermove",x0-dc,y0,1);fire(body,"pointercancel",x0-dc,y0,1);' +
+    'add("A9 pointercancel 走同一收尾",Math.abs((c0-step)-tx())<0.6&&!body.classList.contains("is-drag"),' +
+      '"期望 "+(c0-step)+"px，实际 "+tx()+"px，class="+body.className);' +
+
+    /* A10：lostpointercapture 两侧都没有监听，不应终止拖拽 */
+    'await wait(80);var tab3=document.querySelector(".skin-tab[data-type=\\"cart\\"]");if(tab3)tab3.click();await wait(80);' +
+    'var l0=tx();var dl=Math.round(step*0.5);' +
+    'fire(body,"pointerdown",x0,y0,1);fire(body,"pointermove",x0-dl,y0,1);' +
+    'var midOk=Math.abs((l0-dl)-tx())<0.6;' +
+    'fire(body,"lostpointercapture",x0-dl,y0,1);' +
+    'fire(body,"pointermove",x0-dl-20,y0,1);' +
+    'add("A10 lostpointercapture 不终止拖拽",midOk&&Math.abs((l0-dl-20)-tx())<0.6,' +
+      '"中止前 "+(l0-dl)+"px，继续拖 20px 后 "+(l0-dl-20)+"px，实际 "+tx()+"px");' +
+    'fire(body,"pointerup",x0-dl-20,y0,1);' +
+
+    /* A11：拖拽途中元素被移出文档，监听仍在但不得抛错 */
+    'await wait(80);' +
+    'var p11=document.createElement("div");p11.style.cssText="position:fixed;left:0;top:0;width:10px;height:10px";' +
+    'document.body.appendChild(p11);var end11=0,off11=0;' +
+    'ZQ.ui.gesture.drag(p11,{axis:"x",threshold:6,onMove:function(dx){off11=dx;},onEnd:function(){end11++;}});' +
+    'fire(p11,"pointerdown",100,100,5);fire(p11,"pointermove",60,100,5);' +
+    'p11.parentNode.removeChild(p11);' +
+    'var threw11=false;try{fire(p11,"pointermove",40,100,5);fire(p11,"pointerup",40,100,5);}catch(e){threw11=true;}' +
+    'add("A11 拖拽中元素被移除不抛错",!threw11&&end11===1&&off11===-60,' +
+      '"抛错="+threw11+"，onEnd "+end11+" 次，末次位移 "+off11+"px");' +
+
+    /* A12：旧实现逐行复刻对照（证明两指行为与迁移前逐点一致，含「第二指按下后第一指移动」的跳变）
+     * 旧代码在 pointerdown 直接把基准重置为最新指针，任何一条 pointermove 都按该基准算 dx；
+     * 因此两指场景下第一指再移动会产生跳变。B1 未改变该算法，仲裁留到 B2。 */
+    'function mkProbe(){var p=document.createElement("div");' +
+      'p.style.cssText="position:fixed;left:0;top:0;width:10px;height:10px";document.body.appendChild(p);return p;}' +
+    'var pOld=mkProbe(),pNew=mkProbe(),oldOff=0,newOff=0,oldDrag=null;' +
+    'pOld.addEventListener("pointerdown",function(e){if(e.button!==undefined&&e.button!==0)return;' +
+      'oldDrag={x0:e.clientX,base:oldOff,moved:0,captured:false};});' +
+    'pOld.addEventListener("pointermove",function(e){if(!oldDrag)return;var dx=e.clientX-oldDrag.x0;' +
+      'oldDrag.moved=Math.max(oldDrag.moved,Math.abs(dx));' +
+      'if(!oldDrag.captured){if(oldDrag.moved<=6)return;oldDrag.captured=true;}' +
+      'oldOff=Math.min(0,oldDrag.base+dx);});' +
+    'pOld.addEventListener("pointerup",function(){oldDrag=null;});' +
+    'pOld.addEventListener("pointercancel",function(){oldDrag=null;});' +
+    'ZQ.ui.gesture.drag(pNew,{axis:"x",threshold:6,onMove:function(dx){newOff=Math.min(0,dx);}});' +
+    'function both(t,x,id){fire(pOld,t,x,50,id);fire(pNew,t,x,50,id);}' +
+    'both("pointerdown",200,1);both("pointerdown",300,2);' +
+    'both("pointermove",250,2);var s1=[oldOff,newOff];' +
+    'both("pointermove",210,1);var s2=[oldOff,newOff];' +
+    'both("pointerup",210,1);' +
+    'add("A12 两指行为与旧实现逐点一致",s1[0]===s1[1]&&s2[0]===s2[1],' +
+      '"第2指拖至250：旧 "+s1[0]+"px / 新 "+s1[1]+"px；随后第1指移到210：旧 "+s2[0]+"px / 新 "+s2[1]+"px' +
+      '（该跳变两侧一致，B2 用 pointerId 仲裁解决）");' +
+    'if(pOld.parentNode)pOld.parentNode.removeChild(pOld);' +
+    'if(pNew.parentNode)pNew.parentNode.removeChild(pNew);' +
+
+    'return JSON.stringify(out);})()';
+}
+
 function printAssertions(list, label) {
   var failed = 0;
   list.forEach(function (a) {
@@ -703,6 +837,12 @@ async function main() {
       var rawB = await withTimeout(cdp.evaluate(behaviorScript(), true), 40000, '行为验证');
       var codeB = printAssertions(JSON.parse(rawB), '行为验证');
       if (codeB) process.exitCode = 1;
+    }
+
+    if (VERIFY_GESTURE) {
+      var rawG = await withTimeout(cdp.evaluate(gestureScript(), true), 40000, '手势验证');
+      var codeG = printAssertions(JSON.parse(rawG), '手势验证');
+      if (codeG) process.exitCode = 1;
     }
 
     /* 页面级 JS 报错一律算失败：静默的 TypeError 会让截图看起来正常但功能已坏。
