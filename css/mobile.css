@@ -78,7 +78,9 @@
   }
 
   /* 翻页箭头：用元素盒补足 44px（向外扩会被 .shelf 裁掉），
-     底部锚定，因此只会向上生长，箭头位置不变 */
+     底部锚定，因此只会向上生长，箭头位置不变。
+     补足后箭头矩形会盖住底部一排商品卡的价格行（44×18px），
+     所以在触摸设备上把货架的底部留白一并加高，腾出 44px 翻页条的净空。 */
   .pager-arrow {
     min-width: 44px;
     min-height: 44px;
@@ -86,6 +88,7 @@
     align-items: center;
     justify-content: center;
   }
+  .shelf-page { padding-bottom: calc(1cqw + 48px); }
 
   /* 道具方块：视觉 6.2cqw 在手机上约 43px，补足到 44px 只多 1px；
      ::before/::after 已被玻璃高光占用，不能再拿来做热区 */
