@@ -2,6 +2,10 @@
 window.ZQ = window.ZQ || {};
 
 (function () {
+  /* 首页按返回键的「再按一次退出」判定时间戳（离开首页即清零） */
+  var backExitAt = 0;
+  var BACK_EXIT_WINDOW = 2500;
+
   /** 竖屏提示文案（语言切换后重新填充） */
   function syncRotateTip() {
     var tip = document.querySelector('.rotate-tip');
@@ -60,9 +64,17 @@ window.ZQ = window.ZQ || {};
       }
       if (ZQ.state.screen === 'game') { ZQ.app.go('map', { noHistory: true }); return; }
       if (ZQ.state.screen !== 'start') { ZQ.app.go('start', { noHistory: true }); return; }
-      /* 已在开始页：浏览器已把最后一条历史pop掉，再按一次就会离开页面变成空白页。
-       * 这里补一条回去，让返回键在开始页只做「无操作」。 */
+      /* 已在开始页：浏览器已把最后一条历史 pop 掉，若不再补一条，再按就会离开页面（空白页）。
+       * 做法同 Android 惯例：首次补历史 + 提示「再按一次返回键退出游戏」，
+       * 2.5 秒内再按则不补、让浏览器按原有栈退出。 */
+      var now = Date.now();
+      if (backExitAt && now - backExitAt < BACK_EXIT_WINDOW) {
+        backExitAt = 0;
+        return;
+      }
+      backExitAt = now;
       history.pushState({ zq: 1, screen: 'start' }, '', '#start');
+      ZQ.ui.toast.show(ZQ.I18N.backExitHint, 2000);
     });
   }
 
@@ -118,6 +130,7 @@ window.ZQ = window.ZQ || {};
     go: function (screen, opts) {
       opts = opts || {};
       ZQ.state.screen = screen;
+      backExitAt = 0;
       if (opts.levelId) ZQ.state.levelId = opts.levelId;
       ZQ.state.seed = opts.seed;
       if (!opts.noHistory) {

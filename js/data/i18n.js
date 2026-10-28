@@ -60,6 +60,8 @@ ZQ.I18N_ZH = {
   rotateTitle: '把手机横过来玩吧',
   rotateText: '这一关的画面是横版的：横屏才能看清货架上的商品与价格。',
   rotateContinue: '仍要继续',
+  // 首页按返回键时的提示（返回键由页面接管，避免误触直接退出）
+  backExitHint: '再按一次返回键退出游戏',
 
   // 通用按钮
   btnOk: '确定',
@@ -244,6 +246,7 @@ ZQ.I18N_EN = {
   rotateTitle: 'Turn your phone sideways',
   rotateText: 'The game stage is landscape: rotating gives you a readable shelf and price tags.',
   rotateContinue: 'Continue anyway',
+  backExitHint: 'Press back again to exit',
 
   btnOk: 'OK',
   btnCancel: 'Cancel',
