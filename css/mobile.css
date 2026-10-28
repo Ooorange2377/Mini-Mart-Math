@@ -132,6 +132,8 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
+    /* 竖屏时底部是 34px 的 home indicator 区：提示卡片与按钮整体抬高 */
+    padding-bottom: calc(24px + var(--safe-b));
     background: linear-gradient(160deg, #EAF6FB, #FFF7E6 70%, #FFE9F0);
   }
   .rotate-tip-card {

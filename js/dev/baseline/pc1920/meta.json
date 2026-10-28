@@ -3,7 +3,8 @@
  "width": 1920,
  "height": 1080,
  "dpr": 1,
+ "mobile": false,
  "frozen": true,
  "seed": "fixed-30x3",
- "createdAt": "2026-10-27T11:58:20.282Z"
+ "createdAt": "2026-10-28T06:14:22.074Z"
 }

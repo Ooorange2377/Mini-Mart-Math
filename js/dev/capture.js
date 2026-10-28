@@ -36,6 +36,18 @@ var DPR = parseFloat(arg('dpr', '1'));
 var MOBILE = arg('mobile', '') === '1';
 var ASSERT_MOBILE = arg('assert-mobile', '') === '1';
 var VERIFY_BEHAVIOR = arg('verify-behavior', '') === '1';
+/* 注入底部安全区高度（px）：headless 无法模拟 env(safe-area-inset-*)，
+ * 用 --safe-b 变量代偿；生产环境走 env()，传 0 等价于无安全区。 */
+var SAFE_B = parseFloat(arg('safe-b', '0'));
+/* 名称溢出的容忍值（px）：629/667/844 用 0（必须完整显示），606 保守档可放宽用于记录 */
+var NAME_TOL = parseFloat(arg('name-tol', '0'));
+/* 名称全覆盖审计：把 1~42 关的商品池逐一渲染进真实货架，逐个测量 .slot-name */
+var NAME_AUDIT = arg('name-audit', '') === '1';
+
+/* 本轮批量改短的 21 个商品 id（审计逐个点名输出） */
+var AUDIT_IDS = ['s05', 's02', 's04', 's12', 's15', 's41', 'y12',
+  's01', 's06', 's13', 's14', 's16', 's22', 's24', 's27', 's28', 's43',
+  'y03', 'y05', 'y06', 'y13'];
 
 /* 需要快照计算样式的选择器：覆盖 4 个页面 + 游戏内关键控件 */
 var STYLE_TARGETS = [
@@ -260,14 +272,20 @@ function mobileAssertScript() {
     'if(!el){add("字号 "+f[0],true,"元素不存在，跳过");return;}' +
     'var fs=parseFloat(getComputedStyle(el).fontSize);' +
     'add("字号 "+f[0]+" ≥ "+f[1]+"px",fs>=f[1]-0.01,fs.toFixed(2)+"px");});' +
-    '/* 2. nowrap 文本溢出逐项检查 */' +
+    '/* 2. nowrap 文本溢出逐项检查：.slot-name 要求「完整显示」（容忍值可配），' +
+    ' *    .t-rule-line 允许 ≤3px 并记录实际值（窄台可接受），其余要求完全容纳 */' +
+    'var NAME_TOL=' + NAME_TOL + ';' +
     'var nowrap=[".slot-name",".slot-price",".t-rule-line",".items-row .row-name",' +
     '".items-row .row-price",".hud-items .note-title"];' +
     'nowrap.forEach(function(s){var els=[].slice.call(document.querySelectorAll(s));' +
     'if(!els.length){add("溢出 "+s,true,"无元素，跳过");return;}' +
-    'var bad=els.filter(function(e){return e.scrollWidth>e.clientWidth+1;});' +
+    'var tol=s===".slot-name"?NAME_TOL:(s===".t-rule-line"?3:1);' +
+    'var bad=els.filter(function(e){return e.scrollWidth>e.clientWidth+tol;});' +
+    'var worst=0;els.forEach(function(e){var o=e.scrollWidth-e.clientWidth;if(o>worst)worst=o;});' +
+    'var head=bad.length? bad.length+" 个溢出，例："+bad[0].textContent.trim()+" "' +
+    '+bad[0].scrollWidth+">"+bad[0].clientWidth : (s===".slot-name"?"全部完整显示":"全部容纳");' +
     'add("溢出 "+s+"("+els.length+" 个)",bad.length===0,' +
-    'bad.length? bad.length+" 个溢出，例："+bad[0].textContent.trim()+" "+bad[0].scrollWidth+">"+bad[0].clientWidth : "全部容纳");});' +
+    'head+"；最大溢出 "+worst+"px（容忍 "+tol+"px）");});' +
     '/* 3. 热区：先给出热区矩形四角坐标与是否在舞台内，再验命中。' +
     ' *    热区 = 元素盒 ∪ ::after（伪元素锚定在元素左上角）。' +
     ' *    圆角控件（btn-back-game r=12、btn-tool r=2.8cqw）真角点在圆角外，属设计而非裁剪，' +
@@ -337,8 +355,10 @@ function mobileAssertScript() {
     /* 3.3 关键尺寸：货架总高 / 商品卡高 / 页内商品数，以及留白可下调余量（A/B 还原为 2.6cqw） */
     'var shelfRoot=document.querySelector(".shelf");' +
     'var pageEl=document.querySelector(".shelf-page");' +
-    'var slotEl=document.querySelector(".slot");' +
-    'var imgEl=pageEl?pageEl.querySelector(".slot-frame img"):null;' +
+    /* 断言前会点选前两件商品（is-selected 会把图框描边 2px→3px、图片区变小），
+     * 红线针对常态商品卡，因此统一取「未选中」的 slot 测量。 */
+    'var slotEl=document.querySelector(".slot:not(.is-selected)")||document.querySelector(".slot");' +
+    'var imgEl=slotEl?slotEl.querySelector(".slot-img"):null;' +
     'var slotN=pageEl?pageEl.querySelectorAll(".slot").length:0;' +
     'var layers=pageEl?pageEl.querySelectorAll(".layer").length:0;' +
     'var visN=0;' +
@@ -371,11 +391,17 @@ function mobileAssertScript() {
     'add("关键尺寸",true,msg);' +
     'add("留白可下调余量",gapMin>=8,"箭头与价格行最小间隙 "+gapMin.toFixed(1)+' +
     '"px（≥8 底线；可下调约 "+Math.max(0,Math.round(gapMin-8))+"px）");' +
-    '/* 卡底与层板顶的间隙：必须为正且落在 3~4px，否则卡片看起来压在层板上 */' +
+    '/* 卡底与层板顶的间隙：必须为正且落在 3~4.5px（安全区会把它抬高），否则卡片看起来压在层板上 */' +
     'var bEl=pageEl?pageEl.querySelector(".layer-board"):null;' +
     'var gapBoard=bEl?bEl.getBoundingClientRect().top-slotEl.getBoundingClientRect().bottom:0;' +
-    'add("卡片不压层板",gapBoard>=3&&gapBoard<=4,"卡底与层板顶间隙 "+gapBoard.toFixed(2)+' +
-    '"px（要求 3~4px；留白 48px 那版为负值）");' +
+    'add("卡片不压层板",gapBoard>=3&&gapBoard<=4.5,"卡底与层板顶间隙 "+gapBoard.toFixed(2)+' +
+    '"px（要求 3~4.5px；留白 48px 那版为负值）");' +
+    '/* 商品图片可绘制区（去掉 .slot-img 的 scale(1.06)）：红线 20px，断言留 0.5px 测量余量 */' +
+    'var imgScale=1;var mt=(imgEl?getComputedStyle(imgEl).transform:"").match(/matrix\\(([^,]+)/);' +
+    'if(mt)imgScale=parseFloat(mt[1]);' +
+    'var drawH=imgEl?imgEl.getBoundingClientRect().height/imgScale:0;' +
+    'add("图片区 ≥19.5",drawH>=19.5,"图片可绘制区 "+drawH.toFixed(2)+' +
+    '"px（红线 20，允许 0.5px 工具误差；scale="+imgScale.toFixed(2)+"）");' +
     '/* 3.4 圆角控件：四角需向内多少才能命中（判断是自身圆角还是被裁剪） */' +
     'function corner(sel){var el=document.querySelector(sel);if(!el)return;' +
     'var r=el.getBoundingClientRect();' +
@@ -388,6 +414,70 @@ function mobileAssertScript() {
     'need.join("/")+"px（-1=24px 内仍点不到）；理论值 "+Math.round(rad*(1-Math.SQRT1_2))+"px");}' +
     'corner(".btn-tool");corner(".btn-back-game");corner(".pager-arrow");' +
     'return JSON.stringify(out);})()';
+}
+
+/* ---------- 名称全覆盖审计 ----------
+ * 只测第 25 关不足以覆盖全部商品：不同关卡的 pool 由品类池随机抽样，长名可能出现在任意关卡。
+ * 因此把 1~42 关的关卡实例逐一交给真实渲染器 ZQ.ui.shelf.render() 生成货架，
+ * 换进当前真实 .shelf-track 后逐个测量 .slot-name 的 scrollWidth / clientWidth。
+ * 容器宽度只由舞台宽度决定、与关卡无关，故一次渲染即可得到该档位下每个名称的真实排版结果。 */
+function nameAuditScript() {
+  return '(function(){' +
+    'var TARGET=' + JSON.stringify(AUDIT_IDS) + ';' +
+    'var track=document.querySelector(".shelf-track");' +
+    'if(!track)return JSON.stringify({error:"找不到 .shelf-track（需先进入关卡）"});' +
+    'var original=track.innerHTML;' +
+    'var best={};var recs=[];var levels=0;' +
+    'for(var lvId=1;lvId<=ZQ.totalLevels;lvId++){' +
+    'var lv=ZQ.generator.generate(lvId,12345);if(!lv)continue;' +
+    'var shelf=ZQ.ui.shelf.render(lv);var nt=shelf.querySelector(".shelf-track");' +
+    'if(!nt)continue;levels++;' +
+    'track.innerHTML=nt.innerHTML;void track.offsetWidth;' +
+    'var slots=track.querySelectorAll(".slot[data-item]");' +
+    'for(var i=0;i<slots.length;i++){var sl=slots[i];var nm=sl.querySelector(".slot-name");' +
+    'if(!nm)continue;var id=sl.getAttribute("data-item");var it=ZQ.ui.itemById(id);' +
+    'var r={id:id,name:it?ZQ.itemName(it):nm.textContent.trim(),' +
+    'w:Math.round(nm.scrollWidth*100)/100,cw:Math.round(nm.clientWidth*100)/100,' +
+    'ov:Math.round((nm.scrollWidth-nm.clientWidth)*100)/100,lv:lvId};' +
+    'recs.push(r);' +
+    'if(!best[id]||r.ov>best[id].ov){best[id]={id:id,name:r.name,w:r.w,cw:r.cw,ov:r.ov,lv:r.lv};}}' +
+    '}' +
+    'track.innerHTML=original;' +
+    'var targets=TARGET.map(function(id){return best[id]||{id:id,missing:true};});' +
+    'var worst=null;recs.forEach(function(r){if(!worst||r.ov>worst.ov)worst=r;});' +
+    'var bad=recs.filter(function(r){return r.ov>0;});' +
+    'return JSON.stringify({levels:levels,measurements:recs.length,bad:bad.length,' +
+    'targets:targets,worst:worst});' +
+    '})()';
+}
+
+function printNameAudit(data) {
+  console.log('\n名称全覆盖审计：' + data.levels + ' 关 / ' + data.measurements + ' 次测量，' +
+    '溢出项 ' + data.bad + ' 个');
+  console.log('  名称            文字宽  可用宽  溢出');
+  var failed = 0;
+  data.targets.forEach(function (t) {
+    if (t.missing) { failed++; console.log('  MISS ' + t.id + ' — 未在任何关卡商品池中出现'); return; }
+    var ok = t.ov <= 0;
+    if (!ok) failed++;
+    console.log('  ' + (ok ? 'PASS ' : 'FAIL ') + pad(t.id, 4) + ' ' + pad(t.name, 8) +
+      pad(t.w.toFixed(2), 8) + pad(t.cw.toFixed(2), 8) + (t.ov > 0 ? '+' + t.ov.toFixed(2) : '0.00') +
+      '  （最差出现在第 ' + t.lv + ' 关）');
+  });
+  if (data.worst) {
+    console.log('  全部商品最差：' + data.worst.id + ' ' + data.worst.name +
+      ' 溢出 ' + data.worst.ov.toFixed(2) + 'px（文字 ' + data.worst.w.toFixed(2) +
+      ' / 可用 ' + data.worst.cw.toFixed(2) + '，第 ' + data.worst.lv + ' 关）');
+  }
+  console.log(failed ? '\n名称审计 FAIL：' + failed + '/' + data.targets.length
+    : '\n名称审计 PASS：' + data.targets.length + ' 个名称全部完整显示');
+  return failed;
+}
+
+function pad(s, n) {
+  s = String(s);
+  while (s.length < n) s += ' ';
+  return s;
 }
 
 function printAssertions(list, label) {
@@ -507,7 +597,9 @@ async function main() {
       pageErrors.push('exception: ' + (p.exceptionDetails.exception && p.exceptionDetails.exception.description || p.exceptionDetails.text));
     }]);
     cdp.listeners.set('Log.entryAdded', [function (p) {
-      if (p.entry.level === 'error') pageErrors.push('console.error: ' + p.entry.text);
+      if (p.entry.level === 'error') {
+        pageErrors.push('console.error: ' + p.entry.text + (p.entry.url ? ' @ ' + p.entry.url : ''));
+      }
     }]);
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: WIDTH, height: HEIGHT, deviceScaleFactor: DPR, mobile: MOBILE
@@ -527,6 +619,16 @@ async function main() {
     await cdp.send('Page.navigate', { url: URL_BASE + (URL_BASE.indexOf('?') > -1 ? '&' : '?') + 't=' + Date.now() });
     await loaded;
     await withTimeout(cdp.evaluate(settleScript(), true), 20000, '首屏 settle');
+    if (SAFE_B > 0) {
+      /* 注入安全区：与 base.css 的 --safe-b 同优先级，后写入生效 */
+      await withTimeout(cdp.evaluate(
+        'var s=document.getElementById("zq-safe-b");' +
+        'if(!s){s=document.createElement("style");s.id="zq-safe-b";document.head.appendChild(s);}' +
+        's.textContent=":root{--safe-b:' + SAFE_B + 'px}";'
+      ), 10000, '注入安全区');
+      await sleep(120);
+      console.log('  注入底部安全区 ' + SAFE_B + 'px');
+    }
     console.log('  页面就绪');
 
     for (var i = 0; i < SCREENS.length; i++) {
@@ -578,6 +680,23 @@ async function main() {
       if (code) process.exitCode = 1;
     }
 
+    if (NAME_AUDIT) {
+      await withTimeout(cdp.evaluate(
+        'ZQ.app.go("game",{levelId:25,seed:12345});' +
+        'if(ZQ.screens.game._stopTimer)ZQ.screens.game._stopTimer();'
+      ), 15000, '名称审计前进入关卡');
+      await sleep(150);
+      await withTimeout(cdp.evaluate(settleScript(), true), 25000, '名称审计前 settle');
+      var rawN = await withTimeout(cdp.evaluate(nameAuditScript()), 60000, '名称审计');
+      var dataN = JSON.parse(rawN);
+      if (dataN.error) {
+        console.log('  名称审计失败：' + dataN.error);
+        process.exitCode = 1;
+      } else if (printNameAudit(dataN)) {
+        process.exitCode = 1;
+      }
+    }
+
     if (VERIFY_BEHAVIOR) {
       await withTimeout(cdp.evaluate('ZQ.app.go("game",{levelId:25,seed:12345});'), 15000, '行为验证进入关卡');
       await sleep(200);
@@ -592,11 +711,17 @@ async function main() {
     var isFile = URL_BASE.indexOf('file://') === 0;
     var ignored = [];
     var fatal = pageErrors.filter(function (e) {
-      if (isFile && e.indexOf('CORS policy') > -1) { ignored.push(e); return false; }
+      if (!isFile) return true;
+      if (e.indexOf('CORS policy') > -1) { ignored.push(e); return false; }
+      /* 同一条 mask-image 限制在 Chrome 里还会额外记一条 ERR_FAILED 资源加载失败，
+       * 只在 file:// 且 URL 就是那张立绘时放行，范围收窄避免掩盖真正的坏资源 */
+      if (e.indexOf('net::ERR_FAILED') > -1 && e.indexOf('%E5%A6%88%E5%A6%88%E4%BA%BA%E7%89%A9') > -1) {
+        ignored.push(e); return false;
+      }
       return true;
     });
     if (ignored.length) {
-      console.log('\n（file:// 已知限制，已放行 ' + ignored.length + ' 条 mask-image CORS 报错）');
+      console.log('\n（file:// 已知限制，已放行 ' + ignored.length + ' 条 mask-image CORS / 资源加载报错）');
     }
     if (fatal.length) {
       console.log('\n页面报错 ' + fatal.length + ' 条：');

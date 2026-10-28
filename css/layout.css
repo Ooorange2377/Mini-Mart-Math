@@ -4,8 +4,13 @@
 .stage {
   position: relative;
   width: min(100vw, 177.78vh);   /* 16:9 等比铺满 */
+  /* 扣掉底部安全区后仍保持 16:9：高度减 safe-b，宽度按 1.7778 倍同比例减 */
+  width: min(100vw, calc(177.78vh - 1.7778 * var(--safe-b)));
   height: min(56.25vw, 100vh);
   height: min(56.25vw, 100dvh);  /* 移动端地址栏伸缩时以此为准，旧浏览器保留上一行 */
+  height: min(56.25vw, calc(100dvh - var(--safe-b)));
+  /* 舞台整体抬到 home indicator 之上；safe-b 为 0 时（PC）完全无影响 */
+  margin-bottom: var(--safe-b);
   container-type: inline-size;
   overflow: hidden;
   background: var(--wall);
