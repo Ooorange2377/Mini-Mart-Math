@@ -268,25 +268,71 @@ function mobileAssertScript() {
     'var bad=els.filter(function(e){return e.scrollWidth>e.clientWidth+1;});' +
     'add("溢出 "+s+"("+els.length+" 个)",bad.length===0,' +
     'bad.length? bad.length+" 个溢出，例："+bad[0].textContent.trim()+" "+bad[0].scrollWidth+">"+bad[0].clientWidth : "全部容纳");});' +
-    '/* 3. 热区：尺寸（含 ::after 伪元素热区）+ 内圈命中 */' +
-    'function hit(sel,min){var el=document.querySelector(sel);' +
-    'if(!el){add("热区 "+sel,true,"元素不存在，跳过");return;}' +
-    'var r=el.getBoundingClientRect();' +
-    'var af=getComputedStyle(el,"::after");' +
-    'var aw=parseFloat(af.width)||0, ah=parseFloat(af.height)||0;' +
-    'var hw=Math.max(r.width,aw), hh=Math.max(r.height,ah);' +
-    'add("热区尺寸 "+sel,Math.min(hw,hh)>=min,' +
-    '"元素 "+Math.round(r.width)+"×"+Math.round(r.height)+" @("+Math.round(r.left)+","+Math.round(r.top)+")"' +
-    '+" 含伪元素 "+Math.round(aw)+"×"+Math.round(ah)+"，有效热区 "+Math.round(hw)+"×"+Math.round(hh));' +
-    '/* 伪元素锚定在左上，因此热区矩形以元素左上角为原点 */' +
-    'var x0=r.left, y0=r.top;' +
-    '/* 圆角控件不能取真角点（border-radius 会参与命中测试），取 20%/80% 内圈 */' +
-    'var pts=[[x0+hw*0.2,y0+hh*0.2],[x0+hw*0.8,y0+hh*0.2],' +
-    '[x0+hw*0.2,y0+hh*0.8],[x0+hw*0.8,y0+hh*0.8],[x0+hw*0.5,y0+hh*0.5]];' +
+    '/* 3. 热区：先给出热区矩形四角坐标与是否在舞台内，再验命中。' +
+    ' *    热区 = 元素盒 ∪ ::after（伪元素锚定在元素左上角）。' +
+    ' *    圆角控件（btn-back-game r=12、btn-tool r=2.8cqw）真角点在圆角外，属设计而非裁剪，' +
+    ' *    因此「四角命中」只做记录，「命中」按圆角内缩后的 4 角 + 中心判定。 */' +
+    'var stageBox=document.querySelector(".stage").getBoundingClientRect();' +
+    'function inner(sel){var el=document.querySelector(sel);if(!el)return null;' +
+    'var r=el.getBoundingClientRect(),af=getComputedStyle(el,"::after");' +
+    'var aw=parseFloat(af.width)||0,ah=parseFloat(af.height)||0;' +
+    'var rad=Math.max(parseFloat(getComputedStyle(el).borderTopLeftRadius)||0,' +
+    'parseFloat(af.borderTopLeftRadius)||0);' +
+    'return {el:el,r:r,hw:Math.max(r.width,aw),hh:Math.max(r.height,ah),rad:rad,aw:aw,ah:ah};}' +
+    'function hit(sel,min){var o=inner(sel);' +
+    'if(!o){add("热区 "+sel,true,"元素不存在，跳过");return;}' +
+    'var x0=o.r.left,y0=o.r.top,x1=x0+o.hw,y1=y0+o.hh;' +
+    'var fmt=function(p){return "("+Math.round(p[0])+","+Math.round(p[1])+")";};' +
+    'var cs=[[x0,y0],[x1,y0],[x0,y1],[x1,y1]];' +
+    'add("热区尺寸 "+sel,Math.min(o.hw,o.hh)>=min,' +
+    '"热区 "+Math.round(o.hw)+"×"+Math.round(o.hh)+"，四角 "+cs.map(fmt).join(" ")+' +
+    '"（元素 "+Math.round(o.r.width)+"×"+Math.round(o.r.height)+"，伪元素 "+Math.round(o.aw)+"×"+Math.round(o.ah)+"）");' +
+    'var inside=cs.every(function(p){return p[0]>=stageBox.left-0.5&&p[0]<=stageBox.right+0.5&&' +
+    'p[1]>=stageBox.top-0.5&&p[1]<=stageBox.bottom+0.5;});' +
+    'add("热区四角在舞台内 "+sel,inside,inside?"四角均在 ("+Math.round(stageBox.left)+","+Math.round(stageBox.top)+"–"' +
+    '+Math.round(stageBox.right)+","+Math.round(stageBox.bottom)+") 内":' +
+    '"有角超出舞台，请按裁剪后尺寸计："+Math.round(Math.min(x1,stageBox.right)-Math.max(x0,stageBox.left))+"×"' +
+    '+Math.round(Math.min(y1,stageBox.bottom)-Math.max(y0,stageBox.top)));' +
+    '/* 圆角内缩：点 (d,d) 落在圆角内需 d ≥ rad·(1-1/√2) */' +
+    'var d=o.rad*(1-Math.SQRT1_2)+1;' +
+    'var pts0=cs.map(fmt);' +
+    'var pts=[[x0+d,y0+d],[x1-d,y0+d],[x0+d,y1-d],[x1-d,y1-d],[(x0+x1)/2,(y0+y1)/2]];' +
     'var miss=pts.filter(function(p){var t=document.elementFromPoint(p[0],p[1]);' +
-    'return !t||!(t===el||el.contains(t)||t.parentNode===el);}).length;' +
-    'add("热区命中 "+sel,miss===0,miss+" 个采样点未命中（共 5 点）");}' +
-    'hit(".pager-arrow",44);hit(".btn-tool",44);hit(".btn-back-game",44);' +
+    'return !t||!(t===o.el||o.el.contains(t)||t.parentNode===o.el);}).length;' +
+    'add("热区命中 "+sel,miss===0,miss+" 个采样点未命中（共 5 点，圆角 "+Math.round(o.rad)+' +
+    '"px 内缩 "+Math.round(d)+"px，可点区域为圆角矩形）；真角点 "+pts0.join(" ")+' +
+    '" 为圆角透明区，不计入");' +
+    'return o;}' +
+    'var back=hit(".pager-arrow",44);hit(".btn-tool",44);var bk=hit(".btn-back-game",44);' +
+    /* 3.2 44px 是否挤压排版：与相邻元素不相交、货架可视宽度不减少 */
+    'var inter=function(a,b){return a.left<b.right-0.5&&b.left<a.right-0.5&&a.top<b.bottom-0.5&&b.top<a.bottom-0.5;};' +
+    'var tools=[].slice.call(document.querySelectorAll(".btn-tool"));' +
+    'var clash=0;' +
+    'for(var ti=0;ti<tools.length;ti++){for(var tj=ti+1;tj<tools.length;tj++){' +
+    'if(inter(tools[ti].getBoundingClientRect(),tools[tj].getBoundingClientRect()))clash++;}}' +
+    'add("道具方块 44px 互不相交",clash===0,clash+" 对相交（共 "+tools.length+" 块）");' +
+    'var arrows=[].slice.call(document.querySelectorAll(".pager-arrow"));' +
+    'var dots=[].slice.call(document.querySelectorAll(".pager-dot"));' +
+    'var dotClash=0;arrows.forEach(function(a){dots.forEach(function(dt){' +
+    'if(inter(a.getBoundingClientRect(),dt.getBoundingClientRect()))dotClash++;});});' +
+    'add("翻页箭头 44px 不压页点",dotClash===0,dotClash+" 处相交（箭头 "+arrows.length+"，页点 "+dots.length+"）");' +
+    'var slotClash=0,maxOv=0;arrows.forEach(function(a){[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){' +
+    'var ar=a.getBoundingClientRect(),sr=s.getBoundingClientRect();' +
+    'if(inter(ar,sr)){slotClash++;var ox=Math.min(ar.right,sr.right)-Math.max(ar.left,sr.left);' +
+    'var oy=Math.min(ar.bottom,sr.bottom)-Math.max(ar.top,sr.top);' +
+    'if(ox*oy>maxOv)maxOv=Math.round(ox)+"×"+Math.round(oy);}});});' +
+    'var clashMsg=slotClash===0?"不相交":(slotClash+" 处相交，最大重叠 "+maxOv+"px（箭头 z-index 更高，点击仍命中箭头）");' +
+    'add("翻页箭头 44px 不压商品卡",slotClash===0,clashMsg);' +
+    '/* A/B：临时去掉 min-width/min-height，货架宽度若变化说明热区挤压了排版 */' +
+    'var shelf=document.querySelector(".shelf-viewport")||document.querySelector(".shelf");' +
+    'var grid=document.querySelector(".layer-grid");' +
+    'var w1=shelf.clientWidth,g1=grid?grid.clientWidth:0;' +
+    'arrows.forEach(function(a){a.style.minWidth="0px";a.style.minHeight="0px";});' +
+    'void shelf.offsetWidth;' +
+    'var w2=shelf.clientWidth,g2=grid?grid.clientWidth:0;' +
+    'arrows.forEach(function(a){a.style.minWidth="";a.style.minHeight="";});' +
+    'add("44px 热区不压缩货架",w1===w2&&g1===g2,' +
+    '"有 44px 时货架 "+w1+"px / 网格 "+g1+"px，去掉后 "+w2+"px / "+g2+"px");' +
     'return JSON.stringify(out);})()';
 }
 
@@ -359,12 +405,24 @@ function behaviorScript() {
     'add("返回键 地图→开始",ZQ.state.screen==="start"&&location.hash==="#start",' +
     '"screen="+ZQ.state.screen+" hash="+location.hash);' +
 
-    /* 4. 返回键：已在开始页时不应退出（补一条历史，画面保持） */
+    /* 4. 返回键：已在开始页时首次拦截 + 提示，2.5s 窗口过期后再次提示 */
     'ZQ.app.go("map"); await wait(80);' +
+    'var hl0=history.length;' +
     'ZQ.app.go("start"); await wait(80);' +
-    'history.back(); await wait(300);' +
+    'history.back(); await wait(320);' +
     'add("开始页返回键不退出",ZQ.state.screen==="start"&&location.hash==="#start"&&document.body.childElementCount>0,' +
     '"screen="+ZQ.state.screen+" hash="+location.hash);' +
+    'add("返回键补历史条目不增不减",history.length===hl0+1,"离开前 "+hl0+"，入栈开始页后 "+(hl0+1)+' +
+    '"，按一次返回后 "+history.length);' +
+    'var toastEl=document.querySelector("#toast-layer .toast");' +
+    'add("返回键弹接管提示",!!toastEl&&toastEl.textContent===ZQ.I18N.backExitHint,' +
+    'toastEl?"文案："+toastEl.textContent:"无 toast");' +
+    '/* 窗口过期：2.6s 后再按应重新提示（本次不再补历史，交给浏览器退出，页面内无法断言退出本身） */' +
+    'await wait(2600);' +
+    'history.back(); await wait(320);' +
+    'var toast2=[].slice.call(document.querySelectorAll("#toast-layer .toast")).pop();' +
+    'add("窗口过期后再次提示",ZQ.state.screen==="start"&&!!toast2,' +
+    '"screen="+ZQ.state.screen+" toast="+(toast2?toast2.textContent:"无"));' +
 
     'return JSON.stringify(out);})()';
 }
