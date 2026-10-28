@@ -369,8 +369,13 @@ function mobileAssertScript() {
     '"px，缩 "+(hOld-hNow).toFixed(1)+"px）；商品图 "+ihNow.toFixed(1)+"px（原 "+ihOld.toFixed(1)+' +
     '"px）；底部留白 "+padNow;' +
     'add("关键尺寸",true,msg);' +
-    'add("留白可下调余量",gapMin>=0,"箭头与价格行最小间隙 "+gapMin.toFixed(1)+' +
-    '"px（≥0 即不相交；可下调约 "+Math.max(0,Math.round(gapMin-2))+"px）");' +
+    'add("留白可下调余量",gapMin>=8,"箭头与价格行最小间隙 "+gapMin.toFixed(1)+' +
+    '"px（≥8 底线；可下调约 "+Math.max(0,Math.round(gapMin-8))+"px）");' +
+    '/* 卡底与层板顶的间隙：必须为正且落在 3~4px，否则卡片看起来压在层板上 */' +
+    'var bEl=pageEl?pageEl.querySelector(".layer-board"):null;' +
+    'var gapBoard=bEl?bEl.getBoundingClientRect().top-slotEl.getBoundingClientRect().bottom:0;' +
+    'add("卡片不压层板",gapBoard>=3&&gapBoard<=4,"卡底与层板顶间隙 "+gapBoard.toFixed(2)+' +
+    '"px（要求 3~4px；留白 48px 那版为负值）");' +
     '/* 3.4 圆角控件：四角需向内多少才能命中（判断是自身圆角还是被裁剪） */' +
     'function corner(sel){var el=document.querySelector(sel);if(!el)return;' +
     'var r=el.getBoundingClientRect();' +

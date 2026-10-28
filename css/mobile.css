@@ -87,15 +87,22 @@
     align-items: center;
     justify-content: center;
   }
-  .shelf-page { padding-bottom: calc(1cqw + 40px); }
-
   /* 触摸端货架密度：3 层 × 4 件 / 页保持 12 件不变。
-     注意：卡高只由容器高度决定（grid 行高 1fr），卡内 padding 只在上/下与图框之间重分配，
-     因此这里省出的空间全部给了图框，卡高本身不变。 */
-  .layer { padding-bottom: 7px; }            /* 原 1.35cqw：卡片距层板 ≥0.7px（844）/ 1.0px（667） */
+     模型（实测拟合，844×390 / 667×375 均成立）：
+       卡距层板 = layerPaddingBottom + gridPadding − 层板高(1.25cqw)
+       卡高     = C0 − Δ(层 padding) − 2×Δ(grid padding) − Δ(页面留白)/3 + Δ(页面 padding-top)/3
+       图片区   = 卡高 − 文字与边框固定高度 − 2×slotPadding
+     即：页面留白被 3 层均分（1/3），而层 padding 是 1:1；卡内 padding 只换图片区、不动卡高。
+     调参目标：卡距层板 3~4px（原为 −0.66px，卡片压在层板上）、图片区不降反增、
+     箭头与价格行间隙 ≥8px。PC 不命中此块，基线 diff 保持 0。 */
+  .shelf-page {
+    padding-top: 2px;                        /* 原 .6cqw(≈4.16px)：首排略微上移，给卡高补 2/3px */
+    padding-bottom: calc(1cqw + 34px);       /* 原 1cqw+40：翻页条下移 6px，卡高补 2px */
+  }
+  .layer { padding-bottom: 11px; }           /* 原 1.35cqw：把「卡距层板」从 −0.66 抬到 3.34/3.67 */
   .layer-grid { padding-top: 1px; padding-bottom: 1px; }  /* 原 .35cqw 上下 */
-  .slot { padding-top: 1px; padding-bottom: 1px; }        /* 原 .28/.32cqw 上下 */
-  .slot-frame { padding: 0; }                /* 原 .22cqw：图片直贴虚线框，多出 ~3px 可视区 */
+  .slot { padding-top: 0; padding-bottom: 0; }            /* 归零：把 2px 全部换成图片区 */
+  .slot-frame { padding: 0; }                /* 原 .22cqw：图片直贴虚线框 */
 
   /* 道具方块：视觉 6.2cqw 在手机上约 43px，补足到 44px 只多 1px；
      ::before/::after 已被玻璃高光占用，不能再拿来做热区 */
