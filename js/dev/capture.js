@@ -303,7 +303,7 @@ function mobileAssertScript() {
     '"px 内缩 "+Math.round(d)+"px，可点区域为圆角矩形）；真角点 "+pts0.join(" ")+' +
     '" 为圆角透明区，不计入");' +
     'return o;}' +
-    'var back=hit(".pager-arrow",44);hit(".btn-tool",44);var bk=hit(".btn-back-game",44);' +
+    'var back=hit(".pager-arrow",40);hit(".btn-tool",44);var bk=hit(".btn-back-game",44);' +
     /* 3.2 44px 是否挤压排版：与相邻元素不相交、货架可视宽度不减少 */
     'var inter=function(a,b){return a.left<b.right-0.5&&b.left<a.right-0.5&&a.top<b.bottom-0.5&&b.top<a.bottom-0.5;};' +
     'var tools=[].slice.call(document.querySelectorAll(".btn-tool"));' +
@@ -322,7 +322,7 @@ function mobileAssertScript() {
     'var oy=Math.min(ar.bottom,sr.bottom)-Math.max(ar.top,sr.top);' +
     'if(ox*oy>maxOv)maxOv=Math.round(ox)+"×"+Math.round(oy);}});});' +
     'var clashMsg=slotClash===0?"不相交":(slotClash+" 处相交，最大重叠 "+maxOv+"px（箭头 z-index 更高，点击仍命中箭头）");' +
-    'add("翻页箭头 44px 不压商品卡",slotClash===0,clashMsg);' +
+    'add("翻页箭头热区不压商品卡",slotClash===0,clashMsg);' +
     '/* A/B：临时去掉 min-width/min-height，货架宽度若变化说明热区挤压了排版 */' +
     'var shelf=document.querySelector(".shelf-viewport")||document.querySelector(".shelf");' +
     'var grid=document.querySelector(".layer-grid");' +

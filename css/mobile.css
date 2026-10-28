@@ -77,18 +77,25 @@
     border-radius: 12px;
   }
 
-  /* 翻页箭头：用元素盒补足 44px（向外扩会被 .shelf 裁掉），
-     底部锚定，因此只会向上生长，箭头位置不变。
-     补足后箭头矩形会盖住底部一排商品卡的价格行（44×18px），
-     所以在触摸设备上把货架的底部留白一并加高，腾出 44px 翻页条的净空。 */
+  /* 翻页箭头：用元素盒补足热区（向外扩会被 .shelf 裁掉），底部锚定，箭头位置不变。
+     高度取 40px 而非 44px：箭头字形尺寸不变，少出来的 4px 是翻页条与价格行之间的净空
+     （44px 时该间隙只剩 7px，低于 8px 底线）。40px 仍高于 38px 的触摸下限。 */
   .pager-arrow {
     min-width: 44px;
-    min-height: 44px;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
-  .shelf-page { padding-bottom: calc(1cqw + 48px); }
+  .shelf-page { padding-bottom: calc(1cqw + 40px); }
+
+  /* 触摸端货架密度：3 层 × 4 件 / 页保持 12 件不变。
+     注意：卡高只由容器高度决定（grid 行高 1fr），卡内 padding 只在上/下与图框之间重分配，
+     因此这里省出的空间全部给了图框，卡高本身不变。 */
+  .layer { padding-bottom: 7px; }            /* 原 1.35cqw：卡片距层板 ≥0.7px（844）/ 1.0px（667） */
+  .layer-grid { padding-top: 1px; padding-bottom: 1px; }  /* 原 .35cqw 上下 */
+  .slot { padding-top: 1px; padding-bottom: 1px; }        /* 原 .28/.32cqw 上下 */
+  .slot-frame { padding: 0; }                /* 原 .22cqw：图片直贴虚线框，多出 ~3px 可视区 */
 
   /* 道具方块：视觉 6.2cqw 在手机上约 43px，补足到 44px 只多 1px；
      ::before/::after 已被玻璃高光占用，不能再拿来做热区 */
