@@ -54,6 +54,15 @@
   .slot, .cart-item, .btn-tool, .btn-back-game, .pager-arrow,
   .skin-card, .btn-result, .btn-hall { touch-action: manipulation; }
 
+  /* 货架横滑（B2）：纵向滚动仍交还浏览器，横向位移由手势层接管；
+     overscroll-behavior: contain 阻止 iOS 滑到边缘时触发「侧滑返回」。
+     注意 .slot 自身是 touch-action: manipulation（= pan-x pan-y pinch-zoom），
+     与这里的 pan-y 取交集后仍是 pan-y，纵向拖动不被拦截。 */
+  .shelf-viewport {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+
   /* 长按素材不弹系统菜单、不选中文字 */
   .slot img, .cart-item img, .skin-card img, .hall-mom img,
   .card-icon, .shelf img {

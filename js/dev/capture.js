@@ -37,6 +37,7 @@ var MOBILE = arg('mobile', '') === '1';
 var ASSERT_MOBILE = arg('assert-mobile', '') === '1';
 var VERIFY_BEHAVIOR = arg('verify-behavior', '') === '1';
 var VERIFY_GESTURE = arg('verify-gesture', '') === '1';
+var VERIFY_SHELF = arg('verify-shelf', '') === '1';
 /* 注入底部安全区高度（px）：headless 无法模拟 env(safe-area-inset-*)，
  * 用 --safe-b 变量代偿；生产环境走 env()，传 0 等价于无安全区。 */
 var SAFE_B = parseFloat(arg('safe-b', '0'));
@@ -614,6 +615,159 @@ function gestureScript() {
     'return JSON.stringify(out);})()';
 }
 
+/* ---------- 货架横滑验证（--verify-shelf 1） ----------
+ * B2 功能：货架横滑翻页 + 点选互斥 + overscroll-behavior，先写断言后写实现（TDD）。
+ *   S0 前置：多页关卡、轨道有 transition 载体
+ *   S1 位移 5px（<8 阈值）不触发
+ *   S2 横移 60px 跟手（含「拖拽中 transition 为 none」子项）
+ *   S3 松手越过 30% 视口宽 → 翻页 + 页点同步 + transform 归位
+ *   S4 反向拖 40px（<30%）松手 → 回原位
+ *   S5 首页右拖硬钳制为 0
+ *   S6 末页左拖不越界
+ *   S7 纵向拖交还浏览器（不翻页、不位移）
+ *   S8 pointerdown 落在 .pager-arrow 不启动手势
+ *   S9 翻页后紧接的那次 click 被吞（商品未被选中）
+ *   S10 普通点击商品卡正常选中
+ *   S11 第二指忽略、第一指继续
+ * 建议配 --width 844 --height 390 --mobile 1 --dpr 2 运行。
+ * 注意：合成 PointerEvent 没有真实活动指针，setPointerCapture 会抛 NotFoundError，
+ *       实现侧必须 try/catch；本工具把捕获异常计入 detail，便于定位。 */
+function shelfScript() {
+  return '(async function(){' +
+    'var out=[];function add(n,p,d){out.push({name:n,pass:!!p,detail:d});}' +
+    'function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}' +
+    'function fire(el,type,x,y,id){var ev=new PointerEvent(type,{bubbles:true,cancelable:true,' +
+      'clientX:x,clientY:y,button:0,buttons:type==="pointerup"?0:1,pointerId:id||1,' +
+      'pointerType:"touch",isPrimary:(id||1)===1});el.dispatchEvent(ev);return ev;}' +
+    'function sh(){return document.querySelector(".shelf");}' +
+    'function track(){return document.querySelector(".shelf-track");}' +
+    'function vp(){return document.querySelector(".shelf-viewport");}' +
+    'function pages(){return parseInt(sh().getAttribute("data-pages"),10)||1;}' +
+    /* 当前页：优先读 data-cur（B2 新增），缺失时回退到页点，保证红测也能给出可读数值 */
+    'function cur(){var v=sh().getAttribute("data-cur");if(v!=null&&v!=="")return parseInt(v,10);' +
+      'var d=document.querySelector(".pager-dot.is-active");' +
+      'return d?parseInt(d.getAttribute("data-page"),10)||0:0;}' +
+    'function inline(){var t=track();return t?(t.style.transform||"(空)"):"(无 track)";}' +
+    /* 位移解析：兼容 translateX(calc(-100% + -60px)) / translateX(calc(0% - 60px))
+     *             / translateX(-100%) / translateX(-60px)
+     * 不依赖 getComputedStyle，避免 calc 下读到上一帧的矩阵；
+     * 注意 Chrome 会把 calc 里的 "+ -60px" 序列化成 "- 60px"，两种都要认。 */
+    'function parse(s){s=s||"";' +
+      'var mc=/translateX\\(calc\\((-?[\\d.]+)%\\s*([+-])\\s*(-?[\\d.]+)px\\)\\)/.exec(s);' +
+      'if(mc){var n=parseFloat(mc[3]);if(mc[2]==="+")return{pct:parseFloat(mc[1]),dx:n};' +
+        'return{pct:parseFloat(mc[1]),dx:-n};}' +
+      'var mp=/translateX\\((-?[\\d.]+)%\\)/.exec(s);if(mp)return{pct:parseFloat(mp[1]),dx:0};' +
+      'var mx=/translateX\\((-?[\\d.]+)px\\)/.exec(s);if(mx)return{pct:null,dx:parseFloat(mx[1])};' +
+      'return{pct:0,dx:0};}' +
+    'function dxNow(){return parse(track().style.transform).dx;}' +
+    'function pctNow(){return parse(track().style.transform).pct;}' +
+    'function vw(){var e=vp();return e?e.getBoundingClientRect().width:0;}' +
+    'function selCount(){return document.querySelectorAll(".slot.is-selected").length;}' +
+    'function dots(){return document.querySelectorAll(".pager-dot.is-active").length;}' +
+    /* 冻结样式（capture 注入的 *{transition-duration:0s!important}）会掩盖轨道自身的
+     * transition，S0b 需要「真实」值：临时禁用该样式表读一次再恢复，不改页面状态。 */
+    'function dur(){var fs=document.getElementById("zq-freeze");var was=false;' +
+      'if(fs&&fs.sheet){was=fs.sheet.disabled;fs.sheet.disabled=true;}' +
+      'var v=getComputedStyle(track()).transitionDuration;' +
+      'if(fs&&fs.sheet)fs.sheet.disabled=was;return v;}' +
+    /* 红绿灯门禁：B2 会给 .shelf 写 data-cur。缺失时业务断言一律 FAIL，
+     * 避免「没有手势代码 → 位移恒为 0 → 断言意外 PASS」的假绿。 */
+    'function addF(n,cond,d){if(featOK)add(n,cond,d);else add(n,false,"横滑未接线（.shelf 缺 data-cur）｜"+d);}' +
+
+    /* 选一个多页关卡（pool > 12），不硬编码关卡号 */
+    'var lvId=0;for(var i=1;i<=42;i++){var c=ZQ.levelConfig(i);if(c&&c.pool>ZQ.SLOTS_PER_PAGE){lvId=i;break;}}' +
+    'ZQ.app.go("game",{levelId:lvId,seed:12345});' +
+    'if(ZQ.screens.game._stopTimer)ZQ.screens.game._stopTimer();' +
+    'await wait(220);' +
+    'add("S0a 多页关卡已渲染",!!sh()&&pages()>=2,"关卡 "+lvId+"，pages="+(sh()?pages():"无货架"));' +
+    'var featOK=!!(sh()&&sh().hasAttribute("data-cur"));' +
+    'var tr=track();var td=tr?dur():"-";' +
+    'add("S0b 轨道有 transition 载体",!!tr&&td!=="0s","transition-duration="+td+"（已临时解除冻结样式测量）");' +
+    'add("S0c 横滑已接线（data-cur）",featOK,"data-cur="+(featOK?sh().getAttribute("data-cur"):"(缺失)"));' +
+
+    'var X=200,Y=200,vwPx=vw();' +
+    /* S1 阈值 */
+    'var before=inline();' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X+5,Y,1);fire(vp(),"pointerup",X+5,Y,1);' +
+    'addF("S1 位移 5px 不触发横滑",inline()===before,"起点 "+before+" → 5px 后 "+inline());' +
+    'await wait(60);' +
+
+    /* S2 跟手 */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(30);' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X-60,Y,1);' +
+    'var d2=dxNow(),t2=track().style.transition;' +
+    'addF("S2a 拖拽中跟手 60px",Math.abs(d2+60)<0.6,"期望 -60px，实际 "+d2+"px（inline="+inline()+"）");' +
+    'addF("S2b 拖拽中禁用 transition",t2==="none","transition="+t2);' +
+
+    /* S3 越过 30% 松手翻页 */
+    'var need=Math.round(vwPx*0.5);' +
+    'await wait(40);fire(vp(),"pointermove",X-need,Y,1);await wait(40);fire(vp(),"pointerup",X-need,Y,1);' +
+    'var c3=cur(),p3=pctNow(),dot3=(function(){var d=document.querySelector(".pager-dot.is-active");' +
+      'return d?parseInt(d.getAttribute("data-page"),10):-1;})();' +
+    'addF("S3a 松手翻页 cur+1",c3===1,"位移 "+need+"px（视口 "+vwPx.toFixed(1)+"px），cur="+c3);' +
+    'addF("S3b 页点同步",dot3===c3,"active dot="+dot3+"，cur="+c3+"（is-active 共 "+dots()+" 个）");' +
+    'addF("S3c transform 归位",Math.abs((p3===null?0:p3)+100*c3)<0.6,"期望 "+(-100*c3)+"%，实际 "+p3+"%");' +
+
+    /* S4 未达阈值回原位（放慢节奏：40px / ≥400ms，速度远低于 0.35px·ms⁻¹ 的甩动阈值） */
+    'await wait(180);fire(vp(),"pointerdown",X,Y,1);await wait(200);' +
+    'fire(vp(),"pointermove",X+40,Y,1);await wait(200);fire(vp(),"pointerup",X+40,Y,1);' +
+    'var c4=cur();addF("S4 未达 30% 回原位",c4===1,"40px / "+(vwPx*0.3).toFixed(1)+"px 阈值，cur="+c4);' +
+
+    /* S5 首页钳制 */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(30);' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X+80,Y,1);' +
+    'var d5=dxNow();addF("S5 首页右拖钳制为 0",Math.abs(d5)<0.6,"实际 "+d5+"px（inline="+inline()+"）");' +
+    'fire(vp(),"pointerup",X+80,Y,1);await wait(60);' +
+
+    /* S6 末页不越界 */
+    'ZQ.ui.shelf.goto(sh(),pages()-1);await wait(30);var last=pages()-1;' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X-80,Y,1);' +
+    'var d6=dxNow();addF("S6 末页左拖不越界",Math.abs(d6)<0.6&&cur()===last,' +
+      '"实际 "+d6+"px，cur="+cur()+"（末页 "+last+"）");' +
+    'fire(vp(),"pointerup",X-80,Y,1);await wait(60);' +
+
+    /* S7 纵向手势 */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(30);' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X,Y+60,1);' +
+    'var d7=dxNow();addF("S7 纵向拖不横滑",Math.abs(d7)<0.6&&cur()===0,' +
+      '"位移 "+d7+"px，cur="+cur()+"（inline="+inline()+"）");' +
+    'fire(vp(),"pointerup",X,Y+60,1);await wait(60);' +
+
+    /* S8 箭头不启动手势 */
+    'var arrow=document.querySelector(".pager-arrow");var before8=inline();' +
+    'if(arrow){fire(arrow,"pointerdown",X,Y,1);fire(arrow,"pointermove",X-60,Y,1);fire(arrow,"pointerup",X-60,Y,1);}' +
+    'addF("S8 箭头按下不启动横滑",!!arrow&&inline()===before8,' +
+      '"箭头 "+(arrow?"存在":"缺失")+"，"+before8+" → "+inline());' +
+    'await wait(60);' +
+
+    /* S9 翻页后 click 被吞（pointerup 与 click 同步，验证抑制窗口仍在） */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(40);' +
+    'var sel0=selCount();' +
+    'fire(vp(),"pointerdown",X,Y,1);fire(vp(),"pointermove",X-need,Y,1);fire(vp(),"pointerup",X-need,Y,1);' +
+    'var slot9=document.querySelector(".slot[data-slot]");if(slot9)slot9.click();' +
+    'addF("S9 翻页后那次 click 被吞",selCount()===sel0,"选中数 "+sel0+" → "+selCount());' +
+    'await wait(80);' +
+
+    /* S10 普通点击可选中 */
+    'var slot10=document.querySelector(".slot[data-slot]");var selA=selCount();' +
+    'if(slot10)slot10.click();' +
+    'addF("S10 普通点击可选中",selCount()===selA+1,"选中数 "+selA+" → "+selCount());' +
+    'await wait(60);' +
+
+    /* S11 只认第一指 */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(40);' +
+    'fire(vp(),"pointerdown",X,Y,1);' +
+    'fire(vp(),"pointerdown",X+120,Y,2);fire(vp(),"pointermove",X+60,Y,2);' +
+    'var d11a=dxNow();' +
+    'fire(vp(),"pointermove",X-30,Y,1);var d11b=dxNow();' +
+    'fire(vp(),"pointerup",X-30,Y,1);' +
+    'addF("S11 第二指被忽略、第一指继续",Math.abs(d11a)<0.6&&Math.abs(d11b+30)<0.6,' +
+      '"第二指拖 60px 后位移 "+d11a+"px；第一指再拖 30px 后 "+d11b+"px（B1 两指跳变 → B2 第一指继续）");' +
+    'await wait(60);' +
+
+    'return JSON.stringify(out);})()';
+}
+
 function printAssertions(list, label) {
   var failed = 0;
   list.forEach(function (a) {
@@ -745,7 +899,7 @@ async function main() {
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: SEED_SOURCE });
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
       source: 'document.addEventListener("DOMContentLoaded",function(){' +
-        'var s=document.createElement("style");s.textContent=' + JSON.stringify(FREEZE_CSS) + ';' +
+        'var s=document.createElement("style");s.id="zq-freeze";s.textContent=' + JSON.stringify(FREEZE_CSS) + ';' +
         'document.head.appendChild(s);});'
     });
 
@@ -843,6 +997,12 @@ async function main() {
       var rawG = await withTimeout(cdp.evaluate(gestureScript(), true), 40000, '手势验证');
       var codeG = printAssertions(JSON.parse(rawG), '手势验证');
       if (codeG) process.exitCode = 1;
+    }
+
+    if (VERIFY_SHELF) {
+      var rawS = await withTimeout(cdp.evaluate(shelfScript(), true), 40000, '货架手势验证');
+      var codeS = printAssertions(JSON.parse(rawS), '货架手势验证');
+      if (codeS) process.exitCode = 1;
     }
 
     /* 页面级 JS 报错一律算失败：静默的 TypeError 会让截图看起来正常但功能已坏。

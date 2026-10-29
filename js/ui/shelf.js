@@ -66,6 +66,8 @@ ZQ.ui = ZQ.ui || {};
       var el = document.createElement('div');
       el.className = 'shelf';
       el.setAttribute('data-pages', lv.pages);
+      /* 当前页（横滑/箭头/页点共用同一真值，便于手势层与断言读取） */
+      el.setAttribute('data-cur', '0');
 
       var pages = '';
       for (var p = 0; p < lv.pages; p++) {
@@ -120,6 +122,7 @@ ZQ.ui = ZQ.ui || {};
       var pages = parseInt(shelfEl.getAttribute('data-pages'), 10) || 1;
       var p = Math.max(0, Math.min(pages - 1, page));
       track.style.transform = 'translateX(' + (-100 * p) + '%)';
+      shelfEl.setAttribute('data-cur', String(p));
       var dots = shelfEl.querySelectorAll('.pager-dot');
       for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('is-active', i === p);
 

@@ -13,6 +13,8 @@
  *     onStart: function (dx, dy, e) {},          // 越过阈值时调用一次（已捕获）
  *     onMove:  function (dx, dy, e) {},          // 含越过阈值的那一次 move
  *     onEnd:   function (info, cancelled) {},    // info: { dx, dy, moved, captured }
+ *     firstPointerOnly: true,       // 只认第一指：后续指针的 down/move/up 全部忽略
+ *     ignore: '.pager-arrow'        // 事件目标命中该选择器时完全不启动手势
  *   });
  *   g.destroy();
  */
@@ -27,18 +29,32 @@ ZQ.ui = ZQ.ui || {};
       opts = opts || {};
       var axis = opts.axis === 'y' ? 'y' : 'x';
       var threshold = typeof opts.threshold === 'number' ? opts.threshold : 6;
+      var firstOnly = !!opts.firstPointerOnly;
+      var ignore = opts.ignore || '';
       var drag = null;        /* { x0, y0, moved, captured, pointerId } */
       var destroyed = false;
+
+      function ignored(e) {
+        return !!ignore && !!e.target && !!e.target.closest && !!e.target.closest(ignore);
+      }
+
+      /* 非第一指的事件：firstOnly 下直接丢弃（不重置基准、不移动、不结束） */
+      function foreign(e) {
+        return firstOnly && drag && e.pointerId !== undefined && e.pointerId !== drag.pointerId;
+      }
 
       function onDown(e) {
         if (destroyed) return;
         if (e.button !== undefined && e.button !== PRIMARY_BUTTON) return;
+        if (ignored(e)) return;
+        if (foreign(e)) return;
         /* 多指：后按下的指针直接重置基准（与旧实现同一算法，不做 pointerId 仲裁） */
         drag = { x0: e.clientX, y0: e.clientY, moved: 0, captured: false, pointerId: e.pointerId };
       }
 
       function onMove(e) {
         if (destroyed || !drag) return;
+        if (foreign(e)) return;
         var dx = e.clientX - drag.x0;
         var dy = e.clientY - drag.y0;
         var d = axis === 'y' ? dy : dx;
@@ -68,8 +84,8 @@ ZQ.ui = ZQ.ui || {};
         if (opts.onEnd) opts.onEnd(info, !!cancelled);
       }
 
-      function onUp(e) { end(e, false); }
-      function onCancel(e) { end(e, true); }
+      function onUp(e) { if (!destroyed && drag && foreign(e)) return; end(e, false); }
+      function onCancel(e) { if (!destroyed && drag && foreign(e)) return; end(e, true); }
 
       el.addEventListener('pointerdown', onDown);
       el.addEventListener('pointermove', onMove);

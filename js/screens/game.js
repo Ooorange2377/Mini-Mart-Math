@@ -349,6 +349,7 @@ ZQ.screens = ZQ.screens || {};
     var shelfEl = el.querySelector('.shelf');
     var timerBox = el.querySelector('.hud-timer');
     var page = 0;
+    var suppressClick = false;   /* 横滑收尾时吞掉紧随其后的那次 click */
 
     /* ---------- 计时器 ---------- */
     var remaining = carry ? carry.remaining : lv.timeSec;   // 剩余秒数
@@ -746,6 +747,7 @@ ZQ.screens = ZQ.screens || {};
     el.addEventListener('click', function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
+      if (suppressClick) return;
 
       // 返回地图
       if (t.closest('.btn-back-game')) {
@@ -852,6 +854,50 @@ ZQ.screens = ZQ.screens || {};
       deselect(parseInt(item.getAttribute('data-slot'), 10));
     });
 
+    /* ---------- 货架横滑翻页（B2） ----------
+     * 监听只挂在 .shelf-viewport：8px 内不捕获，商品卡点击不被劫持。
+     * 拖拽中 inline 关掉 transition 跟手，松手交给 goto() 归一化（百分比基准）。
+     * 位移写成 translateX(calc(-100%*page + offpx))，测试脚本可直接解析 inline 值。 */
+    var swipeViewport = shelfEl.querySelector('.shelf-viewport');
+    var swipeTrack = shelfEl.querySelector('.shelf-track');
+    var pageCount = parseInt(shelfEl.getAttribute('data-pages'), 10) || 1;
+    var swipeStart = 0;
+    var swipePage = 0;
+
+    // 速度基准从「手指按下」开始算，避免按住不动后再慢拖被误判为甩动
+    swipeViewport.addEventListener('pointerdown', function () { swipeStart = Date.now(); });
+
+    ZQ.ui.gesture.drag(swipeViewport, {
+      axis: 'x',
+      threshold: 8,
+      firstPointerOnly: true,
+      ignore: '.pager-arrow, .pager-dot',
+      onStart: function () {
+        /* 以 .shelf 的 data-cur 为准，而不是闭包里的 page：
+         * 箭头/页点/提示高亮都会直接调 goto，闭包 page 可能已落后一帧。 */
+        swipePage = parseInt(shelfEl.getAttribute('data-cur'), 10) || 0;
+        swipeTrack.style.transition = 'none';
+      },
+      onMove: function (dx) {
+        var w = swipeViewport.getBoundingClientRect().width;
+        var off = Math.max(-(pageCount - 1 - swipePage) * w, Math.min(swipePage * w, dx));
+        swipeTrack.style.transform = 'translateX(calc(' + (-100 * swipePage) + '% + ' + off + 'px))';
+      },
+      onEnd: function (info, cancelled) {
+        /* 没越过 8px（纯点击/轻触）不接管：不写 transform、不吞 click */
+        if (!info.captured) return;
+        var w = swipeViewport.getBoundingClientRect().width;
+        var off = Math.max(-(pageCount - 1 - swipePage) * w, Math.min(swipePage * w, info.dx));
+        var elapsed = Math.max(1, Date.now() - swipeStart);
+        var flipped = !cancelled &&
+          (Math.abs(off) >= w * 0.3 || Math.abs(off) / elapsed >= 0.35);
+        var next = flipped ? swipePage + (off < 0 ? 1 : -1) : swipePage;
+        swipeTrack.style.transition = '';
+        page = ZQ.ui.shelf.goto(shelfEl, next);
+        suppressClick = true;
+        setTimeout(function () { suppressClick = false; }, 0);
+      }
+    });
     refresh();
     updateTools();
     updateTimerHud();
