@@ -87,22 +87,22 @@ ZQ.screens = ZQ.screens || {};
 
         // 左侧妈妈人物
         '<div class="hall-mom" aria-hidden="true">' +
-          '<img src="图标素材/妈妈人物.PNG" alt="">' +
+          '<img src="图标素材/妈妈人物.webp" alt="">' +
           '<span class="mom-light"></span>' +
           '<div class="mom-bubble">' + ZQ.I18N.momGreet + '</div>' +
         '</div>' +
 
         // 顶部横排：星数 / 三星数 / 零花钱 / 设置
         '<div class="top-bar">' +
-          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-star" style="background-image:url(\'图标素材/三星通关数.jpg\')"></div><span>' + totalStars + '</span></div>' +
-          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-medal" style="background-image:url(\'图标素材/奖牌.png\')"></div><span>' + threeStars + '</span></div>' +
-          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-coin" style="background-image:url(\'图标素材/零花钱.jpg\')"></div><span>' + coins + '</span></div>' +
-          '<button class="btn-settings" type="button" aria-label="' + ZQ.I18N.btnSettings + '"><img src="图标素材/设置.PNG" alt=""></button>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-star" style="background-image:url(\'图标素材/三星通关数.webp\')"></div><span>' + totalStars + '</span></div>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-medal" style="background-image:url(\'图标素材/奖牌.webp\')"></div><span>' + threeStars + '</span></div>' +
+          '<div class="top-pill"><div class="top-pill-ic top-pill-ic-coin" style="background-image:url(\'图标素材/零花钱.webp\')"></div><span>' + coins + '</span></div>' +
+          '<button class="btn-settings" type="button" aria-label="' + ZQ.I18N.btnSettings + '"><img src="图标素材/设置.webp" alt=""></button>' +
         '</div>' +
 
         // 中央标题图片（居中偏上，中英文使用同尺寸图，视觉大小一致）
         '<div class="hall-title">' +
-          '<img src="' + (ZQ.isEn() ? '图标素材/便利店购物大作战标题-英文版.PNG' : '便利店购物大作战标题.PNG') +
+          '<img src="' + (ZQ.isEn() ? '图标素材/便利店购物大作战标题-英文版.webp' : '便利店购物大作战标题.webp') +
             '" alt="' + ZQ.I18N.title + '">' +
         '</div>' +
 
@@ -119,11 +119,11 @@ ZQ.screens = ZQ.screens || {};
         // 右侧竖排：商店 / 道具
         '<div class="hall-side">' +
           '<button class="btn-side" type="button">' +
-            '<span class="btn-side-icon"><img src="图标素材/商店.PNG" alt=""></span>' +
+            '<span class="btn-side-icon"><img src="图标素材/商店.webp" alt=""></span>' +
             '<span class="btn-side-label">' + ZQ.I18N.btnShop + '</span>' +
           '</button>' +
           '<button class="btn-side" type="button">' +
-            '<span class="btn-side-icon"><img src="图标素材/皮肤.PNG" alt=""></span>' +
+            '<span class="btn-side-icon"><img src="图标素材/皮肤.webp" alt=""></span>' +
             '<span class="btn-side-label">' + ZQ.I18N.btnItem + '</span>' +
           '</button>' +
         '</div>';
@@ -134,11 +134,11 @@ ZQ.screens = ZQ.screens || {};
       var momTimer = null;
       function setMom(v2) {
         if (!momImg) return;
-        momImg.src = v2 ? '图标素材/妈妈人物V2.PNG' : '图标素材/妈妈人物.PNG';
+        momImg.src = v2 ? '图标素材/妈妈人物V2.webp' : '图标素材/妈妈人物.webp';
         /* 环境光层的遮罩跟着换，保证光影仍贴合新立绘轮廓 */
         mom.style.setProperty('--mom-src', v2
-          ? "url('图标素材/妈妈人物V2.PNG')"
-          : "url('图标素材/妈妈人物.PNG')");
+          ? "url('图标素材/妈妈人物V2.webp')"
+          : "url('图标素材/妈妈人物.webp')");
         mom.classList.toggle('is-greet', v2);
       }
       if (mom) {

@@ -24,7 +24,7 @@
   inset: 0;
   background:
     linear-gradient(180deg, rgba(255,253,247,.62), rgba(255,250,235,.62)),
-    url('../便利店内环境参考图.jpg') center/cover no-repeat;
+    url('../便利店内环境参考图.webp') center/cover no-repeat;
   z-index: 0;
 }
 .screen-start .room { display: none; }
@@ -40,7 +40,7 @@
   pointer-events: auto;
   cursor: pointer;
   /* 立绘地址集中在变量里：JS 换图时同步改它，环境光的遮罩会跟着换 */
-  --mom-src: url('../图标素材/妈妈人物.PNG');
+  --mom-src: url('../图标素材/妈妈人物.webp');
 }
 /* 地面接触阴影：让她站在这个空间里，而不是贴在画面上 */
 .hall-mom::before {
@@ -367,9 +367,9 @@
   background-repeat: no-repeat;
   vertical-align: middle;
 }
-.ic-img-star  { background-image: url('../图标素材/三星通关数.jpg'); background-size: 102%; }
-.ic-img-medal { background-image: url('../图标素材/奖牌.png');      background-size: 165%; }
-.ic-img-coin  { background-image: url('../图标素材/零花钱.jpg');    background-size: 98%; }
+.ic-img-star  { background-image: url('../图标素材/三星通关数.webp'); background-size: 102%; }
+.ic-img-medal { background-image: url('../图标素材/奖牌.webp');      background-size: 165%; }
+.ic-img-coin  { background-image: url('../图标素材/零花钱.webp');    background-size: 98%; }
 .stat .ic-img { width: 2.5cqw; height: 2.5cqw; }
 .r-row .ic-img { width: 1.15em; height: 1.15em; }
 .card-price .ic-img { width: 1.9cqw; height: 1.9cqw; vertical-align: -.35cqw; }
