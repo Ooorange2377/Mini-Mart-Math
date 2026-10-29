@@ -166,6 +166,7 @@ ZQ.screens = ZQ.screens || {};
 
     function position() {
       var rect = target.getBoundingClientRect();
+      card.style.width = '';            /* 每次重排都从 CSS 宽度起算，避免上次收窄残留 */
       var pad = 9;
       spot.style.left = (rect.left - pad) + 'px';
       spot.style.top = (rect.top - pad) + 'px';
@@ -208,8 +209,23 @@ ZQ.screens = ZQ.screens || {};
         card.style.left = cx + 'px';
         card.style.top = top + 'px';
       } else {
-        var left = mode === 'side-left' ? rect.left - GAP : rect.right + GAP;
-        left = Math.min(Math.max(left, mode === 'side-left' ? cw + EDGE : EDGE), wv - EDGE);
+        /* 侧向：先看这一侧到底能放下多宽。放不下就按可用宽度收窄（文字自动换行），
+         * 否则卡片会伸出屏幕（曾经在 629 档、目标是整块货架时超出右缘 102px）。
+         * 收窄时不能再设 200px 宽度下限：629 档整块货架两侧只剩 158px，
+         * 硬撑到 200px 会反过来盖住高亮目标（实测重叠 35px）。 */
+        var avail = mode === 'side-left'
+          ? (rect.left - GAP) - EDGE
+          : (wv - rect.right - GAP) - EDGE;
+        if (avail < cw) {
+          var fitW = Math.max(140, Math.floor(avail));
+          card.style.width = fitW + 'px';
+          cw = fitW;
+          ch = card.offsetHeight || ch;
+        }
+        var leftSide = mode === 'side-left' ? rect.left - GAP : rect.right + GAP;
+        var left = mode === 'side-left'
+          ? Math.max(leftSide, cw + EDGE)
+          : Math.min(leftSide, wv - cw - EDGE);
         var cy = Math.min(Math.max(rect.top + rect.height / 2, ch / 2 + EDGE), h - ch / 2 - EDGE);
         card.style.left = left + 'px';
         card.style.top = cy + 'px';
@@ -1012,11 +1028,15 @@ ZQ.screens = ZQ.screens || {};
     }
     var pager = el.querySelector('.shelf-pager');
     if (lv.pages > 1 && pager && !ZQ.store.tutorialSeen('shelfPager')) {
+      /* 触摸端没有箭头，只有横滑：文案与高亮锚点都要换（锚点改成整块货架，
+         否则高亮框只会套住三个 6px 小圆点） */
+      var touchOnly = !!(window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches);
+      var shelfView = el.querySelector('.shelf-viewport');
       queue.push({
-        target: pager,
+        target: touchOnly && shelfView ? shelfView : pager,
         key: 'shelfPager',
         title: ZQ.I18N.pagerTipTitle,
-        text: ZQ.I18N.pagerTipText,
+        text: touchOnly ? ZQ.I18N.pagerTipTextTouch : ZQ.I18N.pagerTipText,
         ok: ZQ.I18N.pagerTipOk,
       });
     }

@@ -244,6 +244,9 @@ var SCREENS = [
 /* ---------- 移动端验收断言（在页面内执行，返回 {name, pass, detail} 数组） ---------- */
 function mobileAssertScript() {
   var portrait = HEIGHT > WIDTH;
+  /* 图片区防回退线（按档锁死，口径 = 商品图框高，即评估时给作者看的那组数）：
+   * 844=48 / 667=45 / 629=41 / 606=38（图框 = 可绘制区 + 2×2px 虚线边框） */
+  var IMG_FLOOR = SAFE_B >= 34 ? 38 : (SAFE_B >= 21 ? 41 : (WIDTH < 760 ? 45 : 48));
   return '(function(){' +
     'var out=[];' +
     'var portrait=' + portrait + ';' +
@@ -323,7 +326,10 @@ function mobileAssertScript() {
     '"px 内缩 "+Math.round(d)+"px，可点区域为圆角矩形）；真角点 "+pts0.join(" ")+' +
     '" 为圆角透明区，不计入");' +
     'return o;}' +
-    'var back=hit(".pager-arrow",40);hit(".btn-tool",44);var bk=hit(".btn-back-game",44);' +
+    'var arrowVisNow=[].slice.call(document.querySelectorAll(".pager-arrow")).filter(function(a){' +
+    'var r=a.getBoundingClientRect();return r.width>0&&r.height>0;});' +
+    'add("触摸端隐藏翻页箭头",arrowVisNow.length===0,"可见箭头 "+arrowVisNow.length+" 个（触摸端只保留横滑，PC 不受影响）");' +
+    'hit(".btn-tool",44);var bk=hit(".btn-back-game",44);' +
     /* 3.2 44px 是否挤压排版：与相邻元素不相交、货架可视宽度不减少 */
     'var inter=function(a,b){return a.left<b.right-0.5&&b.left<a.right-0.5&&a.top<b.bottom-0.5&&b.top<a.bottom-0.5;};' +
     'var tools=[].slice.call(document.querySelectorAll(".btn-tool"));' +
@@ -331,28 +337,48 @@ function mobileAssertScript() {
     'for(var ti=0;ti<tools.length;ti++){for(var tj=ti+1;tj<tools.length;tj++){' +
     'if(inter(tools[ti].getBoundingClientRect(),tools[tj].getBoundingClientRect()))clash++;}}' +
     'add("道具方块 44px 互不相交",clash===0,clash+" 对相交（共 "+tools.length+" 块）");' +
-    'var arrows=[].slice.call(document.querySelectorAll(".pager-arrow"));' +
     'var dots=[].slice.call(document.querySelectorAll(".pager-dot"));' +
-    'var dotClash=0;arrows.forEach(function(a){dots.forEach(function(dt){' +
-    'if(inter(a.getBoundingClientRect(),dt.getBoundingClientRect()))dotClash++;});});' +
-    'add("翻页箭头 44px 不压页点",dotClash===0,dotClash+" 处相交（箭头 "+arrows.length+"，页点 "+dots.length+"）");' +
-    'var slotClash=0,maxOv=0;arrows.forEach(function(a){[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){' +
-    'var ar=a.getBoundingClientRect(),sr=s.getBoundingClientRect();' +
-    'if(inter(ar,sr)){slotClash++;var ox=Math.min(ar.right,sr.right)-Math.max(ar.left,sr.left);' +
-    'var oy=Math.min(ar.bottom,sr.bottom)-Math.max(ar.top,sr.top);' +
-    'if(ox*oy>maxOv)maxOv=Math.round(ox)+"×"+Math.round(oy);}});});' +
-    'var clashMsg=slotClash===0?"不相交":(slotClash+" 处相交，最大重叠 "+maxOv+"px（箭头 z-index 更高，点击仍命中箭头）");' +
-    'add("翻页箭头热区不压商品卡",slotClash===0,clashMsg);' +
+    '/* 页点在触摸端只作「第几页」的指示，不可点击：不得压商品卡，且与最下行卡底留净空 */' +
+    'var dotClash=0,dotGap=1e9,slotMaxB=0;' +
+    '[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){' +
+    'var b=s.getBoundingClientRect().bottom;if(b>slotMaxB)slotMaxB=b;});' +
+    'dots.forEach(function(dt){var dr=dt.getBoundingClientRect();' +
+    'if(dr.top<dotGap)dotGap=dr.top-slotMaxB;' +
+    '[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){' +
+    'if(inter(dr,s.getBoundingClientRect()))dotClash++;});});' +
+    'add("页点不压商品卡",dots.length>0&&dotClash===0,dotClash+" 处相交（页点 "+dots.length+" 个）");' +
+    'add("页点与末行卡底留净空 ≥2px",dots.length>0&&dotGap>=2,' +
+    '"最小净空 "+(dots.length?dotGap.toFixed(1):"-")+"px（原「箭头↔价格行 ≥8px」在触摸端由本条替代）");' +
     '/* A/B：临时去掉 min-width/min-height，货架宽度若变化说明热区挤压了排版 */' +
     'var shelf=document.querySelector(".shelf-viewport")||document.querySelector(".shelf");' +
     'var grid=document.querySelector(".layer-grid");' +
     'var w1=shelf.clientWidth,g1=grid?grid.clientWidth:0;' +
-    'arrows.forEach(function(a){a.style.minWidth="0px";a.style.minHeight="0px";});' +
+    'tools.forEach(function(t){t.style.minWidth="0px";t.style.minHeight="0px";});' +
     'void shelf.offsetWidth;' +
     'var w2=shelf.clientWidth,g2=grid?grid.clientWidth:0;' +
-    'arrows.forEach(function(a){a.style.minWidth="";a.style.minHeight="";});' +
+    'tools.forEach(function(t){t.style.minWidth="";t.style.minHeight="";});' +
     'add("44px 热区不压缩货架",w1===w2&&g1===g2,' +
     '"有 44px 时货架 "+w1+"px / 网格 "+g1+"px，去掉后 "+w2+"px / "+g2+"px");' +
+    /* 计时器不得压住雨棚：与「改造前几何」对比（货架顶 18.8%/79.2% + 桌面级计时器内边距），
+     * 要求重叠不增加（允许 0.5px 测量误差）。相对比较而非绝对阈值，四档自动适配。 */
+    'var awEl=document.querySelector(".shelf-awning"),tmEl=document.querySelector(".hud-timer");' +
+    'var psEl=document.querySelector(".panel-shelf"),trEl=document.querySelector(".hud-timer .timer-track");' +
+    'function awOverlap(){if(!awEl||!tmEl)return 0;var a=awEl.getBoundingClientRect(),b=tmEl.getBoundingClientRect();' +
+    'return Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));}' +
+    'var ovNew=awOverlap();' +
+    'var psTop=psEl.style.top,psH=psEl.style.height,tmPad=tmEl.style.padding,trH=trEl?trEl.style.height:"",trMt=trEl?trEl.style.marginTop:"";' +
+    'psEl.style.top="18.8%";psEl.style.height="79.2%";' +
+    /* 桌面级盒模型（= 改造前的值，触摸端原本没有覆盖）：用内联 cqw 显式还原，
+     * 因为把 inline 置空只会回落到 stylesheet 里改造后的新值 */
+    'tmEl.style.padding=".58cqw 1.25cqw .82cqw";' +
+    'if(trEl){trEl.style.height=".8cqw";trEl.style.marginTop=".55cqw";}' +
+    'void psEl.offsetHeight;' +
+    'var ovOld=awOverlap();' +
+    'psEl.style.top=psTop;psEl.style.height=psH;tmEl.style.padding=tmPad;' +
+    'if(trEl){trEl.style.height=trH;trEl.style.marginTop=trMt;}' +
+    'add("计时器不压雨棚（不劣于改造前）",awEl&&tmEl&&ovNew<=ovOld+0.5,' +
+    '"重叠 "+ovNew.toFixed(1)+"px（改造前同档 "+ovOld.toFixed(1)+' +
+    '"px，允许 +0.5px 测量误差；改造手法：货架顶上移 1.6%（17.2%）+ 计时器只收内边距与进度条）");' +
 
     /* 3.3 关键尺寸：货架总高 / 商品卡高 / 页内商品数，以及留白可下调余量（A/B 还原为 2.6cqw） */
     'var shelfRoot=document.querySelector(".shelf");' +
@@ -379,10 +405,9 @@ function mobileAssertScript() {
     'if(sr.top>=vr.top-0.5&&sr.bottom<=vr.bottom+0.5&&sr.left>=vr.left-0.5&&sr.right<=vr.right+0.5)visOld++;});' +
     'pageEl.style.paddingBottom="";' +
     'var gapMin=1e9;' +
-    'arrows.forEach(function(a){var ar=a.getBoundingClientRect();' +
-    '[].slice.call(document.querySelectorAll(".slot")).forEach(function(s){var sr=s.getBoundingClientRect();' +
-    'var ox=Math.min(ar.right,sr.right)-Math.max(ar.left,sr.left);' +
-    'if(ox>0){var dy=ar.top-sr.bottom;if(dy<gapMin)gapMin=dy;}});});' +
+    '/* 触摸端不看箭头，改看页点与末行卡底的最小净空（与上文同口径，这里留存量诊断） */' +
+    'dots.forEach(function(dt){var dr=dt.getBoundingClientRect();' +
+    'var dy=dr.top-slotMaxB;if(dy<gapMin)gapMin=dy;});' +
     'var shH=shelfRoot?Math.round(shelfRoot.getBoundingClientRect().height):0;' +
     'var vpH=vr?Math.round(vr.height):0;' +
     'var per=Math.round(slotN/Math.max(layers,1));' +
@@ -391,8 +416,8 @@ function mobileAssertScript() {
     '"px，缩 "+(hOld-hNow).toFixed(1)+"px）；商品图 "+ihNow.toFixed(1)+"px（原 "+ihOld.toFixed(1)+' +
     '"px）；底部留白 "+padNow;' +
     'add("关键尺寸",true,msg);' +
-    'add("留白可下调余量",gapMin>=8,"箭头与价格行最小间隙 "+gapMin.toFixed(1)+' +
-    '"px（≥8 底线；可下调约 "+Math.max(0,Math.round(gapMin-8))+"px）");' +
+    'add("留白可下调余量",gapMin>=2,"页点与末行卡底最小净空 "+gapMin.toFixed(1)+' +
+    '"px（≥2 底线；可下调约 "+Math.max(0,Math.round(gapMin-2))+"px）");' +
     '/* 卡底与层板顶的间隙：必须为正且落在 3~4.5px（安全区会把它抬高），否则卡片看起来压在层板上 */' +
     'var bEl=pageEl?pageEl.querySelector(".layer-board"):null;' +
     'var gapBoard=bEl?bEl.getBoundingClientRect().top-slotEl.getBoundingClientRect().bottom:0;' +
@@ -402,8 +427,11 @@ function mobileAssertScript() {
     'var imgScale=1;var mt=(imgEl?getComputedStyle(imgEl).transform:"").match(/matrix\\(([^,]+)/);' +
     'if(mt)imgScale=parseFloat(mt[1]);' +
     'var drawH=imgEl?imgEl.getBoundingClientRect().height/imgScale:0;' +
-    'add("图片区 ≥19.5",drawH>=19.5,"图片可绘制区 "+drawH.toFixed(2)+' +
-    '"px（红线 20，允许 0.5px 工具误差；scale="+imgScale.toFixed(2)+"）");' +
+    'var frameEl=slotEl?slotEl.querySelector(".slot-frame"):null;' +
+    'var frameH=frameEl?frameEl.getBoundingClientRect().height:0;' +
+    'add("图片区 ≥'+IMG_FLOOR+'",frameH>='+IMG_FLOOR+',"图框 "+frameH.toFixed(2)+' +
+    '"px（可绘制区 "+drawH.toFixed(2)+"px = 图框 − 2×2px 虚线边框；本档防回退线 '+IMG_FLOOR+
+    '，scale="+imgScale.toFixed(2)+"）");' +
     '/* 3.4 圆角控件：四角需向内多少才能命中（判断是自身圆角还是被裁剪） */' +
     'function corner(sel){var el=document.querySelector(sel);if(!el)return;' +
     'var r=el.getBoundingClientRect();' +
@@ -414,7 +442,7 @@ function mobileAssertScript() {
     'if(t&&(t===el||el.contains(t)))return d;}return -1;});' +
     'add("四角命中内缩 "+sel,true,"圆角 "+Math.round(rad)+"px；自角点向内需 " +' +
     'need.join("/")+"px（-1=24px 内仍点不到）；理论值 "+Math.round(rad*(1-Math.SQRT1_2))+"px");}' +
-    'corner(".btn-tool");corner(".btn-back-game");corner(".pager-arrow");' +
+    'corner(".btn-tool");corner(".btn-back-game");corner(".btn-checkout");' +
     /* 3.5 hover / focus 隔离（C）：触控端不命中 hover 态、点按不留键盘焦点环，
      *     但键盘路径（body.is-keyboard）必须仍能看到焦点环（外接键盘可达性） */
     'var hFine=window.matchMedia("(hover: hover) and (pointer: fine)").matches;' +
@@ -751,11 +779,19 @@ function shelfScript() {
       '"位移 "+d7+"px，cur="+cur()+"（inline="+inline()+"）");' +
     'fire(vp(),"pointerup",X,Y+60,1);await wait(60);' +
 
-    /* S8 箭头不启动手势 */
+    /* S8 触摸端箭头已隐藏；若存在必须不启动手势（PC 档仍走这条） */
     'var arrow=document.querySelector(".pager-arrow");var before8=inline();' +
-    'if(arrow){fire(arrow,"pointerdown",X,Y,1);fire(arrow,"pointermove",X-60,Y,1);fire(arrow,"pointerup",X-60,Y,1);}' +
-    'addF("S8 箭头按下不启动横滑",!!arrow&&inline()===before8,' +
-      '"箭头 "+(arrow?"存在":"缺失")+"，"+before8+" → "+inline());' +
+    'var arrowRect=arrow?arrow.getBoundingClientRect():null;' +
+    'var arrowHidden=!arrowRect||(arrowRect.width===0&&arrowRect.height===0);' +
+    'if(arrow&&!arrowHidden){fire(arrow,"pointerdown",X,Y,1);fire(arrow,"pointermove",X-60,Y,1);fire(arrow,"pointerup",X-60,Y,1);}' +
+    'addF("S8 触摸端无可见箭头且不启动横滑",arrowHidden&&inline()===before8,' +
+      '"箭头 "+(arrow?"存在":"缺失")+(arrowHidden?"（已隐藏）":"（可见）")+"，"+before8+" → "+inline());' +
+    'await wait(60);' +
+    '/* S8b 页点只作指示：点它不得翻页（pointer-events:none，事件落到货架但无位移不捕获） */' +
+    'var dot=document.querySelector(".pager-dot");var beforeD=cur();' +
+    'if(dot){var dr=dot.getBoundingClientRect();var dx0=(dr.left+dr.right)/2,dy0=(dr.top+dr.bottom)/2;' +
+    'fire(dot,"pointerdown",dx0,dy0,1);fire(dot,"pointerup",dx0,dy0,1);}' +
+    'addF("S8b 点页点不翻页",!!dot&&cur()===beforeD,"页点 "+(dot?"存在":"缺失")+"，cur "+beforeD+" → "+cur());' +
     'await wait(60);' +
 
     /* S9 翻页后 click 被吞（pointerup 与 click 同步，验证抑制窗口仍在） */
@@ -797,6 +833,37 @@ function shelfScript() {
       '"最少价卡 "+Math.round(cheap&&cheap.v||0)+"；点卡后 "+nB+" 件，点篮内缩略图后 "+' +
       'selCount()+" 件（篮内 item="+(cartItem?cartItem.getAttribute("data-slot"):"无")+"）");' +
 
+    'return JSON.stringify(out);})()';
+}
+
+/* ---------- 首见多页提示（触摸端横滑版）：文案分流 + 卡片不出屏 + 高亮套住整块货架 ---------- */
+function pagerTipScript() {
+  return '(async function(){' +
+    'var out=[];function add(n,p,d){out.push({name:n,pass:!!p,detail:d});}' +
+    'function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}' +
+    /* 卡片插入是同步的，定位在 rAF 里做：必须等到 style.top/left 落定再量 bbox */
+    'async function settle(){var t=Date.now();' +
+      'while(Date.now()-t<2500){var c=document.querySelector(".pager-tip-card");' +
+      'if(c&&c.style.top&&c.style.left)break;await wait(50);}await wait(60);}' +
+    'await settle();' +
+    'function R(sel){var e=document.querySelector(sel);if(!e)return null;var r=e.getBoundingClientRect();' +
+    'return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height};}' +
+    'var card=R(".pager-tip-card"),spot=R(".pager-tip-spot"),vp=R(".shelf-viewport");' +
+    'var text=document.querySelector(".pager-tip-card .pager-tip-text");' +
+    'var txt=text?text.textContent.trim():"";' +
+    'var wv=window.innerWidth,hv=window.innerHeight;' +
+    'add("T1 多页关卡首见弹出提示",!!card,"卡片 "+(card?"已出现":"未出现")+"（多页关卡）");' +
+    'add("T2 触摸端文案走横滑版",!!text&&txt.indexOf("滑动")>-1&&txt.indexOf("箭头")<0,"文案「"+txt+"」");' +
+    'add("T3 提示卡片完整在视口内",!!card&&card.l>=-0.5&&card.t>=-0.5&&card.r<=wv+0.5&&card.b<=hv+0.5,' +
+    '"卡片 "+[card?Math.round(card.l):"-",card?Math.round(card.t):"-",card?Math.round(card.r):"-",' +
+    'card?Math.round(card.b):"-"].join(",")+" / 视口 "+wv+"×"+hv);' +
+    'add("T4 高亮套住整块货架",!!spot&&!!vp&&spot.l<=vp.l+0.5&&spot.t<=vp.t+0.5&&spot.r>=vp.r-0.5&&spot.b>=vp.b-0.5,' +
+    '"高亮 "+(spot?Math.round(spot.w)+"×"+Math.round(spot.h):"-")+" / 货架 "+(vp?Math.round(vp.w)+"×"+Math.round(vp.h):"-"));' +
+    'add("T5 卡片不遮挡高亮目标",!!card&&!!spot&&(card.r<=spot.l+0.5||card.l>=spot.r-0.5||card.b<=spot.t+0.5||card.t>=spot.b-0.5),' +
+    '"卡片 x "+Math.round(card?card.l:0)+"–"+Math.round(card?card.r:0)+" / 高亮 x "+' +
+    'Math.round(spot?spot.l:0)+"–"+Math.round(spot?spot.r:0));' +
+    'add("T6 无横向溢出",document.documentElement.scrollWidth<=wv+1,' +
+    '"docScrollWidth "+document.documentElement.scrollWidth+" / 视口 "+wv);' +
     'return JSON.stringify(out);})()';
 }
 
@@ -1081,6 +1148,26 @@ async function main() {
       var rawQ = await withTimeout(cdp.evaluate(guideScript(), true), 20000, '新手引导验证');
       var codeQ = printAssertions(JSON.parse(rawQ), '新手引导验证');
       if (codeQ) process.exitCode = 1;
+
+      /* 首见多页提示（触摸端横滑版）：把 shelfPager 改回未读 → 进多页关卡。
+       * 不能走「改 localStorage + Page.reload」：固定存档是用
+       * addScriptToEvaluateOnNewDocument 注入的，每个新文档都会把存档重写一遍，
+       * 重载后标记又变回已读，提示永远不弹。直接改内存里的 store.data 才可靠
+       * （tutorialSeen() 与 markTutorial() 读写的都是这份 data）。 */
+      await withTimeout(cdp.evaluate(
+        '(function(){ZQ.store.data.tutorialSeen.shelfPager=false;return 1;})()'
+      ), 15000, '清 shelfPager 标记');
+      var tipLv = await withTimeout(cdp.evaluate(
+        '(function(){var ids=[25,24,30,20,15,42,10,35];' +
+        'for(var i=0;i<ids.length;i++){ZQ.app.go("game",{levelId:ids[i],seed:12345});' +
+        'var n=parseInt(document.querySelector(".shelf").getAttribute("data-pages"),10)||0;' +
+        'if(n>1)return ids[i];}return 0;})()'
+      ), 20000, '找多页关卡');
+      await sleep(1200);
+      await withTimeout(cdp.evaluate(settleScript(), true), 25000, '提示前 settle');
+      var rawT = await withTimeout(cdp.evaluate(pagerTipScript(), true), 15000, '首见多页提示验证');
+      var codeT = printAssertions(JSON.parse(rawT), '首见多页提示（第 ' + tipLv + ' 关）');
+      if (codeT) process.exitCode = 1;
     }
 
     if (NAME_AUDIT) {
