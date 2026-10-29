@@ -63,6 +63,19 @@
     overscroll-behavior: contain;
   }
 
+  /* 触控端不画键盘焦点环（C：hover/focus 隔离）。
+     触摸点按会让按钮获得 focus，结算页/弹窗还会自动 focus 主按钮，
+     残留的 4px 蓝框看起来像「选中了外框」。键盘路径不受影响：
+     body.is-keyboard 由 main.js 在 Tab 键按下时置位、指针按下时清除。 */
+  button:focus,
+  button:focus-visible {
+    outline: none;
+  }
+  body.is-keyboard button:focus {
+    outline: 4px solid var(--blue);
+    outline-offset: 3px;
+  }
+
   /* 长按素材不弹系统菜单、不选中文字 */
   .slot img, .cart-item img, .skin-card img, .hall-mom img,
   .card-icon, .shelf img {

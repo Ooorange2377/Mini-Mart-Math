@@ -70,7 +70,16 @@ button {
   touch-action: manipulation;
 }
 button:disabled { cursor: default; }
+/* 焦点环只给「键盘路径」：
+ *   - :focus-visible 是浏览器原生判定（鼠标/触摸点击不命中）
+ *   - body.is-keyboard 由 main.js 按最后一次输入源切换，兜住老浏览器
+ *     与「手指点完按钮后程序化 focus」的情况（结算页会自动 focus 主按钮）。
+ * 触屏端在 mobile.css 里统一关掉，避免点完按钮留一圈蓝框。 */
 button:focus-visible {
+  outline: 4px solid var(--blue);
+  outline-offset: 3px;
+}
+body.is-keyboard button:focus {
   outline: 4px solid var(--blue);
   outline-offset: 3px;
 }

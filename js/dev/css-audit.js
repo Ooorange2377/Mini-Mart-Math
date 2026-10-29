@@ -259,6 +259,19 @@ function main() {
     });
   });
 
+  /* 10. 焦点环只在键盘路径（C：hover/focus 隔离）
+   *     含 :focus 且设置 outline 的规则，必须要么是 :focus-visible、要么带 body.is-keyboard 限定，
+   *     要么落在 (any-pointer: coarse) 内（触屏统一关掉）。防止「触屏点一下按钮留一圈蓝框」。 */
+  all.forEach(function (e) {
+    if (e.selector.indexOf(':focus') < 0) return;
+    var hasOutline = e.decls.some(function (d) { return /^outline/.test(d.prop); });
+    if (!hasOutline) return;
+    var keyboardGate = e.selector.indexOf(':focus-visible') > -1 || e.selector.indexOf('.is-keyboard') > -1;
+    if (!keyboardGate && !anyPointerCoarse(e)) {
+      fail(e.file + ' ' + e.selector + ' 的 outline 规则未限定在键盘路径（:focus-visible / body.is-keyboard）或 (any-pointer: coarse) 内');
+    }
+  });
+
   if (violations.length) {
     console.log('CSS 断言 FAIL（' + violations.length + ' 项）');
     violations.forEach(function (v) { console.log('  ✗ ' + v); });

@@ -89,6 +89,17 @@ window.ZQ = window.ZQ || {};
     document.addEventListener('pointerdown', function () { ZQ.audio.unlock(); }, { once: true });
     document.addEventListener('pointerdown', function () { ZQ.audio.kick(); });
 
+    /* 输入源切换（C：hover/focus 隔离）：焦点环只给键盘路径。
+     * Tab 置位 is-keyboard，任何指针按下立即清除 —— 触摸点按不应留下焦点框。 */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab' || e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        document.body.classList.add('is-keyboard');
+      }
+    });
+    document.addEventListener('pointerdown', function () {
+      document.body.classList.remove('is-keyboard');
+    });
+
     bindContextMenu();
     bindRotateTip();
 

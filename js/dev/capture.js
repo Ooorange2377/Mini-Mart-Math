@@ -415,6 +415,24 @@ function mobileAssertScript() {
     'add("四角命中内缩 "+sel,true,"圆角 "+Math.round(rad)+"px；自角点向内需 " +' +
     'need.join("/")+"px（-1=24px 内仍点不到）；理论值 "+Math.round(rad*(1-Math.SQRT1_2))+"px");}' +
     'corner(".btn-tool");corner(".btn-back-game");corner(".pager-arrow");' +
+    /* 3.5 hover / focus 隔离（C）：触控端不命中 hover 态、点按不留键盘焦点环，
+     *     但键盘路径（body.is-keyboard）必须仍能看到焦点环（外接键盘可达性） */
+    'var hFine=window.matchMedia("(hover: hover) and (pointer: fine)").matches;' +
+    'add("hover 媒体不命中",!hFine,"(hover:hover) and (pointer:fine)="+hFine);' +
+    /* 用静态按钮（返回键）做探针：关卡页每秒会重刷道具角标，节点可能被换掉 */
+    'function probeBtn(){return document.querySelector(".btn-back-game")||' +
+    'document.querySelector(".btn-tool")||document.querySelector("button");}' +
+    'var b1=probeBtn();' +
+    'if(!b1){add("触控端焦点环隔离",false,"无可测按钮");}' +
+    'else{' +
+    'b1.focus();var st1=getComputedStyle(b1);var ow1=parseFloat(st1.outlineWidth)||0;' +
+    'add("触控端点按不留焦点环",st1.outlineStyle==="none"||ow1===0,' +
+    '"activeElement="+(document.activeElement===b1)+"，outline="+st1.outlineStyle+" "+st1.outlineWidth);' +
+    'document.body.classList.add("is-keyboard");' +
+    'var b2=probeBtn();b2.focus();var st2=getComputedStyle(b2);var ow2=parseFloat(st2.outlineWidth)||0;' +
+    'add("键盘路径仍有焦点环",st2.outlineStyle==="solid"&&ow2>=1&&b2.matches(":focus"),' +
+    '"body.is-keyboard 下 outline="+st2.outlineStyle+" "+st2.outlineWidth+"（已聚焦="+b2.matches(":focus")+"）");' +
+    'document.body.classList.remove("is-keyboard");b2.blur();}' +
     'return JSON.stringify(out);})()';
 }
 
@@ -895,6 +913,12 @@ async function main() {
     if (MOBILE) {
       /* 只开触摸模拟：让 pointer/any-pointer 变 coarse，用来跑移动端断言 */
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    }
+    /* headless 窗口默认没有焦点，`:focus` 不命中（activeElement 仍在），
+     * focus 相关断言会假失败；只在跑断言时强制页面「被聚焦」，
+     * 不影响截图基线（避免改到后台暂停等依赖可见性的逻辑）。 */
+    if (ASSERT_MOBILE) {
+      await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true });
     }
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: SEED_SOURCE });
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
