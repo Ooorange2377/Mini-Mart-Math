@@ -1,2 +1,4 @@
 .DS_Store
 node_modules/
+# IDE 预览生成的分享包，属于构建产物，不入库
+.trae-html-share-packages/
