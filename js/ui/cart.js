@@ -1,5 +1,5 @@
 /* 右侧购物篮：篮内已选商品缩略图 + 件数角标。
- * 缩略图带 data-slot（对应 lv.items 下标），双击移除由 game.js 在 .panel-cart 上事件委托处理。
+ * 缩略图带 data-slot（对应 lv.items 下标），单击移除由 game.js 在页面根节点上事件委托处理。
  * 1~4 件商品使用预设散点布局，覆盖篮身上、中、下区域并保留稳定旋转与轻微重叠。 */
 window.ZQ = window.ZQ || {};
 ZQ.ui = ZQ.ui || {};

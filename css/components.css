@@ -651,7 +651,26 @@
   color: rgba(27, 62, 111, .82);
 }
 .pager-tip-card.is-below { transform: translate(-50%, 0); }
+/* 侧向落位：窄目标（购物篮、结账条）上下都没空间时，卡片改放左右，避免盖住目标本身 */
+.pager-tip-card.is-side-left { transform: translate(-100%, -50%); }
+.pager-tip-card.is-side-right { transform: translate(0, -50%); }
 .pager-tip-card .btn-result { width: 100%; margin-top: .8em; font-size: 1em; }
+/* 「跳过引导」文字按钮：只在基础引导里出现，视觉弱化但不能小到点不到 */
+.pager-tip-skip {
+  display: block;
+  margin: .45em auto 0;
+  min-width: 44px;
+  min-height: 36px;
+  padding: .2em .5em;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: .85em;
+  font-weight: 700;
+  color: rgba(27, 62, 111, .55);
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 /* ================= 购物篮 ================= */
 .panel-cart { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }

@@ -76,6 +76,12 @@
     outline-offset: 3px;
   }
 
+  /* 引导卡片按钮热区（第一关基础引导）：OK 与跳过都按 44px 兜底 */
+  .pager-tip-card .btn-result,
+  .pager-tip-skip {
+    min-height: 44px;
+  }
+
   /* 长按素材不弹系统菜单、不选中文字 */
   .slot img, .cart-item img, .skin-card img, .hall-mom img,
   .card-icon, .shelf img {

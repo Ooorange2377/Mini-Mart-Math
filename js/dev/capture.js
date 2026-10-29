@@ -783,6 +783,88 @@ function shelfScript() {
       '"第二指拖 60px 后位移 "+d11a+"px；第一指再拖 30px 后 "+d11b+"px（B1 两指跳变 → B2 第一指继续）");' +
     'await wait(60);' +
 
+    /* S12 购物篮缩略图【单击】即取消（旧实现绑在 dblclick，真机上单击无反应） */
+    'ZQ.ui.shelf.goto(sh(),0);await wait(40);' +
+    'var cands=[].slice.call(document.querySelectorAll(".slot[data-slot]:not(.is-selected)")).map(function(s){' +
+    'var pe=s.querySelector(".slot-price");var v=pe?parseFloat(pe.textContent.replace(/[^\\d.]/g,""))||1e9:1e9;' +
+    'return{el:s,v:v};}).sort(function(a,b){return a.v-b.v;});' +
+    'var cheap=cands.length?cands[0]:null;' +
+    'var nA=selCount();if(cheap)cheap.el.click();await wait(800);' +
+    'var nB=selCount();' +
+    'var cartItem=cheap?document.querySelector(".cart-item[data-slot=\\""+cheap.el.getAttribute("data-slot")+"\\"]"):null;' +
+    'if(cartItem)cartItem.click();await wait(60);' +
+    'add("S12 购物篮单击即取消",!!cheap&&!!cartItem&&nB===nA+1&&selCount()===nA,' +
+      '"最少价卡 "+Math.round(cheap&&cheap.v||0)+"；点卡后 "+nB+" 件，点篮内缩略图后 "+' +
+      'selCount()+" 件（篮内 item="+(cartItem?cartItem.getAttribute("data-slot"):"无")+"）");' +
+
+    'return JSON.stringify(out);})()';
+}
+
+/* ---------- 新手引导验证（--assert-mobile 附带，第一关首见 5 步） ---------- */
+function guideScript() {
+  return '(async function(){' +
+    'var out=[];function add(n,p,d){out.push({name:n,pass:!!p,detail:d});}' +
+    'function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}' +
+    'function card(){return document.querySelector(".pager-tip-card");}' +
+    'function spot(){return document.querySelector(".pager-tip-spot");}' +
+    /* 卡片是同步插入 DOM 的，但定位在 requestAnimationFrame 里做：
+     * 必须等 style.top/left 落定后再量 bbox，否则读到的是未定位的 (0,0) 原点。 */
+    'function ready(){var c=card();return c&&c.style.top&&c.style.left?c:null;}' +
+    'async function settle(){var t=Date.now();' +
+      'while(!(ready()&&spot()&&spot().style.top)&&Date.now()-t<2500){await wait(50);}' +
+      'await wait(40);}' +
+    /* 高亮框是否完整包住某个选择器对应的元素 */
+    'function covers(sel){var s=spot(),el=document.querySelector(sel);' +
+      'if(!s||!el)return{ok:false,d:"spot="+!!s+" el="+!!el};' +
+      'var a=s.getBoundingClientRect(),b=el.getBoundingClientRect();' +
+      'return{ok:a.left<=b.left+0.5&&a.top<=b.top+0.5&&a.right>=b.right-0.5&&a.bottom>=b.bottom-0.5,' +
+      'd:"spot "+Math.round(a.width)+"×"+Math.round(a.height)+" / 目标 "+Math.round(b.width)+"×"+Math.round(b.height)};}' +
+    'await settle();' +
+    'var c=ready()||card();' +
+    'var dbg="";' +
+    'if(!c){var ml=document.getElementById("modal-layer");' +
+      'dbg="3s 内未出现｜modal="+((ml&&ml.innerHTML)||"").slice(0,60)+' +
+      '"｜lv="+(ZQ.screens.game.current?(ZQ.screens.game.current.levelId||ZQ.screens.game.current.id):"-")+' +
+      '"｜seen="+ZQ.store.tutorialSeen("basicGuide")+' +
+      '"｜goal="+!!document.querySelector(".hud-target")+' +
+      '"｜slot="+!!document.querySelector(".slot[data-slot]")+' +
+      '"｜basket="+!!document.querySelector(".panel-cart");}' +
+    'add("G1 第 1 关首见弹出引导",!!c,c?"卡片已出现":dbg);' +
+    'if(!c){return JSON.stringify(out);}' +
+    'var r=c.getBoundingClientRect();' +
+    'add("G2 卡片完整在视口内",r.left>=-0.5&&r.top>=-0.5&&r.right<=innerWidth+0.5&&r.bottom<=innerHeight+0.5,' +
+      '"bbox "+[r.left,r.top,r.right,r.bottom].map(function(v){return Math.round(v);}).join(",")+' +
+      '" / 视口 "+innerWidth+"×"+innerHeight);' +
+    'var ti=c.querySelector(".pager-tip-title"),tx=c.querySelector(".pager-tip-text");' +
+    'add("G3 标题/正文不溢出",ti.scrollWidth<=ti.clientWidth&&tx.scrollWidth<=tx.clientWidth,' +
+      '"title "+ti.scrollWidth+"/"+ti.clientWidth+"，text "+tx.scrollWidth+"/"+tx.clientWidth);' +
+    'var ok=c.querySelector(".pager-tip-ok"),sk=c.querySelector(".pager-tip-skip");' +
+    'var ro=ok.getBoundingClientRect(),rs=sk?sk.getBoundingClientRect():null;' +
+    'add("G4 OK 热区 ≥44",ro.width>=44&&ro.height>=44,' +
+      '"OK "+Math.round(ro.width)+"×"+Math.round(ro.height));' +
+    'add("G5 跳过热区 ≥44",!!rs&&rs.width>=44&&rs.height>=44,' +
+      '(rs?"跳过 "+Math.round(rs.width)+"×"+Math.round(rs.height):"无跳过按钮"));' +
+    /* 5 步依次点 OK，每步校验高亮框套住的目标 */
+    'var steps=[{n:"G6 第 1 步高亮目标清单",s:".hud-target"},' +
+      '{n:"G7 第 2 步高亮商品卡",s:".slot[data-slot]"},' +
+      '{n:"G8 第 3 步高亮购物篮",s:".panel-cart"},' +
+      '{n:"G9 第 4 步高亮查看明细",s:".hud-items"},' +
+      '{n:"G10 第 5 步高亮结算按钮",s:".btn-checkout"}];' +
+    'for(var i=0;i<steps.length;i++){' +
+      'var res=covers(steps[i].s);add(steps[i].n,res.ok,res.d);' +
+      'if(i<steps.length-1){var b=card()&&card().querySelector(".pager-tip-ok");' +
+        'if(b){b.click();await wait(90);await settle();}}' +
+    '}' +
+    /* 第 5 步点「跳过」→ 整段引导立即收起，并落下 basicGuide 已读标记 */
+    'var sk5=card()&&card().querySelector(".pager-tip-skip");if(sk5)sk5.click();await wait(200);' +
+    'add("G11 跳过即关闭并记已读",!card()&&ZQ.store.tutorialSeen("basicGuide"),' +
+      '"卡片="+(!!card())+" 标记="+ZQ.store.tutorialSeen("basicGuide"));' +
+    /* 再次进入第 1 关：不应重复弹出 */
+    'ZQ.app.go("map");await wait(120);' +
+    'ZQ.app.go("game",{levelId:1,seed:12345});' +
+    'if(ZQ.screens.game._stopTimer)ZQ.screens.game._stopTimer();' +
+    'await wait(300);' +
+    'add("G12 再次进入不再弹",!card(),"重新进入第 1 关后卡片="+(!!card()));' +
     'return JSON.stringify(out);})()';
 }
 
@@ -990,6 +1072,15 @@ async function main() {
       var raw = await withTimeout(cdp.evaluate(mobileAssertScript()), 15000, '移动端断言');
       var code = printAssertions(JSON.parse(raw));
       if (code) process.exitCode = 1;
+
+      /* 新手引导（第一关首见）：几何 / 热区 / 分步 / 跳过语义 / 不重复弹 */
+      await withTimeout(cdp.evaluate(
+        'ZQ.app.go("game",{levelId:1,seed:12345});' +
+        'if(ZQ.screens.game._stopTimer)ZQ.screens.game._stopTimer();'
+      ), 15000, '引导前进入第 1 关');
+      var rawQ = await withTimeout(cdp.evaluate(guideScript(), true), 20000, '新手引导验证');
+      var codeQ = printAssertions(JSON.parse(rawQ), '新手引导验证');
+      if (codeQ) process.exitCode = 1;
     }
 
     if (NAME_AUDIT) {

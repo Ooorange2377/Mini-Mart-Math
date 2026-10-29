@@ -155,6 +155,7 @@ ZQ.screens = ZQ.screens || {};
         '<button class="btn-result btn-primary pager-tip-ok" type="button">' +
           (tip.ok || ZQ.I18N.pagerTipOk) +
         '</button>' +
+        (tip.skip ? '<button class="pager-tip-skip" type="button">' + tip.skip + '</button>' : '') +
       '</div>';
     layer.appendChild(mask);
 
@@ -171,13 +172,48 @@ ZQ.screens = ZQ.screens || {};
       spot.style.width = (rect.width + pad * 2) + 'px';
       spot.style.height = (rect.height + pad * 2) + 'px';
 
-      // 目标在上半屏时卡片放到下方，避免提示跑出屏幕
-      var below = rect.top < window.innerHeight * 0.55;
+      /* 卡片落位：优先「下方 / 上方」，两侧空间都不够时改放侧边，
+       * 避免把正在讲的那个控件整个盖住（购物篮在右侧、又矮又窄，曾出现纸条只剩一条边）。
+       * 三种朝向用不同的 transform 锚点：
+       *   上方 translate(-50%,-100%) → 可视 bbox [top-ch, top]
+       *   下方 is-below translate(-50%,0) → [top, top+ch]
+       *   左侧 is-side-left translate(-100%,-50%) → x 右边缘贴 left
+       *   右侧 is-side-right translate(0,-50%) → x 左边缘贴 left
+       * 因此每种模式的合法 clamp 区间必须分开算。 */
+      var wv = window.innerWidth, h = window.innerHeight;
       var cw = card.offsetWidth || 320;
-      var cx = Math.min(Math.max(rect.left + rect.width / 2, cw / 2 + 10), window.innerWidth - cw / 2 - 10);
-      card.style.left = cx + 'px';
-      card.style.top = (below ? rect.bottom + 16 : rect.top - 18) + 'px';
-      card.classList.toggle('is-below', below);
+      var ch = card.offsetHeight || 150;
+      var GAP = 16, EDGE = 8;
+      var spaceBelow = h - rect.bottom - GAP - EDGE;
+      var spaceAbove = rect.top - GAP - EDGE;
+      var mode;
+      if (spaceBelow >= ch) mode = 'below';
+      else if (spaceAbove >= ch) mode = 'above';
+      else mode = (rect.left - EDGE) >= (wv - rect.right - EDGE) ? 'side-left' : 'side-right';
+
+      card.classList.toggle('is-below', mode === 'below');
+      card.classList.toggle('is-side-left', mode === 'side-left');
+      card.classList.toggle('is-side-right', mode === 'side-right');
+
+      if (mode === 'below' || mode === 'above') {
+        var cx = Math.min(Math.max(rect.left + rect.width / 2, cw / 2 + EDGE), wv - cw / 2 - EDGE);
+        var top;
+        if (mode === 'below') {
+          top = Math.min(rect.bottom + GAP, h - ch - EDGE);
+          top = Math.max(top, EDGE);
+        } else {
+          top = Math.max(rect.top - GAP, ch + EDGE);
+          top = Math.min(top, h - EDGE);
+        }
+        card.style.left = cx + 'px';
+        card.style.top = top + 'px';
+      } else {
+        var left = mode === 'side-left' ? rect.left - GAP : rect.right + GAP;
+        left = Math.min(Math.max(left, mode === 'side-left' ? cw + EDGE : EDGE), wv - EDGE);
+        var cy = Math.min(Math.max(rect.top + rect.height / 2, ch / 2 + EDGE), h - ch / 2 - EDGE);
+        card.style.left = left + 'px';
+        card.style.top = cy + 'px';
+      }
     }
 
     function close() {
@@ -202,6 +238,15 @@ ZQ.screens = ZQ.screens || {};
       ZQ.audio.click();
       close();
     });
+    var skip = mask.querySelector('.pager-tip-skip');
+    if (skip) {
+      skip.addEventListener('click', function (e) {
+        e.stopPropagation();
+        ZQ.audio.click();
+        if (tip.onSkip) tip.onSkip();
+        close();
+      });
+    }
     window.addEventListener('resize', position);
     document.addEventListener('keydown', onKey);
     requestAnimationFrame(function () {
@@ -760,6 +805,14 @@ ZQ.screens = ZQ.screens || {};
       var row = t.closest('.items-row[data-slot]');
       if (row) { deselect(parseInt(row.getAttribute('data-slot'), 10)); return; }
 
+      // 购物篮缩略图 → 取消选择（单击即取消，与清单行一致）
+      var cartItem = t.closest('.cart-item[data-slot]');
+      if (cartItem) {
+        ZQ.audio.unlock();
+        deselect(parseInt(cartItem.getAttribute('data-slot'), 10));
+        return;
+      }
+
       // 商品卡 → 选 / 取消（含超支拦截）
       var slotEl = t.closest('.slot[data-slot]');
       if (slotEl) {
@@ -845,15 +898,6 @@ ZQ.screens = ZQ.screens || {};
       }
     });
 
-    // 购物篮缩略图双击 → 移除该商品
-    cartPanel.addEventListener('dblclick', function (e) {
-      var t = e.target;
-      if (!t || !t.closest) return;
-      var item = t.closest('.cart-item[data-slot]');
-      if (!item) return;
-      deselect(parseInt(item.getAttribute('data-slot'), 10));
-    });
-
     /* ---------- 货架横滑翻页（B2） ----------
      * 监听只挂在 .shelf-viewport：8px 内不捕获，商品卡点击不被劫持。
      * 拖拽中 inline 关掉 transition 跟手，松手交给 goto() 归一化（百分比基准）。
@@ -909,6 +953,45 @@ ZQ.screens = ZQ.screens || {};
   /** 首次进入需要新机制的关卡时，依次弹出提示，全部关闭后才启动计时 */
   function startWithTips(el, lv, onAllClosed) {
     var queue = [];
+    /* 第一关首见：基础操作引导（目标 → 选品 → 取消 → 查看 → 结算）。
+     * 只教一次，跳过也记已读；后续机制提示仍各走各的 key。 */
+    if (Number(lv.levelId || lv.id) === 1 && !ZQ.store.tutorialSeen('basicGuide')) {
+      queue.push({
+        target: el.querySelector('.hud-target'),
+        key: 'basicGuide1',
+        guide: true,
+        title: ZQ.I18N.guide1Title,
+        text: ZQ.I18N.guide1Text,
+      });
+      queue.push({
+        target: el.querySelector('.slot[data-slot]'),
+        key: 'basicGuide2',
+        guide: true,
+        title: ZQ.I18N.guide2Title,
+        text: ZQ.I18N.guide2Text,
+      });
+      queue.push({
+        target: el.querySelector('.panel-cart'),
+        key: 'basicGuide3',
+        guide: true,
+        title: ZQ.I18N.guide3Title,
+        text: ZQ.I18N.guide3Text,
+      });
+      queue.push({
+        target: el.querySelector('.hud-items'),
+        key: 'basicGuide4',
+        guide: true,
+        title: ZQ.I18N.guide4Title,
+        text: ZQ.I18N.guide4Text,
+      });
+      queue.push({
+        target: el.querySelector('.btn-checkout'),
+        key: 'basicGuide5',
+        guide: true,
+        title: ZQ.I18N.guide5Title,
+        text: ZQ.I18N.guide5Text,
+      });
+    }
     if (lv.constraint && lv.constraint.length && !ZQ.store.tutorialSeen('constraint')) {
       queue.push({
         target: el.querySelector('.hud-target .t-rule'),
@@ -938,10 +1021,22 @@ ZQ.screens = ZQ.screens || {};
       });
     }
 
+    var skipAll = false;
+    var hasGuide = false;
+    queue.forEach(function (t) {
+      if (!t.guide) return;
+      hasGuide = true;
+      t.skip = t.skip || ZQ.I18N.guideSkip;
+      t.onSkip = function () { skipAll = true; };
+    });
+
     next(0);
 
     function next(i) {
-      if (i >= queue.length) { onAllClosed(); return; }
+      if (skipAll || i >= queue.length) {
+        if (hasGuide) ZQ.store.markTutorial('basicGuide');
+        onAllClosed(); return;
+      }
       var tip = queue[i];
       var done = false;
       function run() {
