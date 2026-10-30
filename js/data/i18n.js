@@ -57,18 +57,16 @@ ZQ.I18N_ZH = {
   tipFourText: '这一关要选满 4 件商品。件数或品类不符，都不算通关。',
   tipGotIt: '我明白啦',
 
-  // 第一关基础操作引导（5 步：目标 → 选品 → 取消 → 查看 → 结算）
+  // 第一关基础操作引导（4 步：目标 → 选品/取消 → 查看清单 → 结算）
   guideSkip: '跳过引导',
   guide1Title: '明确目标',
   guide1Text: '查看本关的预算目标、数量和品类要求，尽量花光预算哦！',
-  guide2Title: '挑选商品',
-  guide2Text: '点击货架上的商品卡片，即可放入购物篮。',
-  guide3Title: '取消选择',
-  guide3Text: '选错了？再点一下货架上的它，或者点右上角「查看明细」去取消。',
-  guide4Title: '查看已选购的商品',
-  guide4Text: '点击后展开清单，就能查看已选购的全部商品。',
-  guide5Title: '最后结账',
-  guide5Text: '件数和品类都选对以后，点底部的结算按钮结算。',
+  guide2Title: '挑选与取消',
+  guide2Text: '点击商品加入购物篮；如果选错了，再点一次它就能取消。',
+  guide3Title: '查看清单',
+  guide3Text: '点这里展开清单，核对已选商品。你也可以在清单里点击商品来取消。',
+  guide4Title: '最后结账',
+  guide4Text: '件数和品类都选对以后，点底部的结算按钮结算。',
 
   // 竖屏提示（仅竖屏 + 触摸设备）
   rotateTitle: '把手机横过来玩吧',
@@ -256,18 +254,16 @@ ZQ.I18N_EN = {
   tipFourText: 'Pick exactly 4 items this level. Wrong count or categories will not count.',
   tipGotIt: 'Got it!',
 
-  // Basic first-level guide (5 steps: goals → pick → deselect → view → checkout)
+  // Basic first-level guide (4 steps: goals → pick/remove → view list → checkout)
   guideSkip: 'Skip',
   guide1Title: 'Check Goals',
   guide1Text: 'Check the budget, quantity, and category requirements for this level. Try to spend it all!',
-  guide2Title: 'Select Items',
-  guide2Text: 'Tap an item on the shelf to add it to your cart.',
-  guide3Title: 'Deselect',
-  guide3Text: 'Changed your mind? Tap it again on the shelf, or tap Details at the top to remove it.',
-  guide4Title: 'View Selected',
-  guide4Text: "Tap here to expand the list and view all the items you've selected.",
-  guide5Title: 'Checkout',
-  guide5Text: 'Once you have the right items and categories, tap the checkout button at the bottom to finish.',
+  guide2Title: 'Select & Remove',
+  guide2Text: 'Tap an item to add it. If you change your mind, tap it again to remove.',
+  guide3Title: 'View Details',
+  guide3Text: 'Tap here to view your selected items. You can also tap them in this list to remove.',
+  guide4Title: 'Checkout',
+  guide4Text: 'Once you have the right items and categories, tap the checkout button at the bottom to finish.',
 
   // Portrait hint (portrait + touch devices only)
   rotateTitle: 'Turn your phone sideways',

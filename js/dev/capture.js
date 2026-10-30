@@ -935,21 +935,18 @@ function guideScript() {
       '"OK "+Math.round(ro.width)+"×"+Math.round(ro.height));' +
     'add("G5 跳过热区 ≥44",!!rs&&rs.width>=44&&rs.height>=44,' +
       '(rs?"跳过 "+Math.round(rs.width)+"×"+Math.round(rs.height):"无跳过按钮"));' +
-    /* 5 步依次点 OK，每步校验高亮框套住的目标 */
+    /* 4 步依次点 OK，每步校验高亮框套住的目标 */
     'var steps=[{n:"G6 第 1 步高亮目标清单",s:".hud-target"},' +
       '{n:"G7 第 2 步高亮商品卡",s:".slot[data-slot]"},' +
-      /* 第 3 步的取消入口已从「篮内缩略图」改为「查看明细」（触摸端篮内不可点，
-         见 mobile.css 第 9 节），故锚点随文案一起换到 .hud-items；第 4 步同锚点，
-         两步分别讲「怎么取消」与「怎么看已选」 */
-      '{n:"G8 第 3 步高亮查看明细（取消入口）",s:".hud-items"},' +
-      '{n:"G9 第 4 步高亮查看明细",s:".hud-items"},' +
-      '{n:"G10 第 5 步高亮结算按钮",s:".btn-checkout"}];' +
+      /* 「取消」并入第 2 步讲，第 3 步只说查看清单（锚点 .hud-items），第 4 步讲结算 */
+      '{n:"G8 第 3 步高亮查看明细",s:".hud-items"},' +
+      '{n:"G9 第 4 步高亮结算按钮",s:".btn-checkout"}];' +
     'for(var i=0;i<steps.length;i++){' +
       'var res=covers(steps[i].s);add(steps[i].n,res.ok,res.d);' +
       'if(i<steps.length-1){var b=card()&&card().querySelector(".pager-tip-ok");' +
         'if(b){b.click();await wait(90);await settle();}}' +
     '}' +
-    /* 第 5 步点「跳过」→ 整段引导立即收起，并落下 basicGuide 已读标记 */
+    /* 末步点「跳过」→ 整段引导立即收起，并落下 basicGuide 已读标记 */
     'var sk5=card()&&card().querySelector(".pager-tip-skip");if(sk5)sk5.click();await wait(200);' +
     'add("G11 跳过即关闭并记已读",!card()&&ZQ.store.tutorialSeen("basicGuide"),' +
       '"卡片="+(!!card())+" 标记="+ZQ.store.tutorialSeen("basicGuide"));' +

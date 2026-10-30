@@ -978,7 +978,9 @@ ZQ.screens = ZQ.screens || {};
   /** 首次进入需要新机制的关卡时，依次弹出提示，全部关闭后才启动计时 */
   function startWithTips(el, lv, onAllClosed) {
     var queue = [];
-    /* 第一关首见：基础操作引导（目标 → 选品 → 取消 → 查看 → 结算）。
+    /* 第一关首见：基础操作引导（目标 → 选品/取消 → 查看清单 → 结算）。
+     * 「再点一次货架卡即可取消」并入第 2 步（取消是选品动作的反向，同一张卡讲透最直观），
+     * 第 3 步只说查看清单与清单内取消，共 4 步。
      * 只教一次，跳过也记已读；后续机制提示仍各走各的 key。 */
     if (Number(lv.levelId || lv.id) === 1 && !ZQ.store.tutorialSeen('basicGuide')) {
       queue.push({
@@ -996,7 +998,6 @@ ZQ.screens = ZQ.screens || {};
         text: ZQ.I18N.guide2Text,
       });
       queue.push({
-        /* 篮内缩略图在触摸端已不可点，引导必须指向真正可取消的入口，否则高亮篮身会误导玩家 */
         target: el.querySelector('.hud-items'),
         key: 'basicGuide3',
         guide: true,
@@ -1004,18 +1005,11 @@ ZQ.screens = ZQ.screens || {};
         text: ZQ.I18N.guide3Text,
       });
       queue.push({
-        target: el.querySelector('.hud-items'),
+        target: el.querySelector('.btn-checkout'),
         key: 'basicGuide4',
         guide: true,
         title: ZQ.I18N.guide4Title,
         text: ZQ.I18N.guide4Text,
-      });
-      queue.push({
-        target: el.querySelector('.btn-checkout'),
-        key: 'basicGuide5',
-        guide: true,
-        title: ZQ.I18N.guide5Title,
-        text: ZQ.I18N.guide5Text,
       });
     }
     if (lv.constraint && lv.constraint.length && !ZQ.store.tutorialSeen('constraint')) {
