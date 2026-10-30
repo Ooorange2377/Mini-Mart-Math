@@ -67,15 +67,24 @@
       box.classList.toggle('is-round-even');
     });
   }
+  /* 强制完整展示一轮：单轮 3s（与 components.css 的 --dur 对齐）。
+   * boot 完成时若本轮到点前就已结束，补齐剩余时间再淡出；已满 3s 则立即淡出。 */
+  var MIN_SHOW = 3000;
+  var startedAt = Date.now();
+  function hide() {
+    box.classList.add('is-done');
+    setTimeout(function () {
+      if (box.parentNode) box.parentNode.removeChild(box);
+    }, 260);
+  }
   /* main.js 的 boot 末尾调用：淡出 240ms 后从 DOM 移除，避免残留遮罩挡住交互 */
   window.__zqBootDone = function () {
     if (window.__zqBooted) return;
     window.__zqBooted = true;
     clearTimeout(timer);
-    box.classList.add('is-done');
-    setTimeout(function () {
-      if (box.parentNode) box.parentNode.removeChild(box);
-    }, 260);
+    var left = MIN_SHOW - (Date.now() - startedAt);
+    if (left > 0) setTimeout(hide, left);
+    else hide();
   };
 })();
 </script>

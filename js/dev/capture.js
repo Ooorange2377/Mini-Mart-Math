@@ -196,19 +196,26 @@ function launchChrome() {
 }
 
 /* ---------- 采样 ---------- */
-/* 等图片解码 + 字体就绪。注意：懒加载且未进入视口的图片，img.decode() 可能永久挂起，
- * 因此每个 decode 都加 900ms 上限，整体再加 1200ms 兜底，保证采样一定会推进。 */
+/* 等图片解码 + 字体就绪 + 首屏 Loading 遮罩消失。
+ * 注意：懒加载且未进入视口的图片，img.decode() 可能永久挂起，因此每个 decode 都加 900ms 上限；
+ * 整体兜底放宽到 6000ms，因为 P3 遮罩强制完整展示一轮（3s）后才淡出，采样必须等它走。 */
 function settleScript() {
   return 'new Promise(function(res){' +
     'var finished=false;' +
     'function done(){if(finished)return;finished=true;requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});}' +
-    'setTimeout(done,1200);' +
+    'setTimeout(done,6000);' +
+    '/* 轮询 #boot-loading 移除（淡出 240ms + 补齐到 3s），最多等 3500ms */' +
+    'function waitBoot(){return new Promise(function(r){' +
+      'var t0=Date.now();' +
+      'function tick(){if(!document.getElementById("boot-loading")||Date.now()-t0>3500){r(1);return;}setTimeout(tick,100);}' +
+      'tick();});}' +
     '/* file:// 下对 <img> 调 decode() 会触发 CORS 报错，只等 complete 与字体即可 */' +
-    'if(location.protocol==="file:"){setTimeout(done,300);return;}' +
+    'if(location.protocol==="file:"){waitBoot().then(function(){setTimeout(done,300);});return;}' +
     'function cap(p){return Promise.race([p,new Promise(function(r){setTimeout(r,900);})]);}' +
     'var imgs=[].slice.call(document.images).filter(function(i){return i.complete;i});' +
     'var waits=imgs.map(function(i){return cap((i.decode?i.decode():Promise.resolve()).catch(function(){}));});' +
     'Promise.all(waits).then(function(){return cap(document.fonts&&document.fonts.ready);})' +
+    '.then(waitBoot)' +
     '.then(function(){setTimeout(done,60);});' +
     '})';
 }

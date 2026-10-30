@@ -1093,7 +1093,7 @@
   --track-bg: var(--blue-light);   /* 未走过（奇数轮） */
   --fill-color: var(--blue-deep);  /* 已走过（奇数轮） */
   --text-color: #1E88E5;    /* 文案 / 小车：保持不变的深宝蓝 */
-  --dur: 1.5s;
+  --dur: 3s;                /* 单轮 3s：填充走完 + 文案飘完 */
   --ease: cubic-bezier(.45, .05, .55, .95);
   --travel: 17vw;           /* 文字横向漂移的半程 */
   --bar-h: clamp(28px, 5.2vw, 48px);
