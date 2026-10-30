@@ -673,7 +673,12 @@
 }
 
 /* ================= 购物篮 ================= */
-.panel-cart { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.panel-cart {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  /* 件数胶囊已并入「查看明细」头部，底部空出的这一档留作呼吸空间，
+     使篮身尺寸与位置和改版前完全一致（原胶囊外高约 2.49cqw + 4px 边框） */
+  margin-bottom: calc(2.49cqw + 4px);
+}
 .cart {
   position: relative;
   width: 100%; flex: 1; min-height: 0;
@@ -687,24 +692,11 @@
   pointer-events: none;
   user-select: none;
 }
-.cart-count {
-  position: relative;
-  z-index: 3;
-  margin-top: .15cqw;
-  padding: .18cqw .8cqw .24cqw;
-  background: rgba(255, 253, 247, .94);
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  box-shadow: 2px 2px 0 var(--ink-soft);
-  font-size: 1.6cqw;
-  font-weight: 800;
-  color: var(--blue);
-  white-space: nowrap;
-}
-.cart-count.is-complete { color: var(--green); }
+/* 「查看明细」头部的件数：满额时变绿，与原先底部胶囊一致的完成反馈 */
+.hud-items .note-count.is-complete { color: var(--green); }
 
 /* 篮内已选商品：落在铁丝篮身内部（按归一化图的篮口内壁标定），
-   底部对齐互相堆叠（双击可移除） */
+   底部对齐互相堆叠（触摸端不可点，防误触，见 mobile.css 第 9 节） */
 .cart-items {
   position: absolute;
   left: 15%; right: 15%; top: 8%; bottom: 9%;

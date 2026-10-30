@@ -46,20 +46,16 @@ ZQ.ui = ZQ.ui || {};
      * @param {number} [count] 初始已选件数
      * @param {number} [total] 本关需选件数
      */
-    render: function (skinId, count, total) {
+    render: function (skinId) {
       return '<div class="cart">' + ZQ.ui.slots.renderCart(skinId) +
           '<div class="cart-items"></div>' +
-        '</div>' +
-        '<div class="cart-count">' + ZQ.I18N.cartCount
-          .replace('{n}', count || 0)
-          .replace('{total}', total || count || 0) + '</div>';
+        '</div>';
     },
 
-    /** 同步篮内缩略图与件数角标 */
+    /** 同步篮内缩略图（件数显示在「查看明细」头部） */
     sync: function (panelEl, lv, session) {
       if (!panelEl) return;
       var box = panelEl.querySelector('.cart-items');
-      var countEl = panelEl.querySelector('.cart-count');
       var sel = session.selected.slice().sort(function (a, b) { return a - b; });
 
       var prev = {};
@@ -91,12 +87,6 @@ ZQ.ui = ZQ.ui || {};
           if (!fallback || this.getAttribute('src') === fallback) return;
           this.setAttribute('src', fallback);
         });
-      }
-      if (countEl) {
-        countEl.textContent = ZQ.I18N.cartCount
-          .replace('{n}', sel.length)
-          .replace('{total}', lv.n || sel.length);
-        countEl.classList.toggle('is-complete', sel.length === lv.n);
       }
 
       lastSel = sel;

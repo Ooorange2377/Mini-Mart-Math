@@ -843,10 +843,19 @@ function shelfScript() {
     'var nA=selCount();if(cheap)cheap.el.click();await wait(800);' +
     'var nB=selCount();' +
     'var cartItem=cheap?document.querySelector(".cart-item[data-slot=\\""+cheap.el.getAttribute("data-slot")+"\\"]"):null;' +
-    'if(cartItem)cartItem.click();await wait(60);' +
-    'add("S12 购物篮单击即取消",!!cheap&&!!cartItem&&nB===nA+1&&selCount()===nA,' +
-      '"最少价卡 "+Math.round(cheap&&cheap.v||0)+"；点卡后 "+nB+" 件，点篮内缩略图后 "+' +
-      'selCount()+" 件（篮内 item="+(cartItem?cartItem.getAttribute("data-slot"):"无")+"）");' +
+    /* 触摸端篮内缩略图已设为 pointer-events:none（防误触）：中心点命中不应落到 .cart-item，
+     * 且件数保持不变（取消选择改走「查看明细」的行，见 S13） */
+    'var hitEl=null,hitOnCart=null;' +
+    'if(cartItem){var cr=cartItem.getBoundingClientRect();' +
+    'hitEl=document.elementFromPoint(cr.left+cr.width/2,cr.top+cr.height/2);' +
+    'hitOnCart=hitEl&&hitEl.closest?hitEl.closest(".cart-item"):null;}' +
+    'add("S12 篮内缩略图不可点（防误触）",!!cheap&&!!cartItem&&!hitOnCart&&nB===nA+1&&selCount()===nA+1,' +
+      '"最少价卡 "+Math.round(cheap&&cheap.v||0)+"；点卡后 "+nB+" 件；篮内中心命中="+' +
+      '(hitEl?(hitEl.className||hitEl.tagName):"null")+"；件数仍 "+selCount());' +
+    'var row=cheap?document.querySelector(".items-row[data-slot=\\""+cheap.el.getAttribute("data-slot")+"\\"]"):null;' +
+    'if(row)row.click();await wait(300);' +
+    'add("S13 查看明细的行可取消",!!row&&selCount()===nA,' +
+      '"点明细行后 "+selCount()+" 件（期望 "+nA+"）");' +
 
     'return JSON.stringify(out);})()';
 }

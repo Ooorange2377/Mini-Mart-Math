@@ -370,7 +370,7 @@ ZQ.screens = ZQ.screens || {};
           '<div class="hud-items is-empty">' +
             '<button class="note-head" type="button" aria-expanded="false" aria-controls="cart-details">' +
               '<span class="note-perf"></span>' +
-              '<span class="note-title">' + ZQ.I18N.viewDetails + ' <b class="note-count">(0)</b></span>' +
+              '<span class="note-title">' + ZQ.I18N.viewDetails + ' <b class="note-count">(0/' + lv.n + ')</b></span>' +
               '<span class="note-arrow">&#9662;</span>' +
             '</button>' +
             '<div class="note-body" id="cart-details">' +
@@ -794,7 +794,7 @@ ZQ.screens = ZQ.screens || {};
     }
 
     function popBadge() {
-      var c = cartPanel.querySelector('.cart-count');
+      var c = el.querySelector('.hud-items .note-count');
       if (!c) return;
       c.classList.remove('is-pop');
       void c.offsetWidth;

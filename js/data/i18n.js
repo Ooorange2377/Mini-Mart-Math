@@ -182,7 +182,6 @@ ZQ.I18N_ZH = {
 
   // 游戏内
   timerLabel: '倒计时',
-  cartCount: '已选 {n} / {total} 件',
   itemCount: '{n} 件',
   cardsLeft: '剩 {n}',
   constraintAny: '任选 {n} 件',
@@ -371,7 +370,6 @@ ZQ.I18N_EN = {
   ceremonyCrystalHint: "Tap to see what's inside!",
 
   timerLabel: 'Countdown',
-  cartCount: 'Selected {n} / {total}',
   itemCount: '{n} {item}',
   cardsLeft: '{n} left',
   constraintAny: 'Any {n} items',

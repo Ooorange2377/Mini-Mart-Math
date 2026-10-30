@@ -30,7 +30,10 @@ ZQ.ui = ZQ.ui || {};
       holderEl.classList.toggle('is-empty', sel.length === 0);
 
       var cnt = holderEl.querySelector('.note-count');
-      if (cnt) cnt.textContent = '(' + sel.length + ')';
+      if (cnt) {
+        cnt.textContent = '(' + sel.length + '/' + (lv.n || sel.length) + ')';
+        cnt.classList.toggle('is-complete', sel.length === lv.n);
+      }
 
       // 首次有商品：头部按钮轻弹一下提示件数变化
       if (wasEmpty && sel.length > 0) {
