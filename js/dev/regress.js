@@ -11,8 +11,8 @@
  *
  * 判定口径：
  *   1. 每步要求子进程 exit 0；
- *   2. 606×341 为「保守上界」档，唯一已授权失败是 .t-rule-line 溢出 5px，
- *      该步允许失败但必须**只**失败这一条，出现其它失败同样判整步 FAIL。
+ *   2. 606×341 为「保守上界」档，历史上唯一已授权失败是 .t-rule-line 溢出 5px，
+ *      该步若失败只允许是这一条（品类要求改为每行一条后已不再溢出，保留兜底判定）。
  *   3. --verify-shelf / --name-audit 未实现时自动 SKIP，不计入失败。
  */
 'use strict';
@@ -91,7 +91,7 @@ var STEPS = [
       .concat(MOBILE, ['--safe-b', '21'], CAN_AUDIT ? ['--name-audit', '1'] : [])
   },
   {
-    name: '606×341 保守档（唯一已授权失败：t-rule-line 5px）',
+    name: '606×341 保守档（品类要求每行一条后已无溢出）',
     dir: 'm606',
     expectKnownFailure: onlyKnownRuleLineFailure,
     cmd: ['node', path.join(DEV, 'capture.js'), 'OUT', '--width', '666', '--height', '375']

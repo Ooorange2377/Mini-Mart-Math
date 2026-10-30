@@ -142,14 +142,11 @@ ZQ.rules = {
     return constraint.map(catLabel).join(ZQ.isEn() ? ', ' : '、');
   },
 
-  /** 品类约束分行：每行最多两条，保留完整品类名称 */
+  /** 品类约束分行：每个要求独占一行，保留完整品类名称 */
   constraintLabelLines: function (constraint) {
     if (!constraint || !constraint.length) return [];
-    var lines = [];
-    for (var i = 0; i < constraint.length; i += 2) {
-      lines.push(constraint.slice(i, i + 2).map(catLabel).join(ZQ.isEn() ? ', ' : '、'));
-    }
-    return lines;
+    /* 每个品类要求单独一行：多品类同行在窄屏（尤其英文 Household / Condiments）会被挤压截断 */
+    return constraint.map(catLabel);
   },
 
   /**
