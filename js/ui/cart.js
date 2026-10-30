@@ -71,7 +71,7 @@ ZQ.ui = ZQ.ui || {};
         var item = lv.items[sel[i]];
         var meta = ZQ.ui.itemById ? ZQ.ui.itemById(item.itemId) : null;
         var src = meta ? encodeURI(ZQ.itemRuntimePath(meta)) : '';
-        var fallback = meta ? encodeURI(meta.path) : '';
+        var fallback = meta ? encodeURI(ZQ.itemFallbackPath(meta)) : '';
         var t = toss(sel[i], layout[i] || layout[layout.length - 1]);
         html += '<div class="cart-item' + (prev[sel[i]] ? '' : ' is-new') + '" data-slot="' + sel[i] + '" ' +
           'style="--x:' + t.x.toFixed(1) + '%;--y:' + t.y.toFixed(1) + '%;--r:' + t.r.toFixed(1) +

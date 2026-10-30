@@ -1,4 +1,4 @@
-/* 皮肤素材：购物篮 5 款（购物篮/优化/ 归一化 PNG 顶视角铁丝篮）+ 存钱罐 4 款（内联 SVG）。
+/* 皮肤素材：购物篮 5 款（640px WebP，回退 购物篮/优化/ 的 PNG）+ 存钱罐 4 款（内联 SVG）。
  * 购物车素材为带透明留白的位图，由 CSS 放大裁切让篮身铺满容器。 */
 window.ZQ = window.ZQ || {};
 ZQ.ui = ZQ.ui || {};
@@ -7,11 +7,11 @@ ZQ.ui = ZQ.ui || {};
   var INK = '#1B3E6F';
 
   var CART_SKINS = {
-    silver:   { name: '普通银色', nameEn: 'Classic Silver',  src: '购物篮/优化/普通铁皮.png' },
-    starblue: { name: '星空蓝',   nameEn: 'Starry Blue',     src: '购物篮/优化/星空蓝.png' },
-    straw:    { name: '草莓粉',   nameEn: 'Strawberry Pink', src: '购物篮/优化/草莓粉.png' },
-    mint:     { name: '薄荷绿',   nameEn: 'Mint Green',      src: '购物篮/优化/薄荷绿.png' },
-    gold:     { name: '金光闪闪', nameEn: 'Golden Glow',     src: '购物篮/优化/金光闪闪.png' },
+    silver:   { name: '普通银色', nameEn: 'Classic Silver',  src: '购物篮/webp/普通铁皮.webp', fb: '购物篮/优化/普通铁皮.png' },
+    starblue: { name: '星空蓝',   nameEn: 'Starry Blue',     src: '购物篮/webp/星空蓝.webp',   fb: '购物篮/优化/星空蓝.png' },
+    straw:    { name: '草莓粉',   nameEn: 'Strawberry Pink', src: '购物篮/webp/草莓粉.webp',   fb: '购物篮/优化/草莓粉.png' },
+    mint:     { name: '薄荷绿',   nameEn: 'Mint Green',      src: '购物篮/webp/薄荷绿.webp',   fb: '购物篮/优化/薄荷绿.png' },
+    gold:     { name: '金光闪闪', nameEn: 'Golden Glow',     src: '购物篮/webp/金光闪闪.webp', fb: '购物篮/优化/金光闪闪.png' },
   };
 
   var PIG_THEMES = {
@@ -23,8 +23,24 @@ ZQ.ui = ZQ.ui || {};
   /* 购物篮：顶视角铁丝篮位图（透明留白由 CSS 放大处理） */
   function cartImg(skinId) {
     var t = CART_SKINS[skinId] || CART_SKINS.silver;
-    return '<img class="cart-svg" src="' + encodeURI(t.src) + '" alt="' +
+    return '<img class="cart-svg" src="' + encodeURI(t.src) + '" data-fallback="' + encodeURI(t.fb) + '" alt="' +
       ((ZQ.isEn() && t.nameEn) ? t.nameEn : t.name) + '" draggable="false">';
+  }
+
+  /* 给 root 内所有带 data-fallback 且尚未绑定的图挂「WebP 失败 → PNG」兜底 */
+  function bindFallbacks(root) {
+    if (!root) return;
+    var imgs = root.querySelectorAll('img[data-fallback]');
+    for (var i = 0; i < imgs.length; i++) {
+      var img = imgs[i];
+      if (img.getAttribute('data-fb-bound')) continue;
+      img.setAttribute('data-fb-bound', '1');
+      img.addEventListener('error', function () {
+        var fb = this.getAttribute('data-fallback');
+        if (!fb || this.getAttribute('src') === fb) return;
+        this.setAttribute('src', fb);
+      });
+    }
   }
 
   /* 存钱罐：三款独立造型，Q 版粗描边 4px + 大圆角 */
@@ -137,6 +153,7 @@ ZQ.ui = ZQ.ui || {};
     PIG_SKINS: Object.keys(PIG_THEMES),
     cartTheme: function (id) { return CART_SKINS[id] || CART_SKINS.silver; },
     renderCart: cartImg,
+    bindFallbacks: bindFallbacks,
     renderPig: pigSvg,
   };
 })();

@@ -461,6 +461,21 @@ function mobileAssertScript() {
     'add("键盘路径仍有焦点环",st2.outlineStyle==="solid"&&ow2>=1&&b2.matches(":focus"),' +
     '"body.is-keyboard 下 outline="+st2.outlineStyle+" "+st2.outlineWidth+"（已聚焦="+b2.matches(":focus")+"）");' +
     'document.body.classList.remove("is-keyboard");b2.blur();}' +
+    /* 3.6 进关图片总字节：本关全部商品图（含还没上屏、只挂 data-src 的第二页）+ 购物篮皮肤，
+     *     按 ZQ.IMAGE_BYTES 体积清单求和 —— 确定性口径，不受浏览器缓存影响 */
+    'var seenU={},nimg=0,miss=[],bytes=0;' +
+    'var loadImgs=[].slice.call(document.querySelectorAll(".slot-img,.cart-svg"));' +
+    'loadImgs.forEach(function(el){' +
+    'var u=el.getAttribute("data-src")||el.getAttribute("src")||"";' +
+    'if(!u||seenU[u])return;seenU[u]=1;' +
+    'var key;try{key=decodeURI(u).replace(/^https?:\\/\\/[^\\/]+\\//,"").split("?")[0];}catch(err){key=u;}' +
+    'nimg++;' +
+    'if(window.ZQ&&ZQ.IMAGE_BYTES&&ZQ.IMAGE_BYTES[key])bytes+=ZQ.IMAGE_BYTES[key];else miss.push(key);});' +
+    'var BUDGET=350*1024;' +
+    'add("进关图片总字节 ≤350KB",nimg>0&&miss.length===0&&bytes<=BUDGET,' +
+    '"本关 "+nimg+" 张（商品图 + 购物篮皮肤）共 "+(bytes/1024).toFixed(1)+" KB / 上限 350 KB"' +
+    '+(miss.length?"；清单缺 "+miss.length+" 条，例："+miss.slice(0,2).join(" "):"")' +
+    '+(window.ZQ&&ZQ.IMAGE_BYTES?"":"；未找到 ZQ.IMAGE_BYTES，请先跑 node tools/build-images.js"));' +
     'return JSON.stringify(out);})()';
 }
 

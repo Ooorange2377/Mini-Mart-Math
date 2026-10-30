@@ -119,8 +119,14 @@ ZQ.itemName = function (item) {
   return (ZQ.isEn() && base.nameEn) ? base.nameEn : base.name;
 };
 
-/* 运行素材：原图保留为母版，页面优先加载 512px 优化副本；缺失时由渲染层回退原图。 */
+/* 运行素材：原图保留为母版，页面优先加载「384px WebP」；WebP 缺失时回退「优化 PNG」。
+ * WebP 由 tools/build-images.js 批量生成（商品素材/webp/ 与 PNG 优化目录一一对应）。 */
 ZQ.itemRuntimePath = function (item) {
+  if (!item || !item.path) return '';
+  return item.path.replace(/^商品素材\//, '商品素材/webp/').replace(/\.png$/i, '.webp');
+};
+
+ZQ.itemFallbackPath = function (item) {
   if (!item || !item.path) return '';
   return item.path.replace(/^商品素材\//, '商品素材/优化/');
 };

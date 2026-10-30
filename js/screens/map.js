@@ -145,6 +145,13 @@ ZQ.screens = ZQ.screens || {};
           chapters +
         '</div>';
 
+      /* 玩家在地图停留时（闲着也是闲着），空闲 800ms 预取「当前目标关」的商品图 */
+      if (ZQ.preload && cur) {
+        setTimeout(function () {
+          if (el.isConnected) ZQ.preload.items(cur);
+        }, 800);
+      }
+
       el.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;

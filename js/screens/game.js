@@ -283,6 +283,8 @@ ZQ.screens = ZQ.screens || {};
     _stopTimer: null,
     /** 上一份绑定的「切后台冻结计时」监听（重绑定时移除，避免重复挂载） */
     _visHandler: null,
+    /** 取关题目（预取模块复用同一套「固定题 / 重出题」规则，保证预取的就是进关会看到的） */
+    resolveLevel: function (levelId) { return resolveLevel(levelId); },
 
     /**
      * 渲染游戏主界面。
@@ -392,6 +394,7 @@ ZQ.screens = ZQ.screens || {};
 
       // 货架由独立 UI 模块渲染
       el.querySelector('.panel-shelf').appendChild(ZQ.ui.shelf.render(lv));
+      ZQ.ui.slots.bindFallbacks(el);   // 购物篮皮肤：WebP 失败回退优化 PNG
       el.setAttribute('data-level', lv.levelId);
       this.stage = el;
 
@@ -748,6 +751,9 @@ ZQ.screens = ZQ.screens || {};
         },
         onMap: goMap,
       });
+
+      /* 玩家看结算的这几秒，把下一关的图预取进缓存（未解锁/已满星时内部自动跳过） */
+      if (ZQ.preload) ZQ.preload.items(lv.levelId + 1);
     }
 
     /** 进入指定关卡（不传 seed → 由 resolveLevel 决定沿用固定题或重新出题） */
@@ -937,6 +943,9 @@ ZQ.screens = ZQ.screens || {};
          * 箭头/页点/提示高亮都会直接调 goto，闭包 page 可能已落后一帧。 */
         swipePage = parseInt(shelfEl.getAttribute('data-cur'), 10) || 0;
         swipeTrack.style.transition = 'none';
+        /* 手指一动就把邻页的图挂上：真滑过去时基本已解码完，看不到白框 */
+        ZQ.ui.shelf.prime(shelfEl, swipePage - 1);
+        ZQ.ui.shelf.prime(shelfEl, swipePage + 1);
       },
       onMove: function (dx) {
         var w = swipeViewport.getBoundingClientRect().width;
