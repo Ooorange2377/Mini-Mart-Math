@@ -12,7 +12,7 @@ var CACHE = 'zq-shell-v1';
  * 把这里与 index.html 里所有 ?v= 一起 bump 即可触发更新检测。不要改 CACHE 来当版本号：
  * CACHE 改名会让 activate 时清空整个素材缓存，玩家刷新后要重新下载全部图片。
  * 这个常量本身不参与缓存键，只作为「本次发版号」留痕。 */
-var VERSION = '20261030-65';
+var VERSION = '20261030-66';
 
 /* 不在 install 里 skipWaiting：新版本先进入 waiting，等玩家点横幅确认后再接管（见 message）。
  * 玩家一直不点也没关系——关闭所有页面后新 Worker 会自动激活，下次冷启动即是新版本。

@@ -9,6 +9,7 @@
   "scope": ".",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
+  "orientation": "landscape",
   "background_color": "#EAF6FB",
   "theme_color": "#EAF6FB",
   "categories": ["games", "education"],
