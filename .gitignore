@@ -2,3 +2,6 @@
 node_modules/
 # IDE 预览生成的分享包，属于构建产物，不入库
 .trae-html-share-packages/
+# 背景源图（PNG 原稿，仅用于转码，产物为根目录的 *.webp，不入库）
+新背景-大厅.png
+新背景-游戏内.png
