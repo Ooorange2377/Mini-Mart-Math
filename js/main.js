@@ -103,6 +103,15 @@ window.ZQ = window.ZQ || {};
     bindContextMenu();
     bindRotateTip();
 
+    /* PWA 独立模式标记：添加到主屏幕后以独立窗口运行时，浏览器工具栏消失，
+     * env(safe-area-inset-bottom) 由 0 变为真实值。若仍按浏览器模式把这段安全区
+     * 从舞台高度里减掉，页面背景就会在底部露出一条浅蓝色留白（见 mobile.css 第 8 节）。
+     * 安卓用 display-mode 媒体查询，iOS 走 navigator.standalone。 */
+    if ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        window.navigator.standalone === true) {
+      document.documentElement.classList.add('pwa-standalone');
+    }
+
     ZQ.state = { screen: 'start' };
     bindHistory();
     render();
