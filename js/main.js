@@ -141,6 +141,8 @@ window.ZQ = window.ZQ || {};
     app.appendChild(view);
     syncRotateTip();
     ZQ.audio.bgm(ZQ.state.screen);
+    /* PWA 新版本横幅：关卡内挂起、其他屏显示（见 js/ui/update.js） */
+    if (ZQ.ui && ZQ.ui.update) ZQ.ui.update.sync();
   }
 
   ZQ.app = {

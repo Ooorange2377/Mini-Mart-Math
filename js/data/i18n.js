@@ -75,6 +75,9 @@ ZQ.I18N_ZH = {
   // 首页按返回键时的提示（返回键由页面接管，避免误触直接退出）
   backExitHint: '再按一次返回键退出游戏',
 
+  // PWA 新版本提示（非游戏屏右下角横幅，整条可点击刷新）
+  updateToast: '🎉 发现新版本，点击刷新体验',
+
   // 通用按钮
   btnOk: '确定',
   btnCancel: '取消',
@@ -270,6 +273,7 @@ ZQ.I18N_EN = {
   rotateText: 'The game stage is landscape: rotating gives you a readable shelf and price tags.',
   rotateContinue: 'Continue anyway',
   backExitHint: 'Press back again to exit',
+  updateToast: '🎉 New version ready — tap to refresh',
 
   btnOk: 'OK',
   btnCancel: 'Cancel',

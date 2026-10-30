@@ -8,8 +8,19 @@
 
 var CACHE = 'zq-shell-v1';
 
-self.addEventListener('install', function () {
-  self.skipWaiting();
+/* 版本标记：sw.js 内容有任何字节变化，浏览器就会判定「有新版本」，所以每次发版
+ * 把这里与 index.html 里所有 ?v= 一起 bump 即可触发更新检测。不要改 CACHE 来当版本号：
+ * CACHE 改名会让 activate 时清空整个素材缓存，玩家刷新后要重新下载全部图片。
+ * 这个常量本身不参与缓存键，只作为「本次发版号」留痕。 */
+var VERSION = '20261030-63';
+
+/* 不在 install 里 skipWaiting：新版本先进入 waiting，等玩家点横幅确认后再接管（见 message）。
+ * 玩家一直不点也没关系——关闭所有页面后新 Worker 会自动激活，下次冷启动即是新版本。
+ * 这样也避免了「旧页面 + 新缓存」混跑。 */
+
+/* 横幅点击后按需接管（skipWaiting 只能在 Worker 线程里调用） */
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', function (e) {

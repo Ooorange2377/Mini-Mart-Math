@@ -773,6 +773,39 @@
 .toast-error { background: #FFE2DE; border-color: var(--red); color: var(--red); }
 .toast-good { background: var(--green-lt); }
 
+/* ================= PWA 版本更新横幅 =================
+ * 固定在视口右下角（独立窗口下抬高到 home indicator 之上），不进入舞台容器查询、
+ * 不占用游戏布局。只在检测到新版本时才插入 DOM，PC 基线与正常运行完全不受影响。
+ * 整条就是一个按钮，min-height 44px 保证手指点得中；不带关闭按钮——
+ * 它不遮挡任何可玩区域，玩家可以一直不点继续玩。 */
+.update-banner {
+  position: fixed;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  max-width: min(78vw, 360px);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--ink);
+  text-align: left;
+  background: var(--green-lt);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink-soft);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .22s ease, transform .22s ease;
+}
+.update-banner[hidden] { display: none; }
+.update-banner.is-in { opacity: 1; transform: translateY(0); }
+.update-banner:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink-soft); }
+
 /* ================= 关卡内道具方块（延时 / 提示 / 换题）：描边玻璃 ================= */
 .btn-tool {
   position: relative;
