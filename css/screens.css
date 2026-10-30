@@ -18,13 +18,15 @@
 
 /* ================= 开始页（Little Chef 风格：米白纯底 + 双层描边大字 + 角落装饰道具 + 虚线边框） ================= */
 
-/* 大厅背景：便利店内景图 + 浅色遮罩（覆盖旧 room::before / room-floor） */
+/* 大厅背景：便利店内景图 + 浅色遮罩（覆盖旧 room::before / room-floor）
+ * 底图由 新背景-大厅.png 转码而来（2048×1152 q0.82 WebP，2.4MB → 105KB）。
+ * 关卡地图与本页共用同一张图，见文末「实景底图」一节。 */
 .hall-bg {
   position: absolute;
   inset: 0;
   background:
     linear-gradient(180deg, rgba(255,253,247,.62), rgba(255,250,235,.62)),
-    url('../便利店内环境参考图.webp') center/cover no-repeat;
+    url('../背景-大厅.webp') center/cover no-repeat;
   z-index: 0;
 }
 .screen-start .room { display: none; }
@@ -883,3 +885,32 @@
   box-shadow: 2px 2px 0 var(--ink-soft);
   font-size: 1.8cqw;
 }
+
+/* ================= 实景底图（关卡地图 / 游戏 / 商品 / 皮肤） =================
+ * 四个界面原本共用 .room 的「渐变墙 + 地板网格」，现改为实景照片：
+ *   关卡地图 → 背景-大厅.webp（与开始页同一张，保持空间连续）
+ *   游戏 / 商品 / 皮肤 → 背景-游戏内.webp
+ * 处理方式与 .hall-bg 一致：照片上叠一层 62% 米白遮罩，压住细节、
+ * 保住左侧任务卡与货架面板的文字对比度；图片自带墙面与地面，
+ * 故隐藏旧的 .room::before 渐变墙和 .room-floor 网格。
+ * 两张图由 PNG 转码为 2048×1152 WebP：2.4MB→105KB、2.2MB→39KB。 */
+.screen-map .room {
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.62), rgba(255,250,235,.62)),
+    url('../背景-大厅.webp') center/cover no-repeat;
+}
+.screen-game .room,
+.screen-shop .room,
+.screen-skins .room {
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.62), rgba(255,250,235,.62)),
+    url('../背景-游戏内.webp') center/cover no-repeat;
+}
+.screen-map .room::before,
+.screen-game .room::before,
+.screen-shop .room::before,
+.screen-skins .room::before { display: none; }
+.screen-map .room-floor,
+.screen-game .room-floor,
+.screen-shop .room-floor,
+.screen-skins .room-floor { display: none; }
