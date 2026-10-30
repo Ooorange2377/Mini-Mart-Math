@@ -157,6 +157,17 @@
   /* 道具方块：视觉 6.2cqw 在手机上约 43px，补足到 44px 只多 1px；
      ::before/::after 已被玻璃高光占用，不能再拿来做热区 */
   .btn-tool { min-width: 44px; min-height: 44px; }
+  /* REROLL 一行 6 个字母，在 44px 方格里左右只剩 2.7px，字会压到圆角描边上；
+     字号有 10px 下限不能再缩，改为横向拉宽成胶囊（54×44）：高度不变、热区 54×44 ≥44，
+     三段文字都回到 8px 以上余量。三档同步生效，保持三颗按钮一致 */
+  .hud-tools .btn-tool { aspect-ratio: auto; height: 44px; min-width: 54px; }
+  /* 垂直居中修正：emoji 图标的字形高（25px）超出自身 18px 行盒，flex 居中按行盒算，
+     导致「图标+文案」整体比胶囊中心高 2px（实测上余 1.25px / 下余 5.27px）。
+     顶部补 4px 内边距把内容压回中间，实测上余 3.25px / 下余 3.27px */
+  .hud-tools .btn-tool { padding: 4px 0 0; }
+  /* 三块 54px + 间隙约 168px，超出原 20% 容器（606 档仅 95px）会让最右一颗被舞台裁掉，
+     热区实际不足 44px；改为按内容收缩、保持右对齐，宽度交给三个按钮自己决定 */
+  .hud-tools { width: auto; }
 
   /* 明细头部整行当按钮用：高度补到 44px */
   .hud-items .note-head { min-height: 44px; }
