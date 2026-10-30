@@ -1082,3 +1082,167 @@
   background: linear-gradient(180deg, var(--green-lt), var(--green));
 }
 .btn-result.btn-ghost { flex: 0 0 34%; }
+
+/* ================= P3 首屏 Loading =================
+ * 淡黄底 + 蓝色双色交替：奇数轮「已走过=深蓝 / 未走过=浅蓝」，偶数轮两层互换。
+ * 切换由 index.html 内联脚本监听 .boot-fill 的 animationiteration 完成（每轮重置时触发）。
+ * 颜色/时长/漂移幅度都以变量暴露，后续调参只改这一块。 */
+.boot-loading {
+  --blue-deep: #1E3A8A;     /* 深蓝 */
+  --blue-light: #87CEFA;    /* 浅蓝 */
+  --track-bg: var(--blue-light);   /* 未走过（奇数轮） */
+  --fill-color: var(--blue-deep);  /* 已走过（奇数轮） */
+  --text-color: #1E88E5;    /* 文案 / 小车：保持不变的深宝蓝 */
+  --dur: 1.5s;
+  --ease: cubic-bezier(.45, .05, .55, .95);
+  --travel: 17vw;           /* 文字横向漂移的半程 */
+  --bar-h: clamp(28px, 5.2vw, 48px);
+
+  position: fixed;
+  inset: 0;
+  z-index: 200;             /* 高于 modal(60) / toast(80) / 更新横幅(90)，低于竖屏提示 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #FFF8DC;
+  transition: opacity .24s ease;
+}
+/* 偶数轮：填充与轨道底色互换 */
+.boot-loading.is-round-even {
+  --track-bg: var(--blue-deep);
+  --fill-color: var(--blue-light);
+}
+.boot-loading.is-done { opacity: 0; pointer-events: none; }
+
+.boot-loader { width: 55vw; position: relative; }
+
+/* 轨道不写 overflow:hidden：小车到终点时允许探出胶囊边界 */
+.boot-track {
+  position: relative;
+  height: var(--bar-h);
+  border-radius: 999px;
+  background: var(--track-bg);
+  box-shadow: inset 0 0 0 2px rgba(30, 136, 229, .08);
+}
+.boot-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--fill-color);
+  animation: bootGrow var(--dur) var(--ease) infinite;
+}
+.boot-cart {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+  height: calc(var(--bar-h) * 1.28);
+  width: auto;
+  color: var(--text-color);
+  /* 第二层是淡黄描边光晕：偶数轮小车会压到深蓝轨道上，靠它保住轮廓 */
+  filter: drop-shadow(0 2px 0 rgba(30, 136, 229, .10))
+          drop-shadow(0 0 1.5px rgba(255, 248, 220, .95));
+}
+
+/* 文案：外层管左右漂移，内层管上下浮动，两个 transform 不互相覆盖 */
+.boot-loading-text {
+  position: relative;
+  height: clamp(20px, 2.4vw, 30px);
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.boot-word {
+  position: relative;
+  font-size: clamp(14px, 1.7vw, 20px);
+  font-weight: 800;
+  letter-spacing: .18em;
+  color: var(--text-color);
+  white-space: nowrap;
+  animation: bootDrift var(--dur) var(--ease) infinite;
+}
+.boot-word > span {
+  display: inline-block;
+  animation: bootBob 1.15s ease-in-out infinite alternate;
+}
+.boot-ghost {
+  /* 用 flex 居中而不是 translate 属性：individual transform 属性在旧版 iOS 不生效，
+   * 这里只留 transform 给漂移动画用，避免两套居中方案打架。 */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 1.7vw, 20px);
+  font-weight: 800;
+  letter-spacing: .18em;
+  color: var(--text-color);
+  white-space: nowrap;
+  opacity: .22;
+  filter: blur(2px);
+  animation: bootDrift var(--dur) var(--ease) infinite,
+             bootGhost 1.15s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* 6s 仍未就绪：追加超时文案与重试按钮。
+ * 用绝对定位挂在加载条下方，出现时不会把居中的加载条往上顶。 */
+.boot-timeout {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 58px);
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.boot-loading.is-timeout .boot-timeout { display: flex; }
+.boot-timeout-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(30, 136, 229, .75);
+}
+.boot-retry {
+  min-height: 44px;
+  min-width: 140px;
+  padding: 0 24px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-color);
+  background: var(--paper);
+  border: 2px solid var(--text-color);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.boot-retry:active { transform: translateY(1px); }
+
+@keyframes bootGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes bootDrift {
+  from { transform: translateX(var(--travel)); }
+  to   { transform: translateX(calc(-1 * var(--travel))); }
+}
+@keyframes bootBob {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-3px); }
+}
+@keyframes bootGhost {
+  from { opacity: .14; }
+  to   { opacity: .30; }
+}
+
+/* 降低动态效果：保留方向性动画，关掉装饰性的颠簸与残影呼吸 */
+@media (prefers-reduced-motion: reduce) {
+  .boot-word > span { animation: none; }
+  .boot-ghost { animation: bootDrift var(--dur) linear infinite; opacity: .18; filter: blur(1px); }
+}

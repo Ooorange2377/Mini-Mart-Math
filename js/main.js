@@ -116,6 +116,8 @@ window.ZQ = window.ZQ || {};
     ZQ.state = { screen: 'start' };
     bindHistory();
     render();
+    /* P3：首屏渲染完成，收起 Loading 遮罩（逻辑与 6s 超时兜底在 index.html 内联脚本里） */
+    if (window.__zqBootDone) window.__zqBootDone();
   }
 
   /** 生成当前页视图；页面尚未实现时返回 null（保持当前画面，避免出现空白） */

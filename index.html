@@ -13,14 +13,72 @@
 <!-- 内联 favicon：避免 /favicon.ico 404，也不额外增加图片文件 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23FFD9A6' stroke='%231B3E6F' stroke-width='3'/%3E%3Ccircle cx='11' cy='14' r='2' fill='%231B3E6F'/%3E%3Ccircle cx='21' cy='14' r='2' fill='%231B3E6F'/%3E%3C/svg%3E">
 <title>零钱大作战 · 便利店精算师</title>
-<link rel="stylesheet" href="css/base.css?v=20261030-64">
-<link rel="stylesheet" href="css/layout.css?v=20261030-64">
-<link rel="stylesheet" href="css/components.css?v=20261030-64">
-<link rel="stylesheet" href="css/screens.css?v=20261030-64">
-<link rel="stylesheet" href="css/animations.css?v=20261030-64">
-<link rel="stylesheet" href="css/mobile.css?v=20261030-64">
+<link rel="stylesheet" href="css/base.css?v=20261030-65">
+<link rel="stylesheet" href="css/layout.css?v=20261030-65">
+<link rel="stylesheet" href="css/components.css?v=20261030-65">
+<link rel="stylesheet" href="css/screens.css?v=20261030-65">
+<link rel="stylesheet" href="css/animations.css?v=20261030-65">
+<link rel="stylesheet" href="css/mobile.css?v=20261030-65">
 </head>
 <body>
+
+<!-- P3 首屏 Loading：先于一切脚本绘制（淡黄全屏遮罩 + 蓝色对冲加载条）。
+     boot 首次渲染完成即淡出并移除；6 秒仍未就绪则追加重试按钮。
+     注意：这里只放不依赖 ZQ 的最小内联逻辑，脚本加载失败时超时兜底仍然生效。 -->
+<div class="boot-loading" id="boot-loading" role="status" aria-live="polite" aria-busy="true">
+  <div class="boot-loader">
+    <div class="boot-track">
+      <div class="boot-fill">
+        <svg class="boot-cart" viewBox="0 0 72 50" aria-hidden="true">
+          <path d="M14 22 L22 9 H50 L59 22 Z" fill="currentColor" opacity=".85"/>
+          <rect x="4" y="21" width="64" height="19" rx="9.5" fill="currentColor"/>
+          <rect x="28" y="12" width="16" height="7" rx="3" fill="#FFF8DC" opacity=".9"/>
+          <circle cx="20" cy="40" r="7.5" fill="#FFF8DC" stroke="currentColor" stroke-width="3"/>
+          <circle cx="52" cy="40" r="7.5" fill="#FFF8DC" stroke="currentColor" stroke-width="3"/>
+          <circle cx="66" cy="29" r="3" fill="#FFF8DC" opacity=".9"/>
+        </svg>
+      </div>
+    </div>
+    <div class="boot-loading-text">
+      <span class="boot-ghost" aria-hidden="true">loading ...</span>
+      <span class="boot-word"><span>loading ...</span></span>
+    </div>
+  </div>
+  <div class="boot-timeout">
+    <div class="boot-timeout-text">加载时间有点久，请检查网络后重试</div>
+    <button class="boot-retry" type="button">重新加载</button>
+  </div>
+</div>
+<script>
+(function () {
+  var box = document.getElementById('boot-loading');
+  if (!box) return;
+  var timer = setTimeout(function () {
+    if (window.__zqBooted) return;
+    box.classList.add('is-timeout');
+  }, 6000);
+  box.querySelector('.boot-retry').addEventListener('click', function () {
+    location.reload();
+  });
+  /* 双色交替：每轮动画从 0% 重启时触发，奇偶轮互换「已走过 / 未走过」的深浅蓝 */
+  var fillEl = box.querySelector('.boot-fill');
+  if (fillEl) {
+    fillEl.addEventListener('animationiteration', function () {
+      box.classList.toggle('is-round-even');
+    });
+  }
+  /* main.js 的 boot 末尾调用：淡出 240ms 后从 DOM 移除，避免残留遮罩挡住交互 */
+  window.__zqBootDone = function () {
+    if (window.__zqBooted) return;
+    window.__zqBooted = true;
+    clearTimeout(timer);
+    box.classList.add('is-done');
+    setTimeout(function () {
+      if (box.parentNode) box.parentNode.removeChild(box);
+    }, 260);
+  };
+})();
+</script>
 
 <!-- 页面路由挂载点：main.js 整体替换 #app 子树 -->
 <div id="app"></div>
@@ -44,44 +102,44 @@
 </noscript>
 
 <!-- 依赖顺序：data → core → game → ui → screens → main -->
-<script src="js/data/items.js?v=20261030-64"></script>
-<script src="js/data/image-sizes.js?v=20261030-64"></script>
-<script src="js/data/levels.js?v=20261030-64"></script>
-<script src="js/data/i18n.js?v=20261030-64"></script>
-<script src="js/core/rng.js?v=20261030-64"></script>
-<script src="js/core/money.js?v=20261030-64"></script>
-<script src="js/core/timers.js?v=20261030-64"></script>
-<script src="js/core/audio.js?v=20261030-64"></script>
-<script src="js/core/store.js?v=20261030-64"></script>
-<script src="js/game/rules.js?v=20261030-64"></script>
-<script src="js/game/generator.js?v=20261030-64"></script>
-<script src="js/game/session.js?v=20261030-64"></script>
-<script src="js/game/preload.js?v=20261030-64"></script>
-<script src="js/ui/gesture.js?v=20261030-64"></script>
-<script src="js/ui/slots.js?v=20261030-64"></script>
-<script src="js/ui/shelf.js?v=20261030-64"></script>
-<script src="js/ui/toast.js?v=20261030-64"></script>
-<script src="js/ui/cart.js?v=20261030-64"></script>
-<script src="js/ui/list.js?v=20261030-64"></script>
-<script src="js/ui/update.js?v=20261030-64"></script>
-<script src="js/screens/result.js?v=20261030-64"></script>
-<script src="js/screens/pigshow.js?v=20261030-64"></script>
-<script src="js/screens/start.js?v=20261030-64"></script>
-<script src="js/screens/map.js?v=20261030-64"></script>
-<script src="js/screens/shop.js?v=20261030-64"></script>
-<script src="js/screens/skins.js?v=20261030-64"></script>
-<script src="js/screens/game.js?v=20261030-64"></script>
-<script src="js/main.js?v=20261030-64"></script>
+<script src="js/data/items.js?v=20261030-65"></script>
+<script src="js/data/image-sizes.js?v=20261030-65"></script>
+<script src="js/data/levels.js?v=20261030-65"></script>
+<script src="js/data/i18n.js?v=20261030-65"></script>
+<script src="js/core/rng.js?v=20261030-65"></script>
+<script src="js/core/money.js?v=20261030-65"></script>
+<script src="js/core/timers.js?v=20261030-65"></script>
+<script src="js/core/audio.js?v=20261030-65"></script>
+<script src="js/core/store.js?v=20261030-65"></script>
+<script src="js/game/rules.js?v=20261030-65"></script>
+<script src="js/game/generator.js?v=20261030-65"></script>
+<script src="js/game/session.js?v=20261030-65"></script>
+<script src="js/game/preload.js?v=20261030-65"></script>
+<script src="js/ui/gesture.js?v=20261030-65"></script>
+<script src="js/ui/slots.js?v=20261030-65"></script>
+<script src="js/ui/shelf.js?v=20261030-65"></script>
+<script src="js/ui/toast.js?v=20261030-65"></script>
+<script src="js/ui/cart.js?v=20261030-65"></script>
+<script src="js/ui/list.js?v=20261030-65"></script>
+<script src="js/ui/update.js?v=20261030-65"></script>
+<script src="js/screens/result.js?v=20261030-65"></script>
+<script src="js/screens/pigshow.js?v=20261030-65"></script>
+<script src="js/screens/start.js?v=20261030-65"></script>
+<script src="js/screens/map.js?v=20261030-65"></script>
+<script src="js/screens/shop.js?v=20261030-65"></script>
+<script src="js/screens/skins.js?v=20261030-65"></script>
+<script src="js/screens/game.js?v=20261030-65"></script>
+<script src="js/main.js?v=20261030-65"></script>
 <script>
 // 仅在 ?debug=1 时加载出题自检脚本，避免正常运行时的额外开销
 (function () {
   if (/[?&]debug=1\b/.test(location.search)) {
     var regression = document.createElement('script');
-    regression.src = 'js/dev/regression.js?v=20261030-64';
+    regression.src = 'js/dev/regression.js?v=20261030-65';
     regression.onload = function () {
       ZQ.regression.report();
       var selfcheck = document.createElement('script');
-      selfcheck.src = 'js/dev/selfcheck.js?v=20261030-64';
+      selfcheck.src = 'js/dev/selfcheck.js?v=20261030-65';
       selfcheck.onload = function () { ZQ.selfcheck.report(30); };
       document.body.appendChild(selfcheck);
     };
