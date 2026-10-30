@@ -996,7 +996,8 @@ ZQ.screens = ZQ.screens || {};
         text: ZQ.I18N.guide2Text,
       });
       queue.push({
-        target: el.querySelector('.panel-cart'),
+        /* 篮内缩略图在触摸端已不可点，引导必须指向真正可取消的入口，否则高亮篮身会误导玩家 */
+        target: el.querySelector('.hud-items'),
         key: 'basicGuide3',
         guide: true,
         title: ZQ.I18N.guide3Title,

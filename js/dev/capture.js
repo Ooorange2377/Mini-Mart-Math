@@ -938,7 +938,10 @@ function guideScript() {
     /* 5 步依次点 OK，每步校验高亮框套住的目标 */
     'var steps=[{n:"G6 第 1 步高亮目标清单",s:".hud-target"},' +
       '{n:"G7 第 2 步高亮商品卡",s:".slot[data-slot]"},' +
-      '{n:"G8 第 3 步高亮购物篮",s:".panel-cart"},' +
+      /* 第 3 步的取消入口已从「篮内缩略图」改为「查看明细」（触摸端篮内不可点，
+         见 mobile.css 第 9 节），故锚点随文案一起换到 .hud-items；第 4 步同锚点，
+         两步分别讲「怎么取消」与「怎么看已选」 */
+      '{n:"G8 第 3 步高亮查看明细（取消入口）",s:".hud-items"},' +
       '{n:"G9 第 4 步高亮查看明细",s:".hud-items"},' +
       '{n:"G10 第 5 步高亮结算按钮",s:".btn-checkout"}];' +
     'for(var i=0;i<steps.length;i++){' +
