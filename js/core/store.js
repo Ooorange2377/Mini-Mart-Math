@@ -110,7 +110,7 @@ window.ZQ = window.ZQ || {};
       clearCounts: {},       // 每关成功通关次数（递减倍率用）
       fixedQuestions: {},    // 未满星关卡的固定题
       tutorialSeen: {},
-      settings: { sound: true, music: true, lang: 'zh' },
+      settings: { sound: true, music: true, gameBgm: true, lang: 'zh' },
     };
   }
 
@@ -143,6 +143,9 @@ window.ZQ = window.ZQ || {};
     if (typeof save.rerollCards !== 'number' || !isFinite(save.rerollCards)) save.rerollCards = 0;
     if (typeof save.settings !== 'object' || !save.settings) save.settings = base.settings;
     if (save.settings.lang !== 'zh' && save.settings.lang !== 'en') save.settings.lang = 'zh';
+    /* settings 是嵌套对象，上面的 for-in 只补顶层键，新字段必须在这里单独兜底。
+     * 用「不是布尔值就补 true」而不是「不是 false 就补」：缺字段=老存档，默认应当开启。 */
+    if (typeof save.settings.gameBgm !== 'boolean') save.settings.gameBgm = true;
     var fromVersion = typeof save.version === 'number' ? save.version : 1;
     if (fromVersion < 2) migrateLevelIds(save);
     if (fromVersion < 3) migrateMomBonuses(save);
@@ -414,6 +417,11 @@ window.ZQ = window.ZQ || {};
 
     setMusic: function (on) {
       data.settings.music = !!on;
+      save();
+    },
+
+    setGameBgm: function (on) {
+      data.settings.gameBgm = !!on;
       save();
     },
 

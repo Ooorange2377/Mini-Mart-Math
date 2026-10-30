@@ -37,20 +37,29 @@ window.ZQ = window.ZQ || {};
     osc.stop(t0 + dur + 0.03);
   }
 
-  /* ================= 背景音乐：Let's Go Shopping（Purrple Cat） =================
-     来源 https://opengameart.org/content/lets-go-shopping-0 ，CC-BY 4.0，
-     文件随包放在 audio/ 下，用 <audio> 循环播放，避免合成音色失真。 */
-  var MUSIC_VOL = 0.28;                          // 0~1，音乐音量（混在音效之下）
-  var MUSIC_SRC = 'audio/lets_go_shopping.mp3';
-  var MUSIC_XFADE = 2.4;                         // 结尾交叉淡化时长（秒）
+  /* ================= 背景音乐 =================
+     大厅：Let's Go Shopping（Purrple Cat），来源
+       https://opengameart.org/content/lets-go-shopping-0 ，CC-BY 4.0；
+     关卡内：bgm-game.m4a（原 bgm-game.mp3 → AAC 96kbps 单声道，210s / 2.3MB）。
+     两首都用 <audio> 循环播放、音量统一交给 GainNode（iOS 会忽略 el.volume）；
+     每首内部用「双路交叉淡化」接住循环接缝，大厅 ↔ 关卡之间再做一次交叉淡化切换。 */
+  var MUSIC_VOL = 0.28;    // 大厅曲音量（0~1，混在音效之下）
+  var GAME_VOL = 0.12;     // 关卡内 BGM：约大厅的 43%（−7.4dB），刻意压低，不抢算账注意力
+  var MUSIC_XFADE = 2.4;   // 同一首结尾前的循环交叉淡化时长（秒）
+  var SWITCH_XFADE = 1.2;  // 大厅 ↔ 关卡 切歌时的交叉淡化时长（秒）
 
-  var musicOn = true;      // 用户开关（设置里可单独关）
-  var wantMusic = false;   // 当前界面是否需要 BGM
-  var musicEl = null;      // 当前在播的那一路
-  var musicEl2 = null;     // 交叉淡化用的备用路（懒创建）
-  var loopTimer = null;    // 临近结尾的监测
-  var pauseTimer = null;
+  var musicOn = true;      // 「音乐」总开关：关上则大厅与关卡两首都静音
+  var gameBgmOn = true;    // 「关卡内 BGM」独立开关：总开关关闭时不生效
   var noiseBuf = null;
+
+  /** 一路背景音乐：el 当前在播、alt 是循环交叉淡化用的备用路（懒创建） */
+  function makeTrack(src, vol) {
+    return { src: src, vol: vol, el: null, alt: null, loopTimer: null, pauseTimer: null, want: false };
+  }
+  var TRACKS = {
+    hall: makeTrack('audio/lets_go_shopping.mp3', MUSIC_VOL),
+    game: makeTrack('audio/bgm-game.m4a', GAME_VOL),
+  };
 
   /** 0.5s 白噪声缓冲：笑声字头的送气声复用（只生成一次） */
   function noise() {
@@ -95,9 +104,9 @@ window.ZQ = window.ZQ || {};
   }
 
   /** 新建一路音乐元素：预加载、音量从 0 起以便淡入 */
-  function makeEl() {
+  function makeEl(track) {
     var el = new Audio();
-    el.src = MUSIC_SRC;
+    el.src = track.src;
     el.loop = true;        // 兜底：极端情况下（时长未知）仍能循环，不至于断掉
     /* preload=none：首屏不抢 4.4MB 带宽，首次手势解锁后才真正加载 */
     el.preload = 'none';
@@ -156,19 +165,15 @@ window.ZQ = window.ZQ || {};
     }, 40);
   }
 
-  /** 清掉两路的渐变定时器、循环监测与兜底暂停 */
-  function clearAudioTimers() {
-    [musicEl, musicEl2].forEach(function (el) {
-      if (el && el._fade) { clearInterval(el._fade); el._fade = null; }
-    });
-    if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
-    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+  /** 清掉某一路的循环监测；切歌/暂停时必须先清，否则淡出期间还会触发内部交叉淡化出现第三路 */
+  function clearLoop(track) {
+    if (track.loopTimer) { clearInterval(track.loopTimer); track.loopTimer = null; }
   }
 
-  /** 结尾交叉淡化：备用路从头起播，两路一进一出，衔接处听不出断点 */
-  function crossfade() {
-    var out = musicEl;
-    var inc = wire(musicEl2 || (musicEl2 = makeEl()));
+  /** 同一首的结尾交叉淡化：备用路从头起播，两路一进一出，衔接处听不出断点 */
+  function crossfade(track) {
+    var out = track.el;
+    var inc = wire(track.alt || (track.alt = makeEl(track)));
     /* 淡出的一路关掉 loop，避免它在这 2.4 秒内先播到结尾又回卷重播，出现一声突兀的重来 */
     out.loop = false;
     inc.loop = true;
@@ -177,54 +182,65 @@ window.ZQ = window.ZQ || {};
     var p = inc.play();
     if (p && p.catch) p.catch(function () {});
     var ms = MUSIC_XFADE * 1000;
-    ramp(inc, MUSIC_VOL, ms);
+    ramp(inc, track.vol, ms);
     ramp(out, 0, ms, function () { out.pause(); });
     /* 交换角色：下一轮由新的一路接续 */
-    musicEl = inc;
-    musicEl2 = out;
+    track.el = inc;
+    track.alt = out;
   }
 
-  /** 监测当前一路是否临近结尾，到点就交叉淡化 */
-  function watchLoop() {
-    if (loopTimer) return;
-    loopTimer = setInterval(function () {
-      var el = musicEl;
+  /** 监测某一路是否临近结尾，到点就交叉淡化 */
+  function watchLoop(track) {
+    if (track.loopTimer) return;
+    track.loopTimer = setInterval(function () {
+      var el = track.el;
       if (!el || el.paused) return;
       var d = el.duration;
       if (!d || !isFinite(d)) return;
-      if (d - el.currentTime <= MUSIC_XFADE) crossfade();
+      if (d - el.currentTime <= MUSIC_XFADE) crossfade(track);
     }, 250);
   }
 
-  function startMusic() {
-    if (!musicOn || !wantMusic || !gestured) return;
-    clearAudioTimers();
-    var el = wire(musicEl || (musicEl = makeEl()));
-    /* 只在真正暂停时才 play，重复调用不会再起一层播放 */
-    if (el.paused) {
-      var d = el.duration;
-      /* 暂停点已贴近结尾时跳回开头，避免刚恢复就立刻淡化 */
-      if (d && isFinite(d) && d - el.currentTime <= MUSIC_XFADE) el.currentTime = 0;
-      el.loop = true;
-      if (el._wired && el._gain) el._gain.gain.value = 0; else el.volume = 0;
-      var p = el.play();
-      if (p && p.catch) p.catch(function () {});
-    }
-    ramp(el, MUSIC_VOL, 800);
-    watchLoop();
+  /** 从 0 淡入到该曲自身音量。等 play() 的 promise 之后再开始计时：
+   *  关卡曲首次进关要下载 2.3MB，若增益已按时间表爬满，出声瞬间会直接跳到全音量 */
+  function fadeIn(track, ms) {
+    if (track.pauseTimer) { clearTimeout(track.pauseTimer); track.pauseTimer = null; }
+    var el = wire(track.el || (track.el = makeEl(track)));
+    var begin = function () { ramp(el, track.vol, ms); watchLoop(track); };
+    if (!el.paused) { begin(); return; }
+    var d = el.duration;
+    /* 暂停点已贴近结尾时跳回开头，避免刚恢复就立刻淡化 */
+    if (d && isFinite(d) && d - el.currentTime <= MUSIC_XFADE) el.currentTime = 0;
+    el.loop = true;
+    if (el._wired && el._gain) el._gain.gain.value = 0; else el.volume = 0;
+    var p = el.play();
+    if (p && p.then) p.then(begin)['catch'](function () {});
+    else begin();
   }
 
-  function stopMusic() {
-    clearAudioTimers();
-    [musicEl, musicEl2].forEach(function (el) {
+  /** 淡出并暂停某一路（含正在交叉淡化的备用路） */
+  function fadeOut(track, ms) {
+    clearLoop(track);
+    if (track.pauseTimer) { clearTimeout(track.pauseTimer); track.pauseTimer = null; }
+    [track.el, track.alt].forEach(function (el) {
       if (!el) return;
-      ramp(el, 0, 220, function () { el.pause(); });
+      ramp(el, 0, ms, function () { el.pause(); });
     });
-    /* 兜底：即使渐变定时器被后续 startMusic 清掉，也一定会暂停 */
-    pauseTimer = setTimeout(function () {
-      pauseTimer = null;
-      [musicEl, musicEl2].forEach(function (el) { if (el) el.pause(); });
-    }, 260);
+    /* 兜底：即使渐变定时器被后续 fadeIn 清掉，也一定会暂停 */
+    track.pauseTimer = setTimeout(function () {
+      track.pauseTimer = null;
+      [track.el, track.alt].forEach(function (el) { if (el) el.pause(); });
+    }, ms + 40);
+  }
+
+  /** 按 want / 总开关 / 手势解锁统一决定两路起停；一进一出同时渐变 = 交叉淡化 */
+  function syncTracks(dur) {
+    var ms = (dur || SWITCH_XFADE) * 1000;
+    [TRACKS.hall, TRACKS.game].forEach(function (track) {
+      var should = !!(track.want && musicOn && gestured);
+      if (should) fadeIn(track, ms);
+      else if (track.el || track.alt) fadeOut(track, ms);
+    });
   }
 
   ZQ.audio = {
@@ -236,7 +252,7 @@ window.ZQ = window.ZQ || {};
     unlock: function () {
       gestured = true;
       ensureCtx();      // 内部已调用 ctx.resume()，不 await，避免阻塞解锁
-      startMusic();     // play() 内部异步 load()，不阻塞
+      syncTracks();     // 按当前界面起播对应曲目（大厅曲或关卡曲），play() 内部异步加载
     },
 
     /** 手势补漏：从后台回来、或系统中断后上下文被挂起时，用任意一次点击恢复播放 */
@@ -244,19 +260,27 @@ window.ZQ = window.ZQ || {};
       if (!gestured) return;
       var c = ensureCtx();
       if (c && c.state === 'suspended' && c.resume) c.resume();
-      if (musicOn && wantMusic) startMusic();
+      syncTracks();     // 关卡内恢复的应当是关卡曲，不能再写死大厅曲
     },
 
     /* ---- 背景音乐控制 ---- */
     setMusicEnabled: function (v) {
       musicOn = !!v;
-      if (musicOn) startMusic(); else stopMusic();
+      syncTracks();     // 总开关：一关两首同时淡出，一开按当前界面淡入
     },
     isMusicEnabled: function () { return musicOn; },
-    /** 按界面切换 BGM：游戏内静音，其余界面循环播放 */
+    /** 关卡内 BGM 独立开关；在关卡里改设置也立即生效 */
+    setGameBgm: function (v) {
+      gameBgmOn = !!v;
+      syncTracks();
+    },
+    isGameBgmEnabled: function () { return gameBgmOn; },
+    /** 按界面切歌：大厅 ↔ 关卡交叉淡化（两首同时渐变），中间不会出现空档 */
     bgm: function (screen) {
-      wantMusic = screen !== 'game';
-      if (wantMusic) startMusic(); else stopMusic();
+      var inGame = screen === 'game';
+      TRACKS.hall.want = !inGame;
+      TRACKS.game.want = inGame && gameBgmOn;
+      syncTracks();
     },
 
     ding:  function () { tone(1180, 0.16, 'sine', 0.14, 0); tone(1760, 0.12, 'sine', 0.08, 0.03); },

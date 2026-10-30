@@ -84,6 +84,7 @@ window.ZQ = window.ZQ || {};
     ZQ.setLang((d.settings && d.settings.lang) || 'zh');
     ZQ.audio.setEnabled(!(d.settings && d.settings.sound === false));
     ZQ.audio.setMusicEnabled(!(d.settings && d.settings.music === false));
+    ZQ.audio.setGameBgm(!(d.settings && d.settings.gameBgm === false));
     /* 浏览器要求先有用户手势才能出声：首次任意点击即解锁并起播 BGM。
      * 之后的点击继续调用 kick()，用于系统中断/后台返回后恢复上下文。 */
     document.addEventListener('pointerdown', function () { ZQ.audio.unlock(); }, { once: true });

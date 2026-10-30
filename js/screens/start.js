@@ -178,6 +178,7 @@ ZQ.screens = ZQ.screens || {};
         var st = (ZQ.store.data && ZQ.store.data.settings) || {};
         var sndOn = st.sound !== false;
         var musOn = ZQ.audio.isMusicEnabled();
+        var gameBgmOn = ZQ.audio.isGameBgmEnabled();
         var lang = st.lang === 'en' ? 'en' : 'zh';
         function row(id, label, on) {
           var state = on ? ZQ.I18N.settingsOn : ZQ.I18N.settingsOff;
@@ -192,6 +193,7 @@ ZQ.screens = ZQ.screens || {};
             '<div style="display:flex;flex-direction:column;gap:.2cqw">' +
               row('sound-toggle', ZQ.I18N.settingsSound, sndOn) +
               row('music-toggle', ZQ.I18N.settingsMusic, musOn) +
+              row('game-bgm-toggle', ZQ.I18N.settingsGameBgm, gameBgmOn) +
               '<label style="display:flex;align-items:center;gap:.8cqw;cursor:pointer">' +
                 '<span>' + ZQ.I18N.language + '</span>' +
                 '<select id="lang-select" style="font:inherit;font-size:1.9cqw;padding:.1cqw .5cqw;border:2px solid var(--ink);border-radius:.5cqw;background:var(--paper);color:var(--ink)">' +
@@ -209,9 +211,11 @@ ZQ.screens = ZQ.screens || {};
           onOk: function () {
             var sCb = document.getElementById('sound-toggle');
             var mCb = document.getElementById('music-toggle');
+            var gCb = document.getElementById('game-bgm-toggle');
             var lSel = document.getElementById('lang-select');
             if (sCb) { ZQ.audio.setEnabled(sCb.checked); ZQ.store.setSound(sCb.checked); }
             if (mCb) { ZQ.audio.setMusicEnabled(mCb.checked); ZQ.store.setMusic(mCb.checked); }
+            if (gCb) { ZQ.audio.setGameBgm(gCb.checked); ZQ.store.setGameBgm(gCb.checked); }
             if (lSel) {
               var next = lSel.value === 'en' ? 'en' : 'zh';
               if (next !== ZQ.lang) {

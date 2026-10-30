@@ -140,6 +140,7 @@ ZQ.I18N_ZH = {
   // 设置弹窗
   settingsSound: '音效',
   settingsMusic: '音乐',
+  settingsGameBgm: '关卡内 BGM',
   settingsOn: '已开启',
   settingsOff: '已关闭',
   language: '语言',
@@ -331,6 +332,7 @@ ZQ.I18N_EN = {
 
   settingsSound: 'SFX',
   settingsMusic: 'Music',
+  settingsGameBgm: 'Level BGM',
   settingsOn: 'On',
   settingsOff: 'Off',
   language: 'Language',
