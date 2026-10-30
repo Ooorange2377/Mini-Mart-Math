@@ -1068,6 +1068,12 @@ async function main() {
     }]);
     cdp.listeners.set('Log.entryAdded', [function (p) {
       if (p.entry.level === 'error') {
+        /* 跨域第三方脚本（访问统计等）加载失败不算页面报错：被墙/离线都会让它失效，
+         * 且与游戏功能无关。本站自身资源加载失败仍然记录。 */
+        var u = p.entry.url || '';
+        if (/^https?:\/\//i.test(u)) {
+          try { if (new URL(u).origin !== new URL(URL_BASE).origin) return; } catch (e) { /* 解析失败则照常记录 */ }
+        }
         pageErrors.push('console.error: ' + p.entry.text + (p.entry.url ? ' @ ' + p.entry.url : ''));
       }
     }]);

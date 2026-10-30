@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "零钱大作战 · 便利店精算师",
+  "short_name": "零钱大作战",
+  "description": "便利店精算师：看标价、挑商品、算总价的小游戏。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "background_color": "#EAF6FB",
+  "theme_color": "#EAF6FB",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#EAF6FB">
+<!-- PWA：安卓（Chrome / 华为 / 小米等）添加到主屏幕后以独立窗口运行 -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<!-- 老版本国产浏览器内核仍只认这条 meta（不写也不报错，写了才保证独立窗口） -->
+<meta name="mobile-web-app-capable" content="yes">
 <!-- 内联 favicon：避免 /favicon.ico 404，也不额外增加图片文件 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23FFD9A6' stroke='%231B3E6F' stroke-width='3'/%3E%3Ccircle cx='11' cy='14' r='2' fill='%231B3E6F'/%3E%3Ccircle cx='21' cy='14' r='2' fill='%231B3E6F'/%3E%3C/svg%3E">
 <title>零钱大作战 · 便利店精算师</title>
@@ -83,6 +88,21 @@
   }
 })();
 </script>
+<script>
+/* 注册 Service Worker：仅在 http(s) 下注册；file:// 双击通道、以及不支持的环境直接跳过，
+ * 不注册也不影响游戏本体，只有「添加到主屏幕 / 离线」能力依赖它。 */
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js')['catch'](function () { /* 静默失败，不影响游戏 */ });
+  });
+})();
+</script>
+
+<!-- 访问统计（GoatCounter）：async 加载，不阻塞渲染；脚本被墙/离线时静默失败，不影响游戏 -->
+<script data-goatcounter="https://ooorange.goatcounter.com/count"
+        async src="https://gc.zgo.at/count.js"></script>
 
 </body>
 </html>
